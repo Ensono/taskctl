@@ -185,7 +185,7 @@ func SliceContains(slice []string, value string) bool {
 
 		// create regular expression pattern to test against
 		// this allows multiple variables to be added or excluded
-		pattern := fmt.Sprintf(`(?i)\b%s\b`, x)
+		pattern := fmt.Sprintf(`(?i)\b%s\b|%s`, x, x)
 		re := regexp.MustCompile(pattern)
 
 		// match the value against the re

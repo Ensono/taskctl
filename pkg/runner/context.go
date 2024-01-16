@@ -160,8 +160,21 @@ func (c *ExecutionContext) GenerateEnvfile() error {
 	builder := strings.Builder{}
 	spacePattern := regexp.MustCompile(`\s`)
 
+	// define a list of environment variables that are not permitted
+	invalid_vars := []string{
+		`(!|=)::=::\\`, // this is found in a cygwin environment
+	}
+
 	// iterate around all of the environment variables and add the selected ones to the builder
 	for _, env := range os.Environ() {
+
+		// check to see if the env matches an invalid variable, if it does
+		// move onto the next loop
+		logrus.Info(env)
+		if utils.SliceContains(invalid_vars, env) {
+			logrus.Warnf("Skipping invalid environment variable: `%s`", env)
+			continue
+		}
 
 		// split the environment variable using = as the delimiter
 		// this is so that newlines can be surpressed
