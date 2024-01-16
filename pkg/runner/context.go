@@ -203,6 +203,20 @@ func (c *ExecutionContext) GenerateEnvfile() error {
 		logrus.Fatalf("Error writing out file: %s\n", err.Error())
 	}
 
+	// wait for the file to exist before continuing
+	// this is to address an issue where the file does not exist on disk before the command
+	// is executed
+	for {
+
+		if utils.FileExists(c.Envfile.Path) {
+			logrus.Debug(fmt.Sprintf("File has been found: %s\n", c.Envfile.Path))
+			break
+		}
+
+		// sleep for 1ms
+		time.Sleep(1 * time.Millisecond)
+	}
+
 	logrus.Debug(output)
 
 	// delay the ongoing execution of taskctl if a value has been set
