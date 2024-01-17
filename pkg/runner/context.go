@@ -183,6 +183,34 @@ func (c *ExecutionContext) GenerateEnvfile() error {
 		// Get the name of the variable
 		name := parts[0]
 
+		// iterate around the modify options to see if the name needs to be
+		// modified at all
+		for _, modify := range c.Envfile.Modify {
+
+			// use the pattern to determine if the string has been identified
+			// this assumes 1 capture group so this will be used as the name to transform
+			re := regexp.MustCompile(modify.Pattern)
+			match := re.FindStringSubmatch(name)
+			if len(match) > 0 {
+
+				keyword := match[re.SubexpIndex("keyword")]
+				varname := match[re.SubexpIndex("varname")]
+
+				// perform the operation on the varname
+				switch modify.Operation {
+				case "lower":
+					varname = strings.ToLower(varname)
+				case "upper":
+					varname = strings.ToUpper(varname)
+				}
+
+				// Build up the name
+				name = fmt.Sprintf("%s%s", keyword, varname)
+
+				break
+			}
+		}
+
 		// determine if the variable should be included or excluded
 		shouldExclude := utils.SliceContains(c.Envfile.Exclude, name)
 

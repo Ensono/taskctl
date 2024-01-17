@@ -41,6 +41,12 @@ type Envfile struct {
 	ReplaceChar string
 	Quote       bool
 	Delay       int
+	Modify      []ModifyEnv
+}
+
+type ModifyEnv struct {
+	Pattern   string
+	Operation string
 }
 
 // ConvertEnv converts map representing the environment to array of strings in the form "key=value"
