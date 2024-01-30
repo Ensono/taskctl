@@ -170,7 +170,6 @@ func (c *ExecutionContext) GenerateEnvfile() error {
 
 		// check to see if the env matches an invalid variable, if it does
 		// move onto the next loop
-		logrus.Info(env)
 		if utils.SliceContains(invalid_vars, env) {
 			logrus.Warnf("Skipping invalid environment variable: `%s`", env)
 			continue
@@ -233,7 +232,9 @@ func (c *ExecutionContext) GenerateEnvfile() error {
 		}
 
 		// Add the name and the value to the string builder
-		builder.WriteString(fmt.Sprintf("%s=%s\n", name, value))
+		envstr := fmt.Sprintf("%s=%s\n", name, value)
+		builder.WriteString(envstr)
+		logrus.Debug(envstr)
 	}
 
 	// get the full output from the string builder
@@ -243,22 +244,6 @@ func (c *ExecutionContext) GenerateEnvfile() error {
 	if err := os.WriteFile(c.Envfile.Path, []byte(output), 0666); err != nil {
 		logrus.Fatalf("Error writing out file: %s\n", err.Error())
 	}
-
-	// wait for the file to exist before continuing
-	// this is to address an issue where the file does not exist on disk before the command
-	// is executed
-	for {
-
-		if utils.FileExists(c.Envfile.Path) {
-			logrus.Debug(fmt.Sprintf("File has been found: %s\n", c.Envfile.Path))
-			break
-		}
-
-		// sleep for 1ms
-		time.Sleep(1 * time.Millisecond)
-	}
-
-	logrus.Debug(output)
 
 	// delay the ongoing execution of taskctl if a value has been set
 	if c.Envfile.Delay > 0 {
