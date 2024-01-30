@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"io"
 	"reflect"
-	"slices"
 	"strings"
 	"time"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/taskctl/taskctl/pkg/executor"
 	"github.com/taskctl/taskctl/pkg/task"
