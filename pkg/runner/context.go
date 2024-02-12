@@ -170,7 +170,8 @@ func (c *ExecutionContext) GenerateEnvfile() error {
 
 		// check to see if the env matches an invalid variable, if it does
 		// move onto the next loop
-		if utils.SliceContains(invalid_vars, env) {
+
+		if utils.SliceContains(invalid_vars, env, true) {
 			logrus.Warnf("Skipping invalid environment variable: `%s`", env)
 			continue
 		}
@@ -211,11 +212,11 @@ func (c *ExecutionContext) GenerateEnvfile() error {
 		}
 
 		// determine if the variable should be included or excluded
-		shouldExclude := utils.SliceContains(c.Envfile.Exclude, name)
+		shouldExclude := utils.SliceContains(c.Envfile.Exclude, name, false)
 
 		shouldInclude := true
 		if len(c.Envfile.Include) > 0 {
-			shouldInclude = utils.SliceContains(c.Envfile.Include, name)
+			shouldInclude = utils.SliceContains(c.Envfile.Include, name, false)
 		}
 
 		// if the variable should excluded or not explicitly included then move onto the next variable
