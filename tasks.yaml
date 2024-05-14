@@ -2,20 +2,29 @@ output: cockpit
 
 pipelines:
   build:
-    - name: Build "darwin"
+    - name: Build "darwin:amd64"
       task: build
       env:
         GOOS: darwin
+        GOARCH: amd64
         BIN_OUT: bin/taskctl_darwin_amd64
+    - name: Build "darwin:arm64"
+      task: build
+      env:
+        GOOS: darwin
+        GOARCH: arm64
+        BIN_OUT: bin/taskctl_darwin_arm64
     - name: Build "linux"
       task: build
       env:
         GOOS: linux
+        GOARCH: amd64
         BIN_OUT: bin/taskctl_linux_amd64
     - name: Build "windows"
       task: build
       env:
         GOOS: windows
+        GOARCH: amd64
         BIN_OUT: bin/taskctl_windows_amd64.exe
 
   fixcs:
@@ -48,13 +57,19 @@ tasks:
 
   build:
     command:
-      - GOOS=${GOOS} GOARCH=amd64 go build -o ${BIN_OUT} ./cmd/taskctl
+      - GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${BIN_OUT} ./cmd/taskctl
     variations:
       - GOOS: linux
+        GOARCH: amd64
         BIN_OUT: bin/taskctl_linux_amd64
       - GOOS: darwin
+        GOARCH: amd64
         BIN_OUT: bin/taskctl_darwin_amd64
+      - GOOS: darwin
+        GOARCH: arm64
+        BIN_OUT: bin/taskctl_darwin_arm64
       - GOOS: windows
+        GOARCH: amd64
         BIN_OUT: bin/taskctl_windows_amd64.exe
 
   golint:
