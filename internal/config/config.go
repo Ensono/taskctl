@@ -33,6 +33,14 @@ func NewConfig() *Config {
 	return cfg
 }
 
+type OutputEnum string
+
+const (
+	RawOutput      OutputEnum = "raw"
+	CockpitOutput  OutputEnum = "cockpit"
+	PrefixedOutput OutputEnum = "prefixed"
+)
+
 // Config is a taskctl internal config structure
 type Config struct {
 	Import    []string
@@ -42,7 +50,7 @@ type Config struct {
 	Watchers  map[string]*watch.Watcher
 
 	Quiet, Debug, DryRun, Summary bool
-	Output                        string
+	Output                        OutputEnum
 
 	Variables variables.Container
 }
@@ -109,7 +117,7 @@ func buildFromDefinition(def *configDefinition, lc *loaderContext) (cfg *Config,
 
 	cfg.Import = def.Import
 	cfg.Debug = def.Debug
-	cfg.Output = def.Output
+	cfg.Output = OutputEnum(def.Output)
 	cfg.Variables = cfg.Variables.Merge(variables.FromMap(def.Variables))
 
 	return cfg, nil

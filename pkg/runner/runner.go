@@ -391,5 +391,3 @@ func WithVariables(variables variables.Container) Opts {
 		runner.compiler.variables = variables
 	}
 }
-
-

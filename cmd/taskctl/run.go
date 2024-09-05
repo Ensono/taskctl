@@ -33,7 +33,7 @@ var (
 var (
 	runCmd = &cobra.Command{
 		Use:     "run",
-		Aliases: []string{"r", "fetch", "get"},
+		Aliases: []string{},
 		Short:   `runs <pipeline or task>`,
 		Long: `taskctl run pipeline1
 taskctl run task1`,
@@ -151,7 +151,7 @@ func buildTaskRunner(args []string) error {
 	if err != nil {
 		return err
 	}
-	tr.OutputFormat = conf.Output
+	tr.OutputFormat = string(conf.Output)
 	tr.DryRun = conf.DryRun
 
 	if conf.Quiet {

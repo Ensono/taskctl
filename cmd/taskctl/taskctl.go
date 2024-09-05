@@ -63,12 +63,12 @@ func Execute(ctx context.Context) {
 func init() {
 
 	TaskCtlCmd.PersistentFlags().StringVarP(&cfg, "config", "c", "tasks.yaml", "config file to use") // tasks.yaml or taskctl.yaml
-	viper.BindEnv("config", "TASKCTL_CONFIG_FILE")
-	viper.BindPFlag("config", TaskCtlCmd.PersistentFlags().Lookup("config"))
+	_ = viper.BindEnv("config", "TASKCTL_CONFIG_FILE")
+	_ = viper.BindPFlag("config", TaskCtlCmd.PersistentFlags().Lookup("config"))
 
-	TaskCtlCmd.PersistentFlags().StringVarP(&output, "output", "o", "prefixed", "output format (raw, prefixed or cockpit)")
-	viper.BindEnv("output", "TASKCTL_OUTPUT_FORMAT")
-	viper.BindPFlag("output", TaskCtlCmd.PersistentFlags().Lookup("output")) // TASKCTL_OUTPUT_FORMAT
+	TaskCtlCmd.PersistentFlags().StringVarP(&output, "output", "o", string(config.RawOutput), "output format (raw, prefixed or cockpit)")
+	_ = viper.BindEnv("output", "TASKCTL_OUTPUT_FORMAT")
+	_ = viper.BindPFlag("output", TaskCtlCmd.PersistentFlags().Lookup("output")) // TASKCTL_OUTPUT_FORMAT
 
 	// Shortcut flags
 	TaskCtlCmd.PersistentFlags().BoolVarP(&raw, "raw", "r", true, "shortcut for --output=raw")
@@ -80,12 +80,12 @@ func init() {
 
 	// flag toggles
 	TaskCtlCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "enable debug")
-	viper.BindPFlag("debug", TaskCtlCmd.PersistentFlags().Lookup("debug")) // TASKCTL_DEBUG
+	_ = viper.BindPFlag("debug", TaskCtlCmd.PersistentFlags().Lookup("debug")) // TASKCTL_DEBUG
 	TaskCtlCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "", false, "dry run")
 	TaskCtlCmd.PersistentFlags().BoolVarP(&summary, "summary", "s", true, "show summary")
 	TaskCtlCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "quite mode")
 
-	// Channels overwritable for
+	// Channels overwritable for testing
 	ChannelOut = os.Stdout
 	ChannelErr = os.Stderr
 }
@@ -112,12 +112,12 @@ func initConfig() error {
 	conf.Quiet = quiet
 	conf.DryRun = dryRun
 	conf.Summary = summary
-	conf.Output = output
+	conf.Output = config.OutputEnum(output)
 	if raw {
-		conf.Output = "raw"
+		conf.Output = config.RawOutput
 	}
 	if cockpit {
-		conf.Output = "cockpit"
+		conf.Output = config.CockpitOutput
 	}
 
 	return nil
