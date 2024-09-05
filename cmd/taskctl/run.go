@@ -110,27 +110,6 @@ func init() {
 	TaskCtlCmd.AddCommand(runCmd)
 }
 
-// postRunReset is a test helper function to clear any set values
-func postRunReset() error {
-	cancel = nil
-	conf = nil
-	taskRunner = nil
-	taskOrPipelineName = ""
-	pipelineName = nil
-	taskName = nil
-	argsList = nil
-	debug = false
-	cfgFilePath = ""
-	output = ""
-	raw = false
-	cockpit = false
-	quiet = false
-	variableSet = nil
-	dryRun = false
-	summary = false
-	return nil
-}
-
 func runTarget(taskRunner *runner.TaskRunner) (err error) {
 
 	if pipelineName != nil {
