@@ -41,6 +41,12 @@ type Envfile struct {
 	ReplaceChar string
 	Quote       bool
 	Delay       int
+	Modify      []ModifyEnv
+}
+
+type ModifyEnv struct {
+	Pattern   string
+	Operation string
 }
 
 // ConvertEnv converts map representing the environment to array of strings in the form "key=value"
@@ -178,14 +184,21 @@ func ReadEnvFile(filename string) (map[string]string, error) {
 
 // sliceContains performs a case insensitive match to see if the slice
 // contains the specified value
-func SliceContains(slice []string, value string) bool {
+func SliceContains(slice []string, value string, matchWholeString bool) bool {
 	var result bool
 
 	for _, x := range slice {
 
+		pattern := ""
+
 		// create regular expression pattern to test against
 		// this allows multiple variables to be added or excluded
-		pattern := fmt.Sprintf(`(?i)\b%s\b`, x)
+		if matchWholeString {
+			pattern = x
+		} else {
+			pattern = fmt.Sprintf(`(?i)\b%s\b`, x)
+		}
+
 		re := regexp.MustCompile(pattern)
 
 		// match the value against the re
