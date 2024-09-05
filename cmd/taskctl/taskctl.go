@@ -28,7 +28,7 @@ var (
 
 var (
 	debug       bool
-	cfg         string
+	cfgFilePath string
 	output      string
 	raw         bool
 	cockpit     bool
@@ -62,7 +62,7 @@ func Execute(ctx context.Context) {
 
 func init() {
 
-	TaskCtlCmd.PersistentFlags().StringVarP(&cfg, "config", "c", "tasks.yaml", "config file to use") // tasks.yaml or taskctl.yaml
+	TaskCtlCmd.PersistentFlags().StringVarP(&cfgFilePath, "config", "c", "tasks.yaml", "config file to use") // tasks.yaml or taskctl.yaml
 	_ = viper.BindEnv("config", "TASKCTL_CONFIG_FILE")
 	_ = viper.BindPFlag("config", TaskCtlCmd.PersistentFlags().Lookup("config"))
 
@@ -101,12 +101,15 @@ func initConfig() error {
 
 	conf = config.NewConfig()
 	cl := config.NewConfigLoader(conf)
-
-	if viper.GetString("config") == "" {
+	configFilePath := viper.GetString("config")
+	if configFilePath == "" {
 		return fmt.Errorf("config file was not provided, %w", ErrIncompleteConfig)
 	}
-
-	conf, _ = cl.Load(viper.GetString("config"))
+	var confError error
+	conf, confError = cl.Load(configFilePath)
+	if confError != nil {
+		return confError
+	}
 
 	conf.Debug = debug
 	conf.Quiet = quiet

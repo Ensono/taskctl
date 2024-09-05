@@ -68,7 +68,7 @@ func postRunReset() {
 	taskName = nil
 	argsList = nil
 	debug = false
-	cfg = ""
+	cfgFilePath = ""
 	output = ""
 	raw = false
 	cockpit = false
