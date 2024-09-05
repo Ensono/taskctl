@@ -51,6 +51,9 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInit(args)
 		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			return postRunReset()
+		},
 	}
 )
 

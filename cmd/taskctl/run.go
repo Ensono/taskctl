@@ -51,9 +51,48 @@ taskctl run task1`,
 			return postRunReset()
 		},
 	}
+	runPipelineCmd = &cobra.Command{
+		Use:   "pipeline",
+		Short: `runs pipeline <task>`,
+		Long:  `taskctl pipeline task1`,
+		Args:  cobra.MinimumNArgs(1),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if err := initConfig(); err != nil {
+				return err
+			}
+			return buildTaskRunner(args)
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runPipeline(pipelineName, taskRunner, conf.Summary)
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			return postRunReset()
+		},
+	}
+	runTaskCmd = &cobra.Command{
+		Use:     "task",
+		Aliases: []string{},
+		Short:   `runs task <task>`,
+		Long:    `taskctl run task1`,
+		Args:    cobra.MinimumNArgs(1),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if err := initConfig(); err != nil {
+				return err
+			}
+			return buildTaskRunner(args)
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runTask(taskName, taskRunner)
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			return postRunReset()
+		},
+	}
 )
 
 func init() {
+	runCmd.AddCommand(runPipelineCmd)
+	runCmd.AddCommand(runTaskCmd)
 	TaskCtlCmd.AddCommand(runCmd)
 }
 

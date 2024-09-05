@@ -18,7 +18,7 @@ func Test_showCommand(t *testing.T) {
 	t.Run("succeds on args", func(t *testing.T) {
 		runTestHelper(t, runTestIn{
 			args:   []string{"-c", "testdata/graph.yaml", "show", "graph:task1"},
-			output: []string{"Name: graph:task1", "echo 'hello, world!'"},
+			output: []string{"Name: graph:task1", "echo &#39;hello, world!&#39"},
 		})
 	})
 }

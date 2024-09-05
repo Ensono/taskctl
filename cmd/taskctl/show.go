@@ -31,9 +31,7 @@ var (
 		Use:     "show",
 		Aliases: []string{},
 		Short:   `shows task's details`,
-		Long: `Generates a visual representation of pipeline execution plan.
-The output is in the DOT format, which can be used by GraphViz to generate charts.`,
-		Args: cobra.RangeArgs(1, 1),
+		Args:    cobra.RangeArgs(1, 1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return initConfig()
 		},
