@@ -7,16 +7,13 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/Ensono/taskctl/pkg/executor"
-
-	"github.com/Ensono/taskctl/pkg/variables"
-
 	"github.com/Ensono/taskctl/pkg/utils"
-
+	"github.com/Ensono/taskctl/pkg/variables"
 	"github.com/sirupsen/logrus"
 )
 
@@ -118,6 +115,8 @@ func (c *ExecutionContext) After() error {
 	return nil
 }
 
+var ErrMutuallyExclusiveVarSet = errors.New("mutually exclusive vars have been set")
+
 func (c *ExecutionContext) GenerateEnvfile() error {
 
 	// only generate the file if it has been explicitly asked for
@@ -125,57 +124,89 @@ func (c *ExecutionContext) GenerateEnvfile() error {
 		return nil
 	}
 
-	// set default values
-	if c.Envfile.Path == "" {
-		c.Envfile.Path = "envfile"
-	}
-
-	if c.Envfile.ReplaceChar == "" {
-		c.Envfile.ReplaceChar = " "
-	}
-
 	// return an error if the include and exclude have both been specified
 	if len(c.Envfile.Exclude) > 0 && len(c.Envfile.Include) > 0 {
-		err := errors.New("include and exclude lists are mutually exclusive")
-		return err
+		return fmt.Errorf("include and exclude lists are mutually exclusive, %w", ErrMutuallyExclusiveVarSet)
 	}
 
 	// determine the path to the envfile
 	// if it is not absolute then prepare the current dir to it
-	isAbsolute := filepath.IsAbs(c.Envfile.Path)
-	if !isAbsolute {
-
+	fileIsLocal := filepath.IsLocal(c.Envfile.Path)
+	if fileIsLocal {
 		// get the current working directory
 		cwd, err := os.Getwd()
-
 		if err != nil {
 			return err
 		}
-
 		c.Envfile.Path = filepath.Join(cwd, c.Envfile.Path)
 	}
 
 	// create a string builder object to hold all of the lines that need to be written out to
 	// the resultant file
 	builder := strings.Builder{}
-	spacePattern := regexp.MustCompile(`\s`)
+
+	// define a list of environment variables that are not permitted
+	invalid_vars := []string{
+		`(!|=)::=::\\`, // this is found in a cygwin environment
+	}
 
 	// iterate around all of the environment variables and add the selected ones to the builder
+	// TODO: shouldn't this be the local properties variable.Container on the ExecutionContext?
+	//
+	// c.Env.Map() && c.Variables.Get()
 	for _, env := range os.Environ() {
+
+		// check to see if the env matches an invalid variable, if it does
+		// move onto the next loop
+		if slices.Contains(invalid_vars, env) {
+			logrus.Warnf("Skipping invalid environment variable: `%s`", env)
+			continue
+		}
 
 		// split the environment variable using = as the delimiter
 		// this is so that newlines can be surpressed
 		parts := strings.SplitN(env, "=", 2)
 
-		// Get the name of the variable
-		name := parts[0]
+		// Get the varName of the variable
+		varName, varValue := parts[0], parts[1]
+
+		// iterate around the modify options to see if the name needs to be
+		// modified at all
+		for _, modify := range c.Envfile.Modify {
+
+			// use the pattern to determine if the string has been identified
+			// this assumes 1 capture group so this will be used as the name to transform
+			re := regexp.MustCompile(modify.Pattern)
+			match := re.FindStringSubmatch(varName)
+			if len(match) > 0 {
+
+				keyword := match[re.SubexpIndex("keyword")]
+				varname := match[re.SubexpIndex("varname")]
+
+				// perform the operation on the varname
+				switch modify.Operation {
+				case "lower":
+					varname = strings.ToLower(varname)
+				case "upper":
+					varname = strings.ToUpper(varname)
+				}
+
+				// Build up the name
+				varName = fmt.Sprintf("%s%s", keyword, varname)
+
+				break
+			}
+		}
 
 		// determine if the variable should be included or excluded
-		shouldExclude := utils.SliceContains(c.Envfile.Exclude, name)
+		// shouldExclude := slices.ContainsFunc(c.Envfile.Exclude, name, false)
+		shouldExclude := slices.ContainsFunc(c.Envfile.Exclude, func(v string) bool {
+			return varName == v
+		})
 
 		shouldInclude := true
 		if len(c.Envfile.Include) > 0 {
-			shouldInclude = utils.SliceContains(c.Envfile.Include, name)
+			shouldInclude = slices.Contains(c.Envfile.Include, varName)
 		}
 
 		// if the variable should excluded or not explicitly included then move onto the next variable
@@ -183,31 +214,23 @@ func (c *ExecutionContext) GenerateEnvfile() error {
 			continue
 		}
 
+		// sanitize variable values from newline and space characters
 		// replace any newline characters with a space, this is to prevent multiline variables being passed in
-		value := strings.Replace(parts[1], "\n", c.Envfile.ReplaceChar, -1)
-
 		// quote the value if it has spaces in it
-		if spacePattern.MatchString(value) && c.Envfile.Quote {
-			value = fmt.Sprintf("\"%s\"", value)
-		}
+		value := strings.NewReplacer("\n", c.Envfile.ReplaceChar, `\s`, "").Replace(varValue)
 
 		// Add the name and the value to the string builder
-		builder.WriteString(fmt.Sprintf("%s=%s\n", name, value))
+		envstr := fmt.Sprintf("%s=%s\n", varName, value)
+		builder.WriteString(envstr)
+		logrus.Debug(envstr)
 	}
 
 	// get the full output from the string builder
 	output := builder.String()
 
 	// write the output to the file
-	if err := os.WriteFile(c.Envfile.Path, []byte(output), 0666); err != nil {
+	if err := os.WriteFile(filepath.Join(c.Envfile.GeneratedDir, c.Envfile.Path), []byte(output), 0666); err != nil {
 		logrus.Fatalf("Error writing out file: %s\n", err.Error())
-	}
-
-	logrus.Debug(output)
-
-	// delay the ongoing execution of taskctl if a value has been set
-	if c.Envfile.Delay > 0 {
-		time.Sleep(time.Duration(c.Envfile.Delay) * time.Millisecond)
 	}
 
 	return nil

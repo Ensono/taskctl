@@ -12,7 +12,6 @@ import (
 	"github.com/Ensono/taskctl/pkg/scheduler"
 	"github.com/Ensono/taskctl/pkg/task"
 	"github.com/Ensono/taskctl/pkg/variables"
-	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 )
 
@@ -221,31 +220,4 @@ func argsValidator(args []string) error {
 	argsList = args[1:]
 	taskOrPipelineName = args[0]
 	return nil
-}
-
-func DisplayTaskSelection() (string, error) {
-	var taskOrPipelineSelected string
-	optionMap := []huh.Option[string]{}
-	for pipeline := range conf.Pipelines {
-		optionMap = append(optionMap, huh.NewOption(fmt.Sprintf("Pipeline: %s", pipeline), pipeline))
-	}
-
-	for _, task := range conf.Tasks {
-		optionMap = append(optionMap, huh.NewOption(fmt.Sprintf("Task: %s", task.Name), task.Name))
-	}
-
-	taskOrPipelineName := huh.NewForm(
-		huh.NewGroup(
-			// select file name
-			huh.NewSelect[string]().
-				Title("Select the pipelines or tasks to run").
-				Options(optionMap...).
-				Value(&taskOrPipelineSelected),
-		),
-	).WithHeight(8).WithShowHelp(true)
-	if err := taskOrPipelineName.Run(); err != nil {
-		return taskOrPipelineSelected, err
-	}
-
-	return taskOrPipelineSelected, nil
 }

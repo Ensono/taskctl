@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
-	"regexp"
 	"strings"
 	"text/template"
 )
@@ -34,14 +33,27 @@ type Binary struct {
 // Envile is a structure for storing the information required to generate an envfile which can be consumed
 // by the specified binary
 type Envfile struct {
-	Generate    bool
-	Exclude     []string
-	Include     []string
-	Path        string
-	ReplaceChar string
-	Quote       bool
-	Delay       int
-	Modify      []ModifyEnv
+	Generate     bool
+	Exclude      []string
+	Include      []string
+	Path         string
+	ReplaceChar  string
+	Quote        bool
+	Delay        int
+	Modify       []ModifyEnv
+	GeneratedDir string
+}
+
+const REPLACE_CHAR_DEFAULT = " "
+
+// NewEnvFile creates a new instance of the EnvFile
+// initializes it with some defaults
+func NewEnvFile() *Envfile {
+	e := &Envfile{}
+	e.ReplaceChar = REPLACE_CHAR_DEFAULT
+	e.Path = "envfile"
+	e.GeneratedDir = ".taskctl"
+	return e
 }
 
 type ModifyEnv struct {
@@ -182,32 +194,32 @@ func ReadEnvFile(filename string) (map[string]string, error) {
 	return envs, nil
 }
 
-// sliceContains performs a case insensitive match to see if the slice
-// contains the specified value
-func SliceContains(slice []string, value string, matchWholeString bool) bool {
-	var result bool
+// // SliceContains performs a case insensitive match to see if the slice
+// // contains the specified value
+// func SliceContains(slice []string, value string, matchWholeString bool) bool {
+// 	var result bool
 
-	for _, x := range slice {
+// 	for _, x := range slice {
 
-		pattern := ""
+// 		pattern := ""
 
-		// create regular expression pattern to test against
-		// this allows multiple variables to be added or excluded
-		if matchWholeString {
-			pattern = x
-		} else {
-			pattern = fmt.Sprintf(`(?i)\b%s\b`, x)
-		}
+// 		// create regular expression pattern to test against
+// 		// this allows multiple variables to be added or excluded
+// 		if matchWholeString {
+// 			pattern = x
+// 		} else {
+// 			pattern = fmt.Sprintf(`(?i)\b%s\b`, x)
+// 		}
 
-		re := regexp.MustCompile(pattern)
+// 		re := regexp.MustCompile(pattern)
 
-		// match the value against the re
-		result = re.MatchString(value)
+// 		// match the value against the re
+// 		result = re.MatchString(value)
 
-		if result {
-			break
-		}
-	}
+// 		if result {
+// 			break
+// 		}
+// 	}
 
-	return result
-}
+// 	return result
+// }
