@@ -31,7 +31,7 @@ func DisplayTaskSelection(conf *config.Config) (taskOrPipelineSelected string, e
 				Options(optionMap...).
 				Value(&taskOrPipelineSelected),
 		),
-	).WithHeight(8).WithShowHelp(true)
+	).WithShowHelp(true)
 	err = taskOrPipelineName.Run()
 	return
 }

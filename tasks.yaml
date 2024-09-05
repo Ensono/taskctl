@@ -33,8 +33,6 @@ pipelines:
     - task: gofmt
       depends_on: goimports
     - pipeline: lints
-    - task: update-completers
-      depends_on: test
 
   lints:
     - task: golint
@@ -76,20 +74,15 @@ tasks:
       - goreleaser --debug --rm-dist
 
   gofmt:
-    dir: "{{.Root}}"
     command:
       - go fmt -x ./...
       - gofmt -s -w cmd/**/*.go
       - gofmt -s -w internal/**/*.go
       - gofmt -s -w pkg/**/*.go
 
+  echo:
+    command: echo {{ .Task.Name }}
   tidy:
     command:
       - go mod tidy
 
-  update-completers:
-    dir: "{{.Root}}/cmd/taskctl"
-    command:
-      - rm -rf ../../autocomplete/*
-      - go run . completion bash > ./../../autocomplete/bash_completion.bash
-      - go run . completion zsh > ./../../autocomplete/zsh_completion.zsh

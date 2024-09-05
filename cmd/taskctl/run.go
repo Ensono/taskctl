@@ -36,9 +36,10 @@ var (
 		Use:     "run",
 		Aliases: []string{},
 		Short:   `runs <pipeline or task>`,
-		Long: `taskctl run pipeline1
+		Example: `taskctl run pipeline1
 taskctl run task1`,
-		Args: cobra.MinimumNArgs(0),
+		Args:         cobra.MinimumNArgs(0),
+		SilenceUsage: true,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if err := initConfig(); err != nil {
 				return err
@@ -65,10 +66,10 @@ taskctl run task1`,
 		},
 	}
 	runPipelineCmd = &cobra.Command{
-		Use:   "pipeline",
-		Short: `runs pipeline <task>`,
-		Long:  `taskctl pipeline task1`,
-		Args:  cobra.MinimumNArgs(1),
+		Use:     "pipeline",
+		Short:   `runs pipeline <task>`,
+		Example: `taskctl pipeline task1`,
+		Args:    cobra.MinimumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if err := initConfig(); err != nil {
 				return err
@@ -86,7 +87,7 @@ taskctl run task1`,
 		Use:     "task",
 		Aliases: []string{},
 		Short:   `runs task <task>`,
-		Long:    `taskctl run task1`,
+		Example: `taskctl run task1`,
 		Args:    cobra.MinimumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if err := initConfig(); err != nil {
