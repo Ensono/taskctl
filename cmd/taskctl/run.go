@@ -12,6 +12,7 @@ import (
 	"github.com/Ensono/taskctl/pkg/scheduler"
 	"github.com/Ensono/taskctl/pkg/task"
 	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 )
 
@@ -37,14 +38,26 @@ var (
 		Short:   `runs <pipeline or task>`,
 		Long: `taskctl run pipeline1
 taskctl run task1`,
-		Args: cobra.MinimumNArgs(1),
+		Args: cobra.MinimumNArgs(0),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if err := initConfig(); err != nil {
 				return err
 			}
-			return buildTaskRunner(args)
+			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// display selector if nothing is supplied
+			if len(args) == 0 {
+				selected, err := cmdutils.DisplayTaskSelection(conf)
+				if err != nil {
+					return err
+				}
+				args = append([]string{selected}, args[0:]...)
+			}
+
+			if err := buildTaskRunner(args); err != nil {
+				return err
+			}
 			return runTarget(taskRunner)
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
@@ -98,7 +111,7 @@ func init() {
 
 // postRunReset is a test helper function to clear any set values
 func postRunReset() error {
-	// cancel = nil
+	cancel = nil
 	conf = nil
 	taskRunner = nil
 	taskOrPipelineName = ""
@@ -228,4 +241,31 @@ func argsValidator(args []string) error {
 	argsList = args[1:]
 	taskOrPipelineName = args[0]
 	return nil
+}
+
+func DisplayTaskSelection() (string, error) {
+	var taskOrPipelineSelected string
+	optionMap := []huh.Option[string]{}
+	for pipeline := range conf.Pipelines {
+		optionMap = append(optionMap, huh.NewOption(fmt.Sprintf("Pipeline: %s", pipeline), pipeline))
+	}
+
+	for _, task := range conf.Tasks {
+		optionMap = append(optionMap, huh.NewOption(fmt.Sprintf("Task: %s", task.Name), task.Name))
+	}
+
+	taskOrPipelineName := huh.NewForm(
+		huh.NewGroup(
+			// select file name
+			huh.NewSelect[string]().
+				Title("Select the pipelines or tasks to run").
+				Options(optionMap...).
+				Value(&taskOrPipelineSelected),
+		),
+	).WithHeight(8).WithShowHelp(true)
+	if err := taskOrPipelineName.Run(); err != nil {
+		return taskOrPipelineSelected, err
+	}
+
+	return taskOrPipelineSelected, nil
 }

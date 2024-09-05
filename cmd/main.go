@@ -25,6 +25,11 @@ func setDefaultCommandIfNonePresent() {
 		}
 		os.Args = append([]string{os.Args[0], "run"}, os.Args[1:]...)
 	}
+	// to maintain the existing behaviour of
+	// displaying a pipeline/task selector
+	if len(os.Args) == 1 {
+		os.Args = []string{os.Args[0], "run"}
+	}
 }
 
 func main() {
@@ -34,6 +39,5 @@ func main() {
 	// an existing command command will always take precedence ;)
 	// And will most likely fail as the argument into the command was perceived as a command name
 	setDefaultCommandIfNonePresent()
-	// init loggerHere or in init function
 	cmd.Execute(context.Background())
 }

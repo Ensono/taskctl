@@ -71,6 +71,8 @@ func NewTaskRunner(opts ...Opts) (*TaskRunner, error) {
 	return r, nil
 }
 
+
+
 // SetContexts sets task runner's contexts
 func (r *TaskRunner) SetContexts(contexts map[string]*ExecutionContext) *TaskRunner {
 	r.contexts = contexts
