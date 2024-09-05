@@ -19,8 +19,7 @@ var (
 			return runTask(taskName, taskRunner)
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			postRunReset()
-			return nil
+			return postRunReset()
 		},
 	}
 )

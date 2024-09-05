@@ -18,8 +18,7 @@ var (
 			return runPipeline(pipelineName, taskRunner, conf.Summary)
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			postRunReset()
-			return nil
+			return postRunReset()
 		},
 	}
 )

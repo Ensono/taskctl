@@ -48,8 +48,7 @@ taskctl run task1`,
 			return runTarget(taskRunner)
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			postRunReset()
-			return nil
+			return postRunReset()
 		},
 	}
 )
@@ -59,7 +58,7 @@ func init() {
 }
 
 // postRunReset is a test helper function to clear any set values
-func postRunReset() {
+func postRunReset() error {
 	// cancel = nil
 	conf = nil
 	taskRunner = nil
@@ -76,6 +75,7 @@ func postRunReset() {
 	variableSet = nil
 	dryRun = false
 	summary = false
+	return nil
 }
 
 func runTarget(taskRunner *runner.TaskRunner) (err error) {
@@ -182,7 +182,7 @@ func argsValidator(args []string) error {
 		taskName = conf.Tasks[args[0]]
 	}
 
-	if pipelineName == nil && taskName == nil {
+	if pipelineName == nil && taskName == nil && conf.Watchers[args[0]] == nil {
 		return fmt.Errorf("%s does not exist, ensure your first argument is the name of the pipeline or task. %w", args[0], ErrIncorrectPipelineTaskArg)
 	}
 
