@@ -35,14 +35,19 @@ var (
 	quiet       bool
 	variableSet map[string]string
 	dryRun      bool
-	summary     bool
+	// Summary report at the end of the task run
+	// this was set to default as true in the original
+	// - not sure this makes sense for a boolean flag "¯\_(ツ)_/¯"
+	summary bool
 )
 
 var TaskCtlCmd = &cobra.Command{
 	Use:     "taskctl",
 	Version: fmt.Sprintf("%s-%s", Version, Revision),
 	Short:   "modern task runner",
-	Long:    `Concurrent task runner, developer's routine tasks automation toolkit. Simple modern alternative to GNU Make 🧰`, // taken from original GH repo
+	Long: `Concurrent task runner, developer's routine tasks automation toolkit. 
+Simple modern alternative to GNU Make 🧰`, // taken from original GH repo
+	SuggestionsMinimumDistance: 1,
 }
 
 func Execute(ctx context.Context) {
