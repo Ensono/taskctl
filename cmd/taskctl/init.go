@@ -37,11 +37,17 @@ watchers:
 `
 
 var (
-	initDir   string
-	overwrite bool
-	initCmd   = &cobra.Command{
+	initDir  string
+	noPrompt bool
+	initCmd  = &cobra.Command{
 		Use:   "init",
 		Short: `initializes the directory with a sample config file`,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if noPrompt && len(args) == 0 {
+				return fmt.Errorf("file name must be supplied when running in non-interactive mode")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInit(args)
 		},
@@ -50,7 +56,7 @@ var (
 
 func init() {
 	initCmd.PersistentFlags().StringVar(&initDir, "dir", "", "directory to initialize")
-	initCmd.PersistentFlags().BoolVar(&overwrite, "no-prompt", false, "do not prompt")
+	initCmd.PersistentFlags().BoolVar(&noPrompt, "no-prompt", false, "do not prompt")
 	TaskCtlCmd.AddCommand(initCmd)
 }
 
@@ -66,7 +72,7 @@ func runInit(args []string) error {
 	}
 
 	// if no prompt and file names were supplied
-	if len(args) > 0 && overwrite {
+	if len(args) > 0 && noPrompt {
 		file = args[0]
 		return writeConfig(filepath.Join(initDir, file))
 	}
@@ -109,7 +115,7 @@ func writeConfig(file string) error {
 		return err
 	}
 
-	fmt.Println(aurora.Sprintf(aurora.Magenta("%s was created. Edit it accordingly to your needs"), aurora.Green(file)))
-	fmt.Println(aurora.Cyan("To run example pipeline - taskctl run pipeline1"))
+	fmt.Fprintln(ChannelOut, aurora.Sprintf(aurora.Magenta("%s was created. Edit it accordingly to your needs"), aurora.Green(file)))
+	fmt.Fprintln(ChannelOut, aurora.Cyan("To run example pipeline - taskctl run pipeline1"))
 	return nil
 }
