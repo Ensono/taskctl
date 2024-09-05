@@ -23,7 +23,7 @@ func setDefaultCommandIfNonePresent() {
 	}
 
 	if len(os.Args) == 2 {
-		if slices.Contains([]string{"-h", "--help"}, os.Args[1]) {
+		if slices.Contains([]string{"-h", "--help", "-v", "--version"}, os.Args[1]) {
 			// we want the root command to display all options
 			// another hack around default command
 			return
