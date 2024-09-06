@@ -99,30 +99,31 @@ func (tc *TaskCompiler) CompileCommand(
 	// Look at the executable details and check if the command is running `docker` determine if an Envfile is being generated
 	// If it has then check to see if the args contains the --env-file flag and if does modify the path to the envfile
 	// if it does not then add the --env-file flag to the args array
-	if executionCtx.Executable != nil && strings.Contains(strings.ToLower(executionCtx.Executable.Bin), "docker") && executionCtx.Envfile.Generate {
+	if executionCtx.Executable != nil &&
+		slices.Contains([]string{"docker", "podman"}, strings.ToLower(executionCtx.Executable.Bin)) &&
+		executionCtx.Envfile.Generate {
 
 		// define the filename to hold the envfile path
-		filename := ""
-
 		// get the timestamp to use to append to the envfile name
-		suffix := fmt.Sprintf("%s_%v.env", strings.ToLower(strings.Replace(taskName, ":", "_", -1)), time.Now().UnixNano())
+		suffix := fmt.Sprintf("%s_%v.env", utils.ConvertStringToMachineFriendly(taskName), time.Now().UnixNano())
+		filename := utils.GetFullPath(filepath.Join(executionCtx.Envfile.GeneratedDir, fmt.Sprintf("generated_%s", suffix)))
 
 		// does the args contain the --env-file string
+		// TODO: change this as we are not really wanting to change user supplied env files even if generate is set to true
 		idx := slices.Index(executionCtx.Executable.Args, "--env-file")
 		if idx > -1 {
-			// add 1 to the index to update the path
-			idx += 1
-			filename = fmt.Sprintf("%s_%s", executionCtx.Executable.Args[idx], suffix)
-			executionCtx.Executable.Args[idx] = filename
+			// add 1 to the index to update the path with only the generated file
+			// this only runs if the generate has been set to true
+			// otherwise this is never hit and the user supplied --env-file is the only thing that runs unchanged
+			executionCtx.Executable.Args[idx+1] = filename
 		} else {
-			// the envfile has not been added to the args, so this needs to be added in
+			// the envfile has NOT been added to the args, so this needs to be added in
 			// as the docker args order is important, these will be prepended to the array
-			filename = fmt.Sprintf("generated_%s", suffix)
 			executionCtx.Executable.Args = append([]string{executionCtx.Executable.Args[0], "--env-file", filename}, executionCtx.Executable.Args[1:]...)
 		}
 
 		// set the path to the envfile
-		executionCtx.Envfile.Path = filepath.Join(executionCtx.Envfile.GeneratedDir, filename)
+		executionCtx.Envfile.Path = filename
 
 		// generate the envfile
 		err := executionCtx.GenerateEnvfile()
@@ -131,13 +132,11 @@ func (tc *TaskCompiler) CompileCommand(
 		}
 	}
 
-	var c []string
+	c := []string{command}
 	if executionCtx.Executable != nil {
 		c = []string{executionCtx.Executable.Bin}
 		c = append(c, executionCtx.Executable.Args...)
 		c = append(c, fmt.Sprintf("%s%s%s", executionCtx.Quote, command, executionCtx.Quote))
-	} else {
-		c = []string{command}
 	}
 
 	j.Command = strings.Join(c, " ")

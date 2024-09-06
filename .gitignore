@@ -12,4 +12,6 @@ bin/
 # Random
 local/
 
+# Generated outputs
 .coverage/
+.taskctl/

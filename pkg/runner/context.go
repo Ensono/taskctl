@@ -117,33 +117,19 @@ func (c *ExecutionContext) After() error {
 
 var ErrMutuallyExclusiveVarSet = errors.New("mutually exclusive vars have been set")
 
+// GenerateEnvfile processes env and other supplied variables
+// writes them to a location
+//
+// Note: it will create the directory
 func (c *ExecutionContext) GenerateEnvfile() error {
-
-	// only generate the file if it has been explicitly asked for
-	if !c.Envfile.Generate {
-		return nil
-	}
-
 	// return an error if the include and exclude have both been specified
 	if len(c.Envfile.Exclude) > 0 && len(c.Envfile.Include) > 0 {
 		return fmt.Errorf("include and exclude lists are mutually exclusive, %w", ErrMutuallyExclusiveVarSet)
 	}
 
-	// determine the path to the envfile
-	// if it is not absolute then prepare the current dir to it
-	fileIsLocal := filepath.IsLocal(c.Envfile.Path)
-	if fileIsLocal {
-		// get the current working directory
-		cwd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		c.Envfile.Path = filepath.Join(cwd, c.Envfile.Path)
-	}
-
 	// create a string builder object to hold all of the lines that need to be written out to
 	// the resultant file
-	builder := strings.Builder{}
+	builder := []string{}
 
 	// define a list of environment variables that are not permitted
 	invalid_vars := []string{
@@ -199,14 +185,16 @@ func (c *ExecutionContext) GenerateEnvfile() error {
 		}
 
 		// determine if the variable should be included or excluded
-		// shouldExclude := slices.ContainsFunc(c.Envfile.Exclude, name, false)
+		// ShouldExclude will be true if any varName 
 		shouldExclude := slices.ContainsFunc(c.Envfile.Exclude, func(v string) bool {
-			return varName == v
+			return strings.HasPrefix(varName, v)
 		})
 
 		shouldInclude := true
 		if len(c.Envfile.Include) > 0 {
-			shouldInclude = slices.Contains(c.Envfile.Include, varName)
+			shouldInclude = slices.ContainsFunc(c.Envfile.Include, func(v string) bool {
+				return strings.HasPrefix(varName, v)
+			})
 		}
 
 		// if the variable should excluded or not explicitly included then move onto the next variable
@@ -217,23 +205,24 @@ func (c *ExecutionContext) GenerateEnvfile() error {
 		// sanitize variable values from newline and space characters
 		// replace any newline characters with a space, this is to prevent multiline variables being passed in
 		// quote the value if it has spaces in it
-		value := strings.NewReplacer("\n", c.Envfile.ReplaceChar, `\s`, "").Replace(varValue)
+		// TODO: this should be discussed? why?
+		// supplied values should be left in-tact?
+		//
+		// value := strings.NewReplacer("\n", c.Envfile.ReplaceChar, `\s`, "").Replace(varValue)
 
 		// Add the name and the value to the string builder
-		envstr := fmt.Sprintf("%s=%s\n", varName, value)
-		builder.WriteString(envstr)
+		envstr := fmt.Sprintf("%s=%s", varName, varValue)
+		builder = append(builder, envstr)
 		logrus.Debug(envstr)
 	}
 
 	// get the full output from the string builder
-	output := builder.String()
-
 	// write the output to the file
-	if err := os.WriteFile(filepath.Join(c.Envfile.GeneratedDir, c.Envfile.Path), []byte(output), 0666); err != nil {
-		logrus.Fatalf("Error writing out file: %s\n", err.Error())
+	if err := os.MkdirAll(filepath.Dir(c.Envfile.Path), 0700); err != nil {
+		logrus.Fatalf("Error creating parent directory for artifacts: %s\n", err.Error())
 	}
 
-	return nil
+	return os.WriteFile(c.Envfile.Path, []byte(strings.Join(builder, "\n")), 0700)
 }
 
 func (c *ExecutionContext) runServiceCommand(command string) (err error) {
