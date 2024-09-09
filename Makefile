@@ -55,6 +55,11 @@ tagbuildrelease: tag cross-build release
 show_coverage: test
 	go tool cover -html=.coverage/out
 
+show_docs:
+	go install golang.org/x/tools/cmd/godoc@latest
+	open http://localhost:6060/pkg/github.com/Ensono/taskctl/?m=all
+	godoc -notes "BUG|TODO" -play -http=:6060
+
 .PHONY: dist
 dist:
 	cd dist && \

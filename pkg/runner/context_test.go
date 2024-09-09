@@ -179,7 +179,7 @@ func genEnvFileHelperTestRunner(t *testing.T, envVars variables.Container, envFi
 	return string(contents)
 }
 
-func ExampleExecutionContext_GenerateEnvfile_with_modify_operators() {
+func ExampleExecutionContext_GenerateEnvfile() {
 	outputFilePath, cleanUp := helpSetupCleanUp()
 
 	defer cleanUp()

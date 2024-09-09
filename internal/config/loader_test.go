@@ -206,16 +206,12 @@ func TestLoader_LoadGlobalConfig(t *testing.T) {
 }
 
 func TestLoader_merging_env_with_user_supplied_envVars(t *testing.T) {
-	// ttests := map[string]struct {
-	// 	objType any
-	// }{
-	// 	"test1": {
-	// 		objType: nil,
-	// 	},
-	// }
-	// for name, tt := range ttests {
-	// 	t.Run(name, func(t *testing.T) {
 
-	// 	})
+	// loader := config.NewConfigLoader(config.NewConfig())
+	// loader.WithStrictDecoder()
+	// cwd, _ := os.Getwd()
+	// def, err := loader.Load(filepath.Join(cwd, "testdata", "tasks.yaml"))
+	// if err != nil {
+	// 	t.Fatal(err)
 	// }
 }
