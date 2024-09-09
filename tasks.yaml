@@ -42,7 +42,7 @@ pipelines:
 tasks:
   test:
     command:
-      - go test ./...
+      - go test ./... -v -mod=readonly
 
   build:
     command:
