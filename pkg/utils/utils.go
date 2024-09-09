@@ -44,13 +44,17 @@ type Envfile struct {
 	// HOME=foo,HOMELAB=bar
 	//
 	// Both of these will be skipped
-	Exclude      []string
-	Include      []string
-	Path         string
-	ReplaceChar  string
-	Quote        bool
-	Delay        int
-	Modify       []ModifyEnv
+	Exclude []string
+	Include []string
+	// Path is generated using task name and current timestamp
+	// TODO: include additional graph info about the execution
+	// e.g. owning pipeline (if any) execution number
+	Path        string
+	ReplaceChar string
+	Quote       bool
+	Delay       int
+	Modify      []ModifyEnv
+	// defaults to .taskctl in the current director
 	GeneratedDir string
 }
 
@@ -64,7 +68,7 @@ type EnvFileOpts func(*Envfile)
 func NewEnvFile(opts ...EnvFileOpts) *Envfile {
 	e := &Envfile{}
 	e.ReplaceChar = REPLACE_CHAR_DEFAULT
-	e.Path = "envfile"
+	// e.Path = "envfile"
 	e.GeneratedDir = ".taskctl"
 	for _, o := range opts {
 		o(e)
@@ -72,9 +76,28 @@ func NewEnvFile(opts ...EnvFileOpts) *Envfile {
 	return e
 }
 
+var ErrInvalidOptionsEnvFile = errors.New("invalid options on envfile")
+
+// Validate checks input is correct
+//
+// This will be added to later
+func (e *Envfile) Validate() error {
+	// validate modify
+	for _, v := range e.Modify {
+		if !v.IsValid() {
+			return fmt.Errorf("%s, %w", "modify pattern", ErrInvalidOptionsEnvFile)
+		}
+	}
+	return nil
+}
+
 type ModifyEnv struct {
 	Pattern   string
 	Operation string
+}
+
+func (me ModifyEnv) IsValid() bool {
+	return strings.Contains(me.Pattern, "keyword") && strings.Contains(me.Pattern, "varname")
 }
 
 // ConvertEnv converts map representing the environment to array of strings in the form "key=value"
@@ -87,6 +110,19 @@ func ConvertEnv(env map[string]string) []string {
 	}
 
 	return enva
+}
+
+// ConvertFromEnv takes a string array and coverts it to a map of strings
+// since an env variable can only really be a string
+// it's safe to convert to string and not interface
+// downstream programs need to cast values to what they expect
+func ConvertFromEnv(env []string) map[string]string {
+	envMap := make(map[string]string)
+	for _, val := range env {
+		v := strings.Split(val, "=")
+		envMap[v[0]] = v[1]
+	}
+	return envMap
 }
 
 // ConvertToMapOfStrings converts map of interfaces to map of strings

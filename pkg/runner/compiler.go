@@ -105,16 +105,21 @@ func (tc *TaskCompiler) CompileCommand(
 
 		// define the filename to hold the envfile path
 		// get the timestamp to use to append to the envfile name
-		suffix := fmt.Sprintf("%s_%v.env", utils.ConvertStringToMachineFriendly(taskName), time.Now().UnixNano())
-		filename := utils.GetFullPath(filepath.Join(executionCtx.Envfile.GeneratedDir, fmt.Sprintf("generated_%s", suffix)))
+		filename := utils.GetFullPath(
+			filepath.Join(
+				executionCtx.Envfile.GeneratedDir,
+				fmt.Sprintf("generated_%s_%v.env", utils.ConvertStringToMachineFriendly(taskName), time.Now().UnixNano()),
+			),
+		)
 
 		// does the args contain the --env-file string
-		// TODO: change this as we are not really wanting to change user supplied env files even if generate is set to true
+		// currently we will always either overwrite or just append the `--env-file flag`
+		//
+		// TODO: might want to look at preserving usersupplied values and merging with generated "¯\_(ツ)_/¯"
+		//
 		idx := slices.Index(executionCtx.Executable.Args, "--env-file")
+		// the envfile has been added to the args, need to overwrite the value
 		if idx > -1 {
-			// add 1 to the index to update the path with only the generated file
-			// this only runs if the generate has been set to true
-			// otherwise this is never hit and the user supplied --env-file is the only thing that runs unchanged
 			executionCtx.Executable.Args[idx+1] = filename
 		} else {
 			// the envfile has NOT been added to the args, so this needs to be added in

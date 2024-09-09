@@ -1,12 +1,13 @@
-package config
+package config_test
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/Ensono/taskctl/internal/config"
 )
 
 const sampleCfg = "{\"tasks\": {\"task1\": {\"command\": [\"true\"]}}}"
@@ -17,7 +18,7 @@ func TestLoader_Load(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cl := NewConfigLoader(NewConfig())
+	cl := config.NewConfigLoader(config.NewConfig())
 	cfg, err := cl.Load(filepath.Join(cwd, "testdata", "test.yaml"))
 	if err != nil {
 		t.Fatal(err)
@@ -30,8 +31,8 @@ func TestLoader_Load(t *testing.T) {
 		t.Error("context's quote parsing failed")
 	}
 
-	cl = NewConfigLoader(NewConfig())
-	cl.dir = filepath.Join(cwd, "testdata")
+	cl = config.NewConfigLoader(config.NewConfig())
+	cl.WithDir(filepath.Join(cwd, "testdata"))
 	cfg, err = cl.Load("test.toml")
 	if err != nil {
 		t.Fatal(err)
@@ -40,8 +41,8 @@ func TestLoader_Load(t *testing.T) {
 		t.Error("yaml parsing failed")
 	}
 
-	cl = NewConfigLoader(NewConfig())
-	cl.dir = filepath.Join(cwd, "testdata", "nested")
+	cl = config.NewConfigLoader(config.NewConfig())
+	cl.WithDir(filepath.Join(cwd, "testdata", "nested"))
 	cfg, err = cl.Load("")
 	if err != nil {
 		t.Fatal(err)
@@ -57,10 +58,10 @@ func TestLoader_Load(t *testing.T) {
 }
 
 func TestLoader_resolveDefaultConfigFile(t *testing.T) {
-	cl := NewConfigLoader(NewConfig())
+	cl := config.NewConfigLoader(config.NewConfig())
+	cl.WithDir(filepath.Join(cl.Dir(), "testdata"))
 
-	cl.dir = filepath.Join(cl.dir, "testdata")
-	file, err := cl.resolveDefaultConfigFile()
+	file, err := cl.ResolveDefaultConfigFile()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,47 +70,68 @@ func TestLoader_resolveDefaultConfigFile(t *testing.T) {
 		t.Error()
 	}
 
-	cl.dir = "/"
-	file, err = cl.resolveDefaultConfigFile()
+	cl.WithDir("/")
+	file, err = cl.ResolveDefaultConfigFile()
 	if err == nil || file != "" {
 		t.Error()
 	}
 }
 
-func TestLoader_loadDir(t *testing.T) {
+func TestLoader_LoadDirImport(t *testing.T) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cl := NewConfigLoader(NewConfig())
-	m, err := cl.loadDir(filepath.Join(cwd, "testdata"))
+	cl := config.NewConfigLoader(config.NewConfig())
+	conf, err := cl.Load(filepath.Join(cwd, "testdata", "dir-dep-import.yaml"))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	tasks := m["tasks"].(map[interface{}]interface{})
-	if len(tasks) != 5 {
+	if len(conf.Tasks) != 5 {
 		t.Error()
 	}
 }
 
 func TestLoader_readURL(t *testing.T) {
-	var r int
+	r := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "")
 		if r == 0 {
 			writer.Header().Set("Content-Type", "application/json")
+			writer.Write([]byte(sampleCfg))
+		}
+		if r == 1 {
+			writer.Header().Set("Content-Type", "application/x-yaml")
+			writer.Write([]byte(`tasks:
+  task1:
+    command: 
+      - true
+`))
 		}
 		if r == 2 {
 			writer.WriteHeader(500)
 		}
-		fmt.Fprintln(writer, sampleCfg)
+		if r == 3 {
+			writer.Header().Set("Content-Type", "application/toml")
+			writer.Write([]byte(`[tasks.task1]
+command = [ true ]
+`))
+		}
+		if r == 4 {
+			writer.Header().Set("Content-Type", "")
+			writer.Write([]byte(sampleCfg))
+		}
+		if r == 5 {
+			writer.Header().Set("Content-Type", "application/x-unknown")
+			writer.Write([]byte(sampleCfg))
+		}
 		r++
 	}))
 
-	cl := NewConfigLoader(NewConfig())
-	m, err := cl.readURL(srv.URL)
+	cl := config.NewConfigLoader(config.NewConfig())
+	m, err := cl.ReadURL(srv.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,20 +141,48 @@ func TestLoader_readURL(t *testing.T) {
 		t.Error()
 	}
 
-	_, err = cl.readURL(srv.URL)
+	_, err = cl.ReadURL(srv.URL)
 	if err != nil {
 		t.Fatal()
 	}
 
-	_, err = cl.readURL(srv.URL)
+	_, err = cl.ReadURL(srv.URL)
 	if err == nil {
+		t.Fatal()
+	}
+	// toml test
+	_, err = cl.ReadURL(srv.URL)
+	if err != nil {
+		t.Fatal()
+	}
+	// undefined test
+	_, err = cl.ReadURL(srv.URL)
+	if err == nil {
+		t.Fatal("got nil, wanted err")
+	}
+
+	// unknown content-type
+	//
+	_, err = cl.ReadURL(srv.URL + "/config.json")
+	if err != nil {
 		t.Fatal()
 	}
 }
 
 func TestLoader_LoadGlobalConfig(t *testing.T) {
 	h := os.TempDir()
-	_ = os.RemoveAll(filepath.Join(h, ".taskctl"))
+	originalHomeNix, originalHomeWin := os.Getenv("HOME"), os.Getenv("USERPROFILE")
+	os.Setenv("HOME", h)
+	// windows...
+	os.Setenv("USERPROFILE", h)
+
+	defer func() {
+		_ = os.RemoveAll(filepath.Join(h, ".taskctl"))
+		os.Setenv("HOME", originalHomeNix)
+		// windows...
+		os.Setenv("USERPROFILE", originalHomeWin)
+	}()
+
 	err := os.Mkdir(filepath.Join(h, ".taskctl"), 0744)
 	if err != nil {
 		t.Fatal(err)
@@ -143,8 +193,8 @@ func TestLoader_LoadGlobalConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cl := NewConfigLoader(NewConfig())
-	cl.homeDir = h
+	cl := config.NewConfigLoader(config.NewConfig())
+	// cl.homeDir = h
 	cfg, err := cl.LoadGlobalConfig()
 	if err != nil {
 		t.Fatal()
@@ -155,15 +205,17 @@ func TestLoader_LoadGlobalConfig(t *testing.T) {
 	}
 }
 
-func TestLoader_unmarshalData(t *testing.T) {
-	cl := NewConfigLoader(NewConfig())
-	_, err := cl.unmarshalData([]byte(sampleCfg), ".json")
-	if err != nil {
-		t.Error(err)
-	}
+func TestLoader_merging_env_with_user_supplied_envVars(t *testing.T) {
+	// ttests := map[string]struct {
+	// 	objType any
+	// }{
+	// 	"test1": {
+	// 		objType: nil,
+	// 	},
+	// }
+	// for name, tt := range ttests {
+	// 	t.Run(name, func(t *testing.T) {
 
-	_, err = cl.unmarshalData([]byte(sampleCfg), ".txt")
-	if err == nil {
-		t.Error()
-	}
+	// 	})
+	// }
 }

@@ -109,6 +109,8 @@ func buildFromDefinition(def *configDefinition, lc *loaderContext) (cfg *Config,
 	}
 
 	for k, v := range def.Pipelines {
+		// This never errors out on the cyclical dependency
+		//
 		cfg.Pipelines[k], err = buildPipeline(cfg.Pipelines[k], v, cfg)
 		if err != nil {
 			return nil, err

@@ -28,20 +28,37 @@ var ErrConfigNotFound = errors.New("config file not found")
 
 // Loader reads and parses config files
 type Loader struct {
-	dst     *Config
-	imports map[string]bool
-	dir     string
-	homeDir string
+	dst           *Config
+	imports       map[string]bool
+	dir           string
+	homeDir       string
+	strictDecoder bool
 }
 
 // NewConfigLoader is Loader constructor
 func NewConfigLoader(dst *Config) Loader {
 	return Loader{
-		dst:     dst,
-		imports: make(map[string]bool),
-		homeDir: utils.MustGetUserHomeDir(),
-		dir:     utils.MustGetwd(),
+		dst:           dst,
+		imports:       make(map[string]bool),
+		homeDir:       utils.MustGetUserHomeDir(),
+		dir:           utils.MustGetwd(),
+		strictDecoder: false,
 	}
+}
+
+func (c *Loader) WithDir(dir string) *Loader {
+	c.dir = dir
+	return c
+}
+
+// Dir
+func (c *Loader) Dir() string {
+	return c.dir
+}
+
+func (c *Loader) WithStrictDecoder() *Loader {
+	c.strictDecoder = true
+	return c
 }
 
 type loaderContext struct {
@@ -61,7 +78,7 @@ func (cl *Loader) Load(file string) (*Config, error) {
 	}
 
 	if file == "" {
-		file, err = cl.resolveDefaultConfigFile()
+		file, err = cl.ResolveDefaultConfigFile()
 		if err != nil {
 			return cl.dst, err
 		}
@@ -138,7 +155,7 @@ func (cl *Loader) load(file string) (config map[string]interface{}, err error) {
 	cl.imports[file] = true
 
 	if utils.IsURL(file) {
-		config, err = cl.readURL(file)
+		config, err = cl.ReadURL(file)
 	} else {
 		if !utils.FileExists(file) {
 			return config, fmt.Errorf("%s: %w", file, ErrConfigNotFound)
@@ -150,7 +167,8 @@ func (cl *Loader) load(file string) (config map[string]interface{}, err error) {
 	}
 
 	var raw map[string]interface{}
-	importDir := path.Dir(file)
+
+	importDir := filepath.Dir(file)
 	if imports, ok := config["import"]; ok {
 		for _, v := range imports.([]interface{}) {
 			if utils.IsURL(v.(string)) {
@@ -191,6 +209,10 @@ func (cl *Loader) load(file string) (config map[string]interface{}, err error) {
 }
 
 func (cl *Loader) loadDir(dir string) (map[string]interface{}, error) {
+	// this is only going to work on yaml files
+	// this program seems to want to accept json/toml and yaml
+	//
+	// TODO: remove json/toml support - unnecessary
 	pattern := filepath.Join(dir, "*.yaml")
 	q, err := filepath.Glob(pattern)
 	if err != nil {
@@ -217,7 +239,7 @@ func (cl *Loader) loadDir(dir string) (map[string]interface{}, error) {
 	return cm, nil
 }
 
-func (cl *Loader) readURL(u string) (map[string]interface{}, error) {
+func (cl *Loader) ReadURL(u string) (map[string]interface{}, error) {
 	resp, err := http.Get(u)
 	if err != nil {
 		return nil, err
@@ -232,24 +254,26 @@ func (cl *Loader) readURL(u string) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("%s: %v", u, err)
 	}
 
-	var ext string
+	ext := ""
 	ct := resp.Header.Get("Content-Type")
-	if ct != "" {
-		mediaType, _, _ := mime.ParseMediaType(ct)
-		if mediaType == "application/json" {
-			ext = ".json"
-		}
-	}
+	// if ct == "" {
+	// 	return cl.unmarshalData(data, "")
+	// }
+	mediaType, _, _ := mime.ParseMediaType(ct)
 
-	if ext == "" {
-		up, err := url.Parse(u)
-		if err == nil {
-			ext = filepath.Ext(up.Path)
-		}
-	}
-
-	if ext == "" {
+	switch mediaType {
+	case "application/json":
+		ext = ".json"
+	case "application/x-yaml", "application/yaml", "text/yaml":
 		ext = ".yaml"
+	case "application/x-toml", "application/toml", "text/toml":
+		ext = ".toml"
+	default:
+		up, err := url.Parse(u)
+		if err != nil {
+			return cl.unmarshalData(data, "")
+		}
+		ext = filepath.Ext(up.Path)
 	}
 
 	return cl.unmarshalData(data, ext)
@@ -271,7 +295,9 @@ func (cl *Loader) unmarshalData(data []byte, ext string) (map[string]interface{}
 
 	switch strings.ToLower(ext) {
 	case ".yaml", ".yml":
-		err := yaml.NewDecoder(bytes.NewReader(data)).Decode(&cm)
+		yamlDec := yaml.NewDecoder(bytes.NewReader(data))
+		yamlDec.SetStrict(cl.strictDecoder)
+		err := yamlDec.Decode(&cm)
 		if err != nil {
 			return nil, err
 		}
@@ -312,7 +338,7 @@ func (cl *Loader) decode(cm map[string]interface{}) (*configDefinition, error) {
 	return c, nil
 }
 
-func (cl *Loader) resolveDefaultConfigFile() (file string, err error) {
+func (cl *Loader) ResolveDefaultConfigFile() (file string, err error) {
 	dir := cl.dir
 	for {
 		if dir == filepath.Dir(dir) {

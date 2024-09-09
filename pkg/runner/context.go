@@ -17,6 +17,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var (
+	// define a list of environment variable names that are not permitted
+	invalidEnvVarKeys = []string{
+		`!::`, // this is found in a cygwin environment
+	}
+)
+
 // ExecutionContext allow you to set up execution environment, variables, binary which will run your task, up/down commands etc.
 type ExecutionContext struct {
 	Executable *utils.Binary
@@ -60,6 +67,11 @@ func NewExecutionContext(executable *utils.Binary, dir string, env variables.Con
 	}
 
 	return c
+}
+
+// StartUpError reports whether an error exists on startUp
+func (c *ExecutionContext) StartupError() error {
+	return c.startupError
 }
 
 // Up executes tasks defined to run once before first usage of the context
@@ -118,7 +130,8 @@ func (c *ExecutionContext) After() error {
 var ErrMutuallyExclusiveVarSet = errors.New("mutually exclusive vars have been set")
 
 // GenerateEnvfile processes env and other supplied variables
-// writes them to a location
+// writes them to a `.taskctl` folder in a current directory
+// the file names are generated using the `generated_{Task_Name}_{UNIX_timestamp}.env`.
 //
 // Note: it will create the directory
 func (c *ExecutionContext) GenerateEnvfile() error {
@@ -131,30 +144,18 @@ func (c *ExecutionContext) GenerateEnvfile() error {
 	// the resultant file
 	builder := []string{}
 
-	// define a list of environment variables that are not permitted
-	invalid_vars := []string{
-		`(!|=)::=::\\`, // this is found in a cygwin environment
-	}
-
 	// iterate around all of the environment variables and add the selected ones to the builder
 	// TODO: shouldn't this be the local properties variable.Container on the ExecutionContext?
 	//
 	// c.Env.Map() && c.Variables.Get()
-	for _, env := range os.Environ() {
+	for varName, varValue := range c.Env.Map() {
 
 		// check to see if the env matches an invalid variable, if it does
 		// move onto the next loop
-		if slices.Contains(invalid_vars, env) {
-			logrus.Warnf("Skipping invalid environment variable: `%s`", env)
+		if slices.Contains(invalidEnvVarKeys, varName) {
+			logrus.Warnf("Skipping invalid environment variable: `%s`", varName)
 			continue
 		}
-
-		// split the environment variable using = as the delimiter
-		// this is so that newlines can be surpressed
-		parts := strings.SplitN(env, "=", 2)
-
-		// Get the varName of the variable
-		varName, varValue := parts[0], parts[1]
 
 		// iterate around the modify options to see if the name needs to be
 		// modified at all
@@ -185,7 +186,7 @@ func (c *ExecutionContext) GenerateEnvfile() error {
 		}
 
 		// determine if the variable should be included or excluded
-		// ShouldExclude will be true if any varName 
+		// ShouldExclude will be true if any varName
 		shouldExclude := slices.ContainsFunc(c.Envfile.Exclude, func(v string) bool {
 			return strings.HasPrefix(varName, v)
 		})
@@ -251,11 +252,15 @@ func (c *ExecutionContext) runServiceCommand(command string) (err error) {
 
 // DefaultContext creates default ExecutionContext instance
 func DefaultContext() *ExecutionContext {
-	return &ExecutionContext{
-		Env:       variables.NewVariables(),
-		Envfile:   &utils.Envfile{},
-		Variables: variables.NewVariables(),
-	}
+	// the default context still needs access to global env variables
+	return NewExecutionContext(nil, "",
+		variables.FromMap(utils.ConvertFromEnv(os.Environ())),
+		&utils.Envfile{},
+		[]string{},
+		[]string{},
+		[]string{},
+		[]string{},
+	)
 }
 
 // WithQuote is functional option to set Quote for ExecutionContext
