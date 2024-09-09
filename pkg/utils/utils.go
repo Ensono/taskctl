@@ -79,7 +79,7 @@ type ModifyEnv struct {
 
 // ConvertEnv converts map representing the environment to array of strings in the form "key=value"
 func ConvertEnv(env map[string]string) []string {
-	var i int
+	i := 0
 	enva := make([]string, len(env))
 	for k, v := range env {
 		enva[i] = fmt.Sprintf("%s=%s", k, v)

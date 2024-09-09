@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/Ensono/taskctl/internal/cmdutils"
 	"github.com/Ensono/taskctl/internal/config"
 	"github.com/charmbracelet/huh"
-	"github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
 )
 
@@ -118,7 +118,7 @@ func writeConfig(file string) error {
 		return err
 	}
 
-	fmt.Fprintln(ChannelOut, aurora.Sprintf(aurora.Magenta("%s was created. Edit it accordingly to your needs"), aurora.Green(file)))
-	fmt.Fprintln(ChannelOut, aurora.Cyan("To run example pipeline - taskctl run pipeline1"))
+	fmt.Fprintf(ChannelOut, "%s %s\n", fmt.Sprintf(cmdutils.GREEN_TERMINAL, file), fmt.Sprintf(cmdutils.MAGENTA_TERMINAL, "was created. Edit it accordingly to your needs"))
+	fmt.Fprintf(ChannelOut, cmdutils.CYAN_TERMINAL, "To run example pipeline - taskctl run pipeline1")
 	return nil
 }

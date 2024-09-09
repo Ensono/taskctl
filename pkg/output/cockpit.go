@@ -8,8 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/logrusorgru/aurora"
-
 	"github.com/briandowns/spinner"
 
 	"github.com/Ensono/taskctl/pkg/task"
@@ -79,11 +77,11 @@ func (b *baseCockpit) remove(t *task.Task) {
 		}
 	}
 
-	var mark = aurora.Green("✔")
+	var mark = fmt.Sprintf("\x1b[32m%s\x1b[0m", "✔")
 	if t.Errored {
-		mark = aurora.Red("✗")
+		mark = fmt.Sprintf("\x1b[31m%s\x1b[0m", "✗")
 	}
-	b.spinner.FinalMSG = fmt.Sprintf("%s Finished %s in %s\r\n", mark, aurora.Bold(t.Name), t.Duration())
+	b.spinner.FinalMSG = fmt.Sprintf("%s Finished %s in %s\r\n", mark, fmt.Sprintf("\x1b[1m%s", t.Name), t.Duration())
 	b.spinner.Restart()
 	b.spinner.FinalMSG = ""
 }

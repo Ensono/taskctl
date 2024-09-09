@@ -1,11 +1,12 @@
 package cmd_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/logrusorgru/aurora"
+	"github.com/Ensono/taskctl/internal/cmdutils"
 )
 
 func setupCleanUp() (dir string, deferFn func()) {
@@ -24,7 +25,7 @@ func Test_initCommand(t *testing.T) {
 
 		runTestHelper(t, runTestIn{
 			args:   []string{"--dir", dir, "init", "tasks.yml", "--no-prompt"},
-			output: []string{aurora.Sprintf(aurora.Magenta("%s was created. Edit it accordingly to your needs"), aurora.Green(file))},
+			output: []string{fmt.Sprintf(cmdutils.GREEN_TERMINAL+" "+cmdutils.MAGENTA_TERMINAL, file, "was created. Edit it accordingly to your needs")},
 		})
 
 		files, _ := os.ReadDir(dir)

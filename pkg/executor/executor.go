@@ -90,6 +90,7 @@ func (e *DefaultExecutor) Execute(ctx context.Context, job *Job) ([]byte, error)
 	if job.Timeout != nil {
 		ctx, cancelFn = context.WithTimeout(ctx, *job.Timeout)
 	}
+
 	defer func() {
 		if cancelFn != nil {
 			cancelFn()

@@ -6,8 +6,6 @@ import (
 	"io"
 	"regexp"
 
-	"github.com/logrusorgru/aurora"
-
 	"github.com/sirupsen/logrus"
 
 	"github.com/Ensono/taskctl/pkg/task"
@@ -85,7 +83,7 @@ type lineWriter struct {
 func (l lineWriter) Write(p []byte) (n int, err error) {
 	n = len(p)
 	p = ansiRegexp.ReplaceAllLiteral(p, []byte{})
-	_, err = fmt.Fprintf(l.dst, "%s: %s\r\n", aurora.Cyan(l.t.Name), p)
+	_, err = fmt.Fprintf(l.dst, "\x1b[18m%s\x1b[0m: %s\r\n", l.t.Name, p)
 
 	return n, err
 }
