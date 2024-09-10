@@ -23,7 +23,7 @@ type ConfigDefinition struct {
 	Contexts map[string]*ContextDefinition `mapstructure:"contexts" yaml:"contexts" json:"contexts,omitempty"`
 	// Pipelines are a set of tasks wrapped in additional run conditions
 	// e.g. depends on or allow failure
-	Pipelines map[string][]*PipelineDefinition `mapstructure:"pipelines" yaml:"pipelines" json:"pipelines,omitempty" jsonschema:"oneof_required=pipeline;task"`
+	Pipelines map[string][]*PipelineDefinition `mapstructure:"pipelines" yaml:"pipelines" json:"pipelines,omitempty"`
 	// Tasks are the most basic buidling blocks
 	Tasks    map[string]*TaskDefinition    `mapstructure:"tasks" yaml:"tasks" json:"tasks"`
 	Watchers map[string]*WatcherDefinition `mapstructure:"watchers" yaml:"watchers" json:"watchers,omitempty"`

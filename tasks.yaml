@@ -1,12 +1,7 @@
-# yaml-language-server: $schema=/Users/dusannitschneider/git/ensono/taskctl/internal/config/schemas/schema_v1.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Ensono/taskctl/fix/config-schema-generator/internal/config/schemas/schema_v1.json
 
 debug: true
 output: cockpit
-
-# contexts:
-#   context1: 
-#     executable:
-#       bin: 
 
 pipelines:
   build:
