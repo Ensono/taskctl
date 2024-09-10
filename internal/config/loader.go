@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,12 +14,11 @@ import (
 	"strings"
 
 	"dario.cat/mergo"
+	"github.com/Ensono/taskctl/pkg/utils"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pelletier/go-toml"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
-
-	"github.com/Ensono/taskctl/pkg/utils"
+	"gopkg.in/yaml.v3"
 )
 
 // ErrConfigNotFound occurs when requested config file does not exists
@@ -155,7 +153,7 @@ func (cl *Loader) load(file string) (config map[string]interface{}, err error) {
 	cl.imports[file] = true
 
 	if utils.IsURL(file) {
-		config, err = cl.ReadURL(file)
+		config, err = cl.readURL(file)
 	} else {
 		if !utils.FileExists(file) {
 			return config, fmt.Errorf("%s: %w", file, ErrConfigNotFound)
@@ -239,7 +237,7 @@ func (cl *Loader) loadDir(dir string) (map[string]interface{}, error) {
 	return cm, nil
 }
 
-func (cl *Loader) ReadURL(urlStr string) (map[string]interface{}, error) {
+func (cl *Loader) readURL(urlStr string) (map[string]interface{}, error) {
 	resp, err := http.Get(urlStr)
 	if err != nil {
 		return nil, err
@@ -251,7 +249,7 @@ func (cl *Loader) ReadURL(urlStr string) (map[string]interface{}, error) {
 
 	// data, err := io.ReadAll(resp.Body)
 	// if err != nil {
-	// 	return nil, fmt.Errorf("%s: %v", u, err)
+	// 	return nil, fmt.Errorf("%s: %v", urlStr, err)
 	// }
 
 	ext := ""
@@ -269,12 +267,12 @@ func (cl *Loader) ReadURL(urlStr string) (map[string]interface{}, error) {
 	default:
 		up, err := url.Parse(urlStr)
 		if err != nil {
-			return cl.unmarshalData(resp.Body, "")
+			return cl.unmarshalDataStream(resp.Body, "")
 		}
 		ext = filepath.Ext(up.Path)
 	}
 
-	return cl.unmarshalData(resp.Body, ext)
+	return cl.unmarshalDataStream(resp.Body, ext)
 }
 
 func (cl *Loader) readFile(filename string) (map[string]interface{}, error) {
@@ -283,41 +281,53 @@ func (cl *Loader) readFile(filename string) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("%s: %v", filename, err)
 	}
 
-	return cl.unmarshalData(bytes.NewReader(data), filepath.Ext(filename))
+	return cl.unmarshalDataByte(data, filepath.Ext(filename))
 }
 
-func (cl *Loader) unmarshalData(data io.Reader, ext string) (map[string]interface{}, error) {
-	var cm map[string]interface{}
+func (cl *Loader) unmarshalDataByte(data []byte, ext string) (map[string]interface{}, error) {
+	cm := make(map[string]any)
 
 	switch strings.ToLower(ext) {
 	case ".yaml", ".yml":
-		// // debug
-		// b, e := io.ReadAll(data)
-		// if e != nil {
-		// 	return nil, e
-		// }
-		// fmt.Println(string(b))
-		// // end debug
-		yamlDec := yaml.NewDecoder(data)
-		yamlDec.SetStrict(cl.strictDecoder)
-		err := yamlDec.Decode(&cm)
-		if err != nil {
+		if err := yaml.Unmarshal(data, &cm); err != nil {
 			return nil, err
 		}
 	case ".json":
-		err := json.NewDecoder(data).Decode(&cm)
-		if err != nil {
+		if err := json.Unmarshal(data, &cm); err != nil {
 			return nil, err
 		}
 	case ".toml":
-		err := toml.NewDecoder(data).Decode(&cm)
-		if err != nil {
+		if err := toml.Unmarshal(data, &cm); err != nil {
+			return nil, err
+		}
+	default:
+		// speed up GC cycle if data is not read
+		data = nil
+		return nil, errors.New("unsupported config file type")
+	}
+
+	return cm, nil
+}
+
+func (cl *Loader) unmarshalDataStream(data io.Reader, ext string) (map[string]interface{}, error) {
+	cm := make(map[string]any)
+
+	switch strings.ToLower(ext) {
+	case ".yaml", ".yml":
+		if err := yaml.NewDecoder(data).Decode(&cm); err != nil {
+			return nil, err
+		}
+	case ".json":
+		if err := json.NewDecoder(data).Decode(&cm); err != nil {
+			return nil, err
+		}
+	case ".toml":
+		if err := toml.NewDecoder(data).Decode(&cm); err != nil {
 			return nil, err
 		}
 	default:
 		// speed up GC cycle if data is not read
 		_, _ = io.Copy(io.Discard, data)
-		// data = nil
 		return nil, errors.New("unsupported config file type")
 	}
 
