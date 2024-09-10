@@ -19,7 +19,7 @@ func main() {
 		log.Fatal(err.Error())
 	}
 	s := r.Reflect(&config.ConfigDefinition{})
-	out, err := json.Marshal(s)
+	out, err := json.MarshalIndent(s, "", "\t")
 	if err != nil {
 		log.Fatalf("failed to parse: %s", err)
 	}
