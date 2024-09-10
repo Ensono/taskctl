@@ -63,7 +63,7 @@ tasks:
       - go test ./... -v -mod=readonly -coverprofile=.coverage/out > .coverage/test.out
       - cat .coverage/test.out | go-junit-report > .coverage/report-junit.xml
       - gocov convert .coverage/out | gocov-xml > .coverage/report-cobertura.xml
-      - cat .coverage/test.out
+      # - cat .coverage/test.out
 
   build:
     command:
