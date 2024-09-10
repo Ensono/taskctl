@@ -38,11 +38,27 @@ pipelines:
     - task: golint
     - task: govet
       depends_on: golint
+  
+  testOut:
+    - task: clean
+    - task: test
+      depends_on: clean
 
 tasks:
+  clean: 
+    command: 
+      - | 
+        rm -rf bin/*
+        rm -rf dist/*
+        rm -rf vendor/*
+
   test:
     command:
-      - go test ./... -v -mod=readonly
+      - mkdir -p .coverage
+      - go test ./... -v -mod=readonly -coverprofile=.coverage/out > .coverage/test.out
+      - cat .coverage/test.out | go-junit-report > .coverage/report-junit.xml
+      - gocov convert .coverage/out | gocov-xml > .coverage/report-cobertura.xml
+      - cat .coverage/test.out
 
   build:
     command:

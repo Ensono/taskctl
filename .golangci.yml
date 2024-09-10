@@ -4,3 +4,7 @@
 run:
   # See the dedicated "run" documentation section.
   tests: false
+output:
+  formats:
+    - path: stdout
+      format: colored-line-number # junit-xml 
