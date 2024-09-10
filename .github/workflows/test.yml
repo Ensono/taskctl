@@ -24,7 +24,11 @@ jobs:
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
-
+    
+    - name: go vet
+      run: |
+        go run cmd/main.go run task govet
+    
     - name: Test
       run: |
         go run cmd/main.go run pipeline testOut

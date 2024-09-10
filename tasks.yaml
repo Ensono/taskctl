@@ -6,12 +6,12 @@ pipelines:
       task: build
       env:
         GOOS: darwin
-        BIN_OUT: bin/taskctl_darwin_amd64
+        BIN_OUT: bin/taskctl_darwin
     - name: Build "linux"
       task: build
       env:
         GOOS: linux
-        BIN_OUT: bin/taskctl_linux_amd64
+        BIN_OUT: bin/taskctl_linux
     - name: Build "windows"
       task: build
       env:
@@ -77,18 +77,20 @@ tasks:
         BIN_OUT: bin/taskctl_windows_amd64.exe
 
   golint:
+  # in CI it is run 
     command:
-      - golint  $(go list ./... | grep -v /vendor/)
+      - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      - golangci-lint run
 
   govet:
     command:
-      - go vet $(go list ./... | grep -v /vendor/)
+      - go vet ./...
 
   goimports:
     command:
-      - goimports -v -local github.com/taskctl/taskctl -w -format-only $(ls -d internal/**/*.go)
-      - goimports -v -local github.com/taskctl/taskctl -w -format-only $(ls -d pkg/**/*.go)
-      - goimports -v -local github.com/taskctl/taskctl -w -format-only $(ls -d cmd/**/*.go)
+      - goimports -v -local github.com/Ensono/taskctl -w -format-only $(ls -d internal/**/*.go)
+      - goimports -v -local github.com/Ensono/taskctl -w -format-only $(ls -d pkg/**/*.go)
+      - goimports -v -local github.com/Ensono/taskctl -w -format-only $(ls -d cmd/**/*.go)
 
   goreleaser:
     command:
@@ -102,8 +104,9 @@ tasks:
       - gofmt -s -w pkg/**/*.go
 
   echo:
-    command: echo {{ .Task.Name }}
+    command: echo {{ .Name }}
+    # variations:
+    #   Name: foo
   tidy:
     command:
       - go mod tidy
-
