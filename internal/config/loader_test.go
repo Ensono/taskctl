@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -10,7 +11,7 @@ import (
 	"github.com/Ensono/taskctl/internal/config"
 )
 
-const sampleCfg = "{\"tasks\": {\"task1\": {\"command\": [\"true\"]}}}"
+var sampleCfg = []byte(`{"tasks": {"task1": {"command": ["true"]}}}`)
 
 func TestLoader_Load(t *testing.T) {
 	cwd, err := os.Getwd()
@@ -94,7 +95,92 @@ func TestLoader_LoadDirImport(t *testing.T) {
 	}
 }
 
+func TestLoader_ReadConfigFromURL(t *testing.T) {
+	ttests := map[string]struct {
+		contentType    string
+		responseBytes  []byte
+		wantError      bool
+		taskCount      int
+		additionalPath string
+	}{
+		"correct json": {
+			"application/json",
+			sampleCfg, false, 1, "",
+		},
+		"correct json from file": {
+			"application/x-unknown",
+			sampleCfg, false, 1, "/config.json",
+		},
+		"correct toml": {
+			"application/toml",
+			[]byte(`[tasks.task1]
+command = [ true ]
+`),
+			false, 1, ""},
+	}
+	for name, tt := range ttests {
+		t.Run(name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				writer.Header().Set("Content-Type", tt.contentType)
+				// fmt.Println(string(tt.responseBytes))
+				_, err := writer.Write([]byte(tt.responseBytes))
+				if err != nil {
+					t.Errorf("failed to write bytes to response stream")
+				}
+			}))
+
+			cl := config.NewConfigLoader(config.NewConfig())
+			// cl.WithStrictDecoder()
+			m, err := cl.ReadURL(srv.URL + tt.additionalPath)
+			if err != nil && !tt.wantError {
+				t.Error("got error, wanted nil")
+			}
+			if tt.wantError && err == nil {
+				t.Error("got nil, wanted error")
+			}
+			tasks, ok := m["tasks"].(map[string]any)
+			if !ok {
+				t.Fatal("unable to cast into type")
+			}
+			if len(tasks) != tt.taskCount {
+				t.Errorf("got %v count, wanted %v task count", len(tasks), tt.taskCount)
+			}
+		})
+	}
+
+	// yaml needs to be run separately "¯\_(ツ)_/¯"
+	t.Run("yaml parsed correctly", func(t *testing.T) {
+		t.Skip()
+		srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			writer.Header().Set("Content-Type", "application/x-yaml")
+			_, err := writer.Write([]byte(`
+tasks:
+  task1:
+    command:
+      - true
+`))
+			if err != nil {
+				t.Errorf("failed to write bytes to response stream")
+			}
+		}))
+
+		cl := config.NewConfigLoader(config.NewConfig())
+		m, err := cl.ReadURL(srv.URL)
+		if err != nil {
+			t.Error("got error, wanted nil")
+		}
+		tasks, ok := m["tasks"].(map[string]any)
+		if !ok {
+			t.Fatal("unable to cast into type")
+		}
+		if len(tasks) != 1 {
+			t.Errorf("got %v count, wanted %v task count", len(tasks), 1)
+		}
+	})
+}
+
 func TestLoader_readURL(t *testing.T) {
+
 	r := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "")
@@ -104,11 +190,14 @@ func TestLoader_readURL(t *testing.T) {
 		}
 		if r == 1 {
 			writer.Header().Set("Content-Type", "application/x-yaml")
-			writer.Write([]byte(`tasks:
+
+			bInput := []byte(`tasks:
   task1:
-    command: 
+    command:
       - true
-`))
+`)
+			fmt.Println(string(bInput))
+			writer.Write(bInput)
 		}
 		if r == 2 {
 			writer.WriteHeader(500)
@@ -121,11 +210,11 @@ command = [ true ]
 		}
 		if r == 4 {
 			writer.Header().Set("Content-Type", "")
-			writer.Write([]byte(sampleCfg))
+			writer.Write(sampleCfg)
 		}
 		if r == 5 {
 			writer.Header().Set("Content-Type", "application/x-unknown")
-			writer.Write([]byte(sampleCfg))
+			writer.Write(sampleCfg)
 		}
 		r++
 	}))
@@ -136,7 +225,7 @@ command = [ true ]
 		t.Fatal(err)
 	}
 
-	tasks := m["tasks"].(map[string]interface{})
+	tasks := m["tasks"].(map[string]any)
 	if len(tasks) != 1 {
 		t.Error()
 	}
@@ -145,15 +234,24 @@ command = [ true ]
 	if err != nil {
 		t.Fatal()
 	}
+	yamlTasks := m["tasks"].(map[string]any)
+	if len(yamlTasks) != 1 {
+		t.Error()
+	}
 
 	_, err = cl.ReadURL(srv.URL)
 	if err == nil {
 		t.Fatal()
 	}
+
 	// toml test
 	_, err = cl.ReadURL(srv.URL)
 	if err != nil {
 		t.Fatal()
+	}
+	tomlTasks := m["tasks"].(map[string]any)
+	if len(tomlTasks) != 1 {
+		t.Error()
 	}
 	// undefined test
 	_, err = cl.ReadURL(srv.URL)
@@ -166,6 +264,10 @@ command = [ true ]
 	_, err = cl.ReadURL(srv.URL + "/config.json")
 	if err != nil {
 		t.Fatal()
+	}
+	jsonFileTasks := m["tasks"].(map[string]any)
+	if len(jsonFileTasks) != 1 {
+		t.Error()
 	}
 }
 

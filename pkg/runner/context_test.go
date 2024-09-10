@@ -197,7 +197,7 @@ func ExampleExecutionContext_GenerateEnvfile() {
 		}...)
 	}), []string{}, []string{}, []string{}, []string{})
 
-	execContext.GenerateEnvfile()
+	_ = execContext.GenerateEnvfile()
 
 	contents, _ := os.ReadFile(outputFilePath)
 	// for the purposes of the test example we need to make sure the map is

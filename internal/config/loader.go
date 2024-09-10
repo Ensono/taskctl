@@ -239,26 +239,24 @@ func (cl *Loader) loadDir(dir string) (map[string]interface{}, error) {
 	return cm, nil
 }
 
-func (cl *Loader) ReadURL(u string) (map[string]interface{}, error) {
-	resp, err := http.Get(u)
+func (cl *Loader) ReadURL(urlStr string) (map[string]interface{}, error) {
+	resp, err := http.Get(urlStr)
 	if err != nil {
 		return nil, err
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("%d: config request failed - %s", resp.StatusCode, u)
+		return nil, fmt.Errorf("%d: config request failed - %s", resp.StatusCode, urlStr)
 	}
 
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %v", u, err)
-	}
+	// data, err := io.ReadAll(resp.Body)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("%s: %v", u, err)
+	// }
 
 	ext := ""
 	ct := resp.Header.Get("Content-Type")
-	// if ct == "" {
-	// 	return cl.unmarshalData(data, "")
-	// }
+
 	mediaType, _, _ := mime.ParseMediaType(ct)
 
 	switch mediaType {
@@ -269,14 +267,14 @@ func (cl *Loader) ReadURL(u string) (map[string]interface{}, error) {
 	case "application/x-toml", "application/toml", "text/toml":
 		ext = ".toml"
 	default:
-		up, err := url.Parse(u)
+		up, err := url.Parse(urlStr)
 		if err != nil {
-			return cl.unmarshalData(data, "")
+			return cl.unmarshalData(resp.Body, "")
 		}
 		ext = filepath.Ext(up.Path)
 	}
 
-	return cl.unmarshalData(data, ext)
+	return cl.unmarshalData(resp.Body, ext)
 }
 
 func (cl *Loader) readFile(filename string) (map[string]interface{}, error) {
@@ -285,33 +283,41 @@ func (cl *Loader) readFile(filename string) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("%s: %v", filename, err)
 	}
 
-	ext := filepath.Ext(filename)
-
-	return cl.unmarshalData(data, ext)
+	return cl.unmarshalData(bytes.NewReader(data), filepath.Ext(filename))
 }
 
-func (cl *Loader) unmarshalData(data []byte, ext string) (map[string]interface{}, error) {
+func (cl *Loader) unmarshalData(data io.Reader, ext string) (map[string]interface{}, error) {
 	var cm map[string]interface{}
 
 	switch strings.ToLower(ext) {
 	case ".yaml", ".yml":
-		yamlDec := yaml.NewDecoder(bytes.NewReader(data))
+		// // debug
+		// b, e := io.ReadAll(data)
+		// if e != nil {
+		// 	return nil, e
+		// }
+		// fmt.Println(string(b))
+		// // end debug
+		yamlDec := yaml.NewDecoder(data)
 		yamlDec.SetStrict(cl.strictDecoder)
 		err := yamlDec.Decode(&cm)
 		if err != nil {
 			return nil, err
 		}
 	case ".json":
-		err := json.NewDecoder(bytes.NewReader(data)).Decode(&cm)
+		err := json.NewDecoder(data).Decode(&cm)
 		if err != nil {
 			return nil, err
 		}
 	case ".toml":
-		err := toml.NewDecoder(bytes.NewReader(data)).Decode(&cm)
+		err := toml.NewDecoder(data).Decode(&cm)
 		if err != nil {
 			return nil, err
 		}
 	default:
+		// speed up GC cycle if data is not read
+		_, _ = io.Copy(io.Discard, data)
+		// data = nil
 		return nil, errors.New("unsupported config file type")
 	}
 

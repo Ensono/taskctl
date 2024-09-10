@@ -27,7 +27,4 @@ jobs:
 
     - name: Test
       run: |
-        echo $PWD
         go run cmd/main.go test
-        # -c tasks.yaml
-        # go test ./... -v -mod=readonly

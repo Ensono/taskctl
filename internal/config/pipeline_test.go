@@ -44,7 +44,7 @@ tasks:
 	}()
 
 	file := filepath.Join(tmpDir, "cyclical.yaml")
-	os.WriteFile(file, []byte(cyclicalYaml), 0777)
+	_ = os.WriteFile(file, []byte(cyclicalYaml), 0777)
 
 	cl := config.NewConfigLoader(config.NewConfig())
 	_, err := cl.Load(file)
@@ -76,7 +76,7 @@ tasks:
     name: task3
 `
 		file := filepath.Join(tmpDir, "nosuch-task.yaml")
-		os.WriteFile(file, []byte(errorYaml), 0777)
+		_ = os.WriteFile(file, []byte(errorYaml), 0777)
 
 		cl := config.NewConfigLoader(config.NewConfig())
 		_, err := cl.Load(file)
@@ -101,7 +101,7 @@ tasks:
     name: task3
 `
 		file := filepath.Join(tmpDir, "nosuch-pipeline.yaml")
-		os.WriteFile(file, []byte(errorYaml), 0777)
+		_ = os.WriteFile(file, []byte(errorYaml), 0777)
 
 		cl := config.NewConfigLoader(config.NewConfig())
 		_, err := cl.Load(file)
@@ -131,7 +131,7 @@ tasks:
     name: task3
 `
 		file := filepath.Join(tmpDir, "stage.yaml")
-		os.WriteFile(file, []byte(errorYaml), 0777)
+		_ = os.WriteFile(file, []byte(errorYaml), 0777)
 
 		cl := config.NewConfigLoader(config.NewConfig())
 		_, err := cl.Load(file)
