@@ -40,3 +40,6 @@ jobs:
       if: always()
       with:
         filename: '.coverage/report-cobertura.xml'
+        badge: true
+        format: markdown
+
