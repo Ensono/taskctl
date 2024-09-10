@@ -301,8 +301,6 @@ func (cl *Loader) unmarshalDataByte(data []byte, ext string) (map[string]interfa
 			return nil, err
 		}
 	default:
-		// speed up GC cycle if data is not read
-		data = nil
 		return nil, errors.New("unsupported config file type")
 	}
 
