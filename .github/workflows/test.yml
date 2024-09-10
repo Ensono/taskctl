@@ -27,7 +27,7 @@ jobs:
 
     - name: Test
       run: |
-        go run cmd/main.go run pipeline testCoverage -c tasks.yaml
+        go run cmd/main.go run pipeline testOut -c tasks.yaml
     
     - name: Publish Junit style Test Report
       uses: mikepenz/action-junit-report@v3
