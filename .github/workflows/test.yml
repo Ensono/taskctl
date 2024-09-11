@@ -54,3 +54,4 @@ jobs:
         badge: true
         format: markdown
 
+    # TODO: add sonar cloud
