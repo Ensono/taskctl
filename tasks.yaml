@@ -47,10 +47,22 @@ pipelines:
     - task: govet
       depends_on: golint
   
-  testOut:
+  test:unit:
     - task: clean
+    - task: test_prereqs
     - task: test
-      depends_on: clean
+      depends_on: 
+        - clean
+        - test_prereqs
+
+  build:binary:
+    - task: clean
+    - task: build
+      depends_on:
+        - clean
+      variables:
+        RepoOwner: Ensono
+        BinName: taskctl
 
 tasks:
   clean: 
@@ -59,7 +71,8 @@ tasks:
         rm -rf bin/*
         rm -rf dist/*
         rm -rf vendor/*
-      - |
+  test_prereqs: 
+    command: |
         mkdir -p .coverage
         go install github.com/jstemmer/go-junit-report@v0.9.1 && \
         go install github.com/axw/gocov/gocov@v1.0.0 && \
@@ -75,13 +88,36 @@ tasks:
 
   build:
     command:
-      - rm -rf bin/*
       - |
         ldflags="-s -w -X \"github.com/{{.RepoOwner}}/{{.BinName}}/cmd/taskctl.Version={{.Version}}\" -X \"github.com/{{.RepoOwner}}/{{.BinName}}/cmd/taskctl.Revision={{.Revision}}\" -extldflags -static"
-        GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -mod=readonly -buildvcs=false -ldflags="$ldflags" -o bin/{{.BinName}}-windows-amd64.exe cmd/main.go
-        GOOS=windows GOARCH=386 CGO_ENABLED=0 go build -mod=readonly -buildvcs=false -ldflags="$ldflags" -o bin/{{.BinName}}-windows-386.exe cmd/main.go
-        GOOS=darwin CGO_ENABLED=0 go build -mod=readonly -buildvcs=false -ldflags="$ldflags" -o bin/{{.BinName}}-darwin cmd/main.go
-        GOOS=linux CGO_ENABLED=0 go build -mod=readonly -buildvcs=false -ldflags="$ldflags" -o bin/{{.BinName}}-linux cmd/main.go
+        GOOS=${GOOS} GOARCH=${GOARCH} CGO_ENABLED=0 go build -mod=readonly -buildvcs=false -ldflags="$ldflags" -o bin/{{.BinName}}-${GOOS}-${GOARCH}${BINARY_SUFFIX} cmd/main.go
+        echo GOOS=${GOOS} GOARCH=${GOARCH} CGO_ENABLED=0 go build -mod=readonly -buildvcs=false -ldflags="$ldflags" -o bin/{{.BinName}}-${GOOS}-${GOARCH}${BINARY_SUFFIX} cmd/main.go
+    # GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -mod=readonly -buildvcs=false -ldflags="$ldflags" -o bin/{{.BinName}}-windows-amd64.exe cmd/main.go
+    # GOOS=windows GOARCH=386 CGO_ENABLED=0 go build -mod=readonly -buildvcs=false -ldflags="$ldflags" -o bin/{{.BinName}}-windows-386.exe cmd/main.go
+    # GOOS=darwin CGO_ENABLED=0 go build -mod=readonly -buildvcs=false -ldflags="$ldflags" -o bin/{{.BinName}}-darwin cmd/main.go
+    # GOOS=linux CGO_ENABLED=0 go build -mod=readonly -buildvcs=false -ldflags="$ldflags" -o bin/{{.BinName}}-linux cmd/main.go
+    variations:
+      - GOOS: windows
+        GOARCH: amd64
+        BINARY_SUFFIX: .exe
+      - GOOS: windows
+        GOARCH: "386"
+        BINARY_SUFFIX: .exe
+      - GOOS: windows
+        GOARCH: arm64
+        BINARY_SUFFIX: .exe
+      - GOOS: darwin
+        GOARCH: amd64
+        BINARY_SUFFIX: ""
+      - GOOS: darwin
+        GOARCH: arm64
+        BINARY_SUFFIX: ""
+      - GOOS: linux
+        GOARCH: arm64
+        BINARY_SUFFIX: ""
+      - GOOS: linux
+        GOARCH: amd64
+        BINARY_SUFFIX: ""
     variables:
       RepoOwner: Ensono
       BinName: taskctl
