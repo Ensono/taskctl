@@ -27,7 +27,7 @@ func TestNewTaskOutput_Prefixed(t *testing.T) {
 	tt.Name = "task1"
 	o, err := NewTaskOutput(
 		tt,
-		FormatPrefixed,
+		string(PrefixedOutput),
 		&b,
 		&b,
 	)
@@ -68,7 +68,7 @@ func TestNewTaskOutput(t *testing.T) {
 	tt.Name = "task1"
 	o, err := NewTaskOutput(
 		tt,
-		FormatRaw,
+		string(RawOutput),
 		&b,
 		&b,
 	)
@@ -108,7 +108,7 @@ func TestNewTaskOutput(t *testing.T) {
 	closeCh = make(chan bool)
 	_, err = NewTaskOutput(
 		tt,
-		FormatCockpit,
+		string(CockpitOutput),
 		&b,
 		&b,
 	)

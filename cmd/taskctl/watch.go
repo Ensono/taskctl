@@ -18,7 +18,7 @@ var (
 		Long:  "starts watching for filesystem events",
 		Args:  cobra.MinimumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			output = outputPkg.FormatRaw
+			output = string(outputPkg.RawOutput)
 			if err := initConfig(); err != nil {
 				return err
 			}

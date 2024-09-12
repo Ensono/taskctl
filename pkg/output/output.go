@@ -3,16 +3,49 @@ package output
 import (
 	"fmt"
 	"io"
+	"sync"
 
 	"github.com/Ensono/taskctl/pkg/task"
 )
 
-// Output types
+type OutputEnum string
+
 const (
-	FormatRaw      = "raw"
-	FormatPrefixed = "prefixed"
-	FormatCockpit  = "cockpit"
+	RawOutput      OutputEnum = "raw"
+	CockpitOutput  OutputEnum = "cockpit"
+	PrefixedOutput OutputEnum = "prefixed"
 )
+
+type SafeWriter struct {
+	writerImpl   io.Writer
+	bytesWritten []byte
+	mu           *sync.Mutex
+}
+
+// NewSafeWriter initiates a new concurrency safe writer
+func NewSafeWriter(writerImpl io.Writer) *SafeWriter {
+	return &SafeWriter{writerImpl: writerImpl, bytesWritten: []byte{}, mu: &sync.Mutex{}}
+}
+
+func (tw *SafeWriter) Write(p []byte) (n int, err error) {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	tw.bytesWritten = append(tw.bytesWritten, p...)
+	return tw.writerImpl.Write(p)
+	// return len(p), nil
+}
+
+func (tw *SafeWriter) String() string {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	return string(tw.bytesWritten)
+}
+
+func (tw *SafeWriter) Len() int {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	return len(tw.bytesWritten)
+}
 
 var closed = false
 var closeCh = make(chan bool)
@@ -20,7 +53,7 @@ var closeCh = make(chan bool)
 // DecoratedOutputWriter is a decorator for task output.
 // It extends io.Writer with methods to write header before output starts and footer after execution completes
 type DecoratedOutputWriter interface {
-	io.Writer
+	io.Writer // *SafeWriter
 	WriteHeader() error
 	WriteFooter() error
 }
@@ -37,13 +70,13 @@ func NewTaskOutput(t *task.Task, format string, stdout, stderr io.Writer) (*Task
 		t: t,
 	}
 
-	switch format {
-	case FormatRaw:
-		o.decorator = newRawOutputWriter(stdout)
-	case FormatPrefixed:
-		o.decorator = newPrefixedOutputWriter(t, stdout)
-	case FormatCockpit:
-		o.decorator = newCockpitOutputWriter(t, stdout, closeCh)
+	switch OutputEnum(format) {
+	case RawOutput:
+		o.decorator = newRawOutputWriter(NewSafeWriter(stdout))
+	case PrefixedOutput:
+		o.decorator = newPrefixedOutputWriter(t, NewSafeWriter(stdout))
+	case CockpitOutput:
+		o.decorator = newCockpitOutputWriter(t, NewSafeWriter(stdout), closeCh)
 	default:
 		return nil, fmt.Errorf("unknown decorator \"%s\" requested", format)
 	}

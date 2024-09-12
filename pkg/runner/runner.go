@@ -55,7 +55,7 @@ type TaskRunner struct {
 func NewTaskRunner(opts ...Opts) (*TaskRunner, error) {
 	r := &TaskRunner{
 		compiler:     NewTaskCompiler(),
-		OutputFormat: output.FormatRaw,
+		OutputFormat: string(output.RawOutput),
 		Stdin:        os.Stdin,
 		Stdout:       os.Stdout,
 		Stderr:       os.Stderr,
@@ -113,7 +113,7 @@ func (r *TaskRunner) Run(t *task.Task) error {
 
 	var stdin io.Reader
 	if t.Interactive {
-		outputFormat = output.FormatRaw
+		outputFormat = string(output.RawOutput)
 		stdin = r.Stdin
 	}
 

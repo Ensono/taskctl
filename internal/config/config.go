@@ -22,7 +22,7 @@ var DefaultFileNames = []string{"taskctl.yaml", "tasks.yaml"}
 // NewConfig creates new config instance
 func NewConfig() *Config {
 	cfg := &Config{
-		Output:    output.FormatPrefixed,
+		Output:    output.PrefixedOutput,
 		Contexts:  make(map[string]*runner.ExecutionContext),
 		Pipelines: make(map[string]*scheduler.ExecutionGraph),
 		Tasks:     make(map[string]*task.Task),
@@ -33,14 +33,6 @@ func NewConfig() *Config {
 	return cfg
 }
 
-type OutputEnum string
-
-const (
-	RawOutput      OutputEnum = "raw"
-	CockpitOutput  OutputEnum = "cockpit"
-	PrefixedOutput OutputEnum = "prefixed"
-)
-
 // Config is a taskctl internal config structure
 type Config struct {
 	Import    []string
@@ -50,7 +42,7 @@ type Config struct {
 	Watchers  map[string]*watch.Watcher
 
 	Quiet, Debug, DryRun, Summary bool
-	Output                        OutputEnum
+	Output                        output.OutputEnum
 
 	Variables variables.Container
 }
@@ -121,7 +113,7 @@ func buildFromDefinition(def *ConfigDefinition, lc *loaderContext) (cfg *Config,
 
 	cfg.Import = def.Import
 	cfg.Debug = def.Debug
-	cfg.Output = OutputEnum(def.Output)
+	cfg.Output = output.OutputEnum(def.Output)
 	cfg.Variables = cfg.Variables.Merge(variables.FromMap(def.Variables))
 
 	return cfg, nil

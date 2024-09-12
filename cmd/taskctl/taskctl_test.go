@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	taskctlCmd "github.com/Ensono/taskctl/cmd/taskctl"
+	"github.com/Ensono/taskctl/pkg/output"
 )
 
 type runTestIn struct {
@@ -21,17 +22,21 @@ func runTestHelper(t *testing.T, tt *runTestIn) {
 	taskctlCmd.ChannelOut = nil
 	taskctlCmd.ChannelErr = nil
 	cmd := taskctlCmd.TaskCtlCmd
-	errOut := new(bytes.Buffer)
-	stdOut := new(bytes.Buffer)
-	logOut := &bytes.Buffer{}
-	logErr := &bytes.Buffer{}
+
+	errOut := output.NewSafeWriter(&bytes.Buffer{})
+	stdOut := output.NewSafeWriter(&bytes.Buffer{})
+	logOut := output.NewSafeWriter(&bytes.Buffer{})
+	logErr := output.NewSafeWriter(&bytes.Buffer{})
+
 	// silence output
 	taskctlCmd.ChannelOut = logOut
 	taskctlCmd.ChannelErr = logErr
 	cmdArgs := tt.args
+
 	cmd.SetArgs(cmdArgs)
 	cmd.SetErr(errOut)
 	cmd.SetOut(stdOut)
+
 	defer func() {
 		cmd = nil
 		taskctlCmd.ChannelErr = nil

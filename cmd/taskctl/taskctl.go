@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/Ensono/taskctl/internal/config"
+	outputpkg "github.com/Ensono/taskctl/pkg/output"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -71,12 +72,12 @@ func init() {
 	_ = viper.BindEnv("config", "TASKCTL_CONFIG_FILE")
 	_ = viper.BindPFlag("config", TaskCtlCmd.PersistentFlags().Lookup("config"))
 
-	TaskCtlCmd.PersistentFlags().StringVarP(&output, "output", "o", string(config.RawOutput), "output format (raw, prefixed or cockpit)")
+	TaskCtlCmd.PersistentFlags().StringVarP(&output, "output", "o", string(outputpkg.RawOutput), "output format (raw, prefixed or cockpit)")
 	_ = viper.BindEnv("output", "TASKCTL_OUTPUT_FORMAT")
 	_ = viper.BindPFlag("output", TaskCtlCmd.PersistentFlags().Lookup("output")) // TASKCTL_OUTPUT_FORMAT
 
 	// Shortcut flags
-	TaskCtlCmd.PersistentFlags().BoolVarP(&raw, "raw", "r", true, "shortcut for --output=raw")
+	TaskCtlCmd.PersistentFlags().BoolVarP(&raw, "raw", "r", false, "shortcut for --output=raw")
 	TaskCtlCmd.PersistentFlags().BoolVarP(&cockpit, "cockpit", "", false, "shortcut for --output=cockpit")
 
 	// Key=Value pairs
@@ -120,12 +121,12 @@ func initConfig() error {
 	conf.Quiet = quiet
 	conf.DryRun = dryRun
 	conf.Summary = summary
-	conf.Output = config.OutputEnum(output)
+	conf.Output = outputpkg.OutputEnum(output)
 	if raw {
-		conf.Output = config.RawOutput
+		conf.Output = outputpkg.RawOutput
 	}
 	if cockpit {
-		conf.Output = config.CockpitOutput
+		conf.Output = outputpkg.CockpitOutput
 	}
 
 	return nil
