@@ -44,7 +44,7 @@ var (
 			return fmt.Errorf("%s. %w", args[0], ErrIncorrectPipelineTaskArg)
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return postRunReset()
+			return nil // postRunReset()
 		},
 	}
 )

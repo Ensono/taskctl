@@ -61,7 +61,7 @@ taskctl run task1`,
 			return runTarget(taskRunner)
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return postRunReset()
+			return nil // postRunReset()
 		},
 	}
 	runPipelineCmd = &cobra.Command{
@@ -79,7 +79,7 @@ taskctl run task1`,
 			return runPipeline(pipelineName, taskRunner, conf.Summary)
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return postRunReset()
+			return nil // postRunReset()
 		},
 	}
 	runTaskCmd = &cobra.Command{
@@ -98,7 +98,7 @@ taskctl run task1`,
 			return runTask(taskName, taskRunner)
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return postRunReset()
+			return nil // postRunReset()
 		},
 	}
 )

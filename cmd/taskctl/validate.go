@@ -20,7 +20,7 @@ var (
 			return nil
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return postRunReset()
+			return nil // postRunReset()
 		},
 	}
 )

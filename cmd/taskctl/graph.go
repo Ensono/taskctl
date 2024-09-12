@@ -27,7 +27,8 @@ The output is in the DOT format, which can be used by GraphViz to generate chart
 			return graphCmdRun(args[0])
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return postRunReset()
+			// return postRunReset()
+			return nil
 		},
 	}
 )

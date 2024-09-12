@@ -16,8 +16,11 @@ type runTestIn struct {
 	output      []string
 }
 
-func runTestHelper(t *testing.T, tt runTestIn) {
+func runTestHelper(t *testing.T, tt *runTestIn) {
 	t.Helper()
+	taskctlCmd.ChannelOut = nil
+	taskctlCmd.ChannelErr = nil
+	cmd := taskctlCmd.TaskCtlCmd
 	errOut := new(bytes.Buffer)
 	stdOut := new(bytes.Buffer)
 	logOut := &bytes.Buffer{}
@@ -26,7 +29,6 @@ func runTestHelper(t *testing.T, tt runTestIn) {
 	taskctlCmd.ChannelOut = logOut
 	taskctlCmd.ChannelErr = logErr
 	cmdArgs := tt.args
-	cmd := taskctlCmd.TaskCtlCmd
 	cmd.SetArgs(cmdArgs)
 	cmd.SetErr(errOut)
 	cmd.SetOut(stdOut)

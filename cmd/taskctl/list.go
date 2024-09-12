@@ -59,7 +59,7 @@ var (
 			})
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return postRunReset()
+			return nil //postRunReset()
 		},
 	}
 	listPipelines = &cobra.Command{
@@ -75,7 +75,7 @@ var (
 			return nil
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return postRunReset()
+			return nil // postRunReset()
 		},
 	}
 	listTasks = &cobra.Command{
@@ -91,7 +91,7 @@ var (
 			return nil
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return postRunReset()
+			return nil //postRunReset()
 		},
 	}
 	listWatchers = &cobra.Command{
@@ -107,7 +107,7 @@ var (
 			return nil
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return postRunReset()
+			return nil // postRunReset()
 		},
 	}
 )
