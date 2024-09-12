@@ -52,7 +52,7 @@ jobs:
         run: |
           echo "Version: v$SEMVER"
           echo "Revision: $GITHUB_SHA"
-          go run cmd/main.go run task build --set Version=v${SEMVER} --set Revision=$GITHUB_SHA
+          go run cmd/main.go run pipeline build:binary --set Version=v${SEMVER} --set Revision=$GITHUB_SHA
 
       # tag repo
       - name: tag repo
