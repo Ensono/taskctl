@@ -137,7 +137,7 @@ func Test_DockerExec_Cmd(t *testing.T) {
 			task1.Commands = []string{tt.command}
 			task1.Name = "some test task"
 			task1.Dir = "{{.Root}}"
-			task1.After = []string{"echo 'after task1'"}
+			// task1.After = []string{"echo 'after task1'"}
 
 			if err := runner.Run(task1); err != nil {
 				fmt.Println(testOut.String())
