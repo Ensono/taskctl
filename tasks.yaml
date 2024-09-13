@@ -134,9 +134,15 @@ tasks:
   generateschema:
     command:
       - go run tools/schemagenerator/main.go
-      - 
       # todo: error in CI if changes detected 
-      # git diff --porcelain
+      - | 
+        if [ ! -z "$(git status --porcelain --untracked-files=no)" ]; then 
+          if [ ! -z ${CI+x} ] ; then
+            echo "In CI with an unclean tree - exiting"
+            echo "Info: make sure you have generatedschema and committed"
+            exit 1
+          fi
+        fi
   show_coverage:
     command:
       - go tool cover -html=.coverage/out
