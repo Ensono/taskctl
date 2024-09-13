@@ -41,7 +41,8 @@ jobs:
     
     - name: Test
       run: |
-        go run cmd/main.go run pipeline test:unit
+        go test ./... -v -race -mod=readonly -coverprofile=.coverage/out 
+        # go run cmd/main.go run pipeline test:unit
     
     - name: Publish Junit style Test Report
       uses: mikepenz/action-junit-report@v3
