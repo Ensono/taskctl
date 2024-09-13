@@ -36,34 +36,38 @@ watchers:
     task: task1
 `
 
-var (
+type initFlags struct {
 	initDir  string
 	noPrompt bool
-	initCmd  = &cobra.Command{
-		Use:   "init",
-		Short: `initializes the directory with a sample config file`,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if noPrompt && len(args) == 0 {
-				return fmt.Errorf("file name must be supplied when running in non-interactive mode")
-			}
-			return nil
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runInit(args)
-		},
-		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return nil // postRunReset()
-		},
-	}
-)
-
-func init() {
-	initCmd.PersistentFlags().StringVar(&initDir, "dir", "", "directory to initialize")
-	initCmd.PersistentFlags().BoolVar(&noPrompt, "no-prompt", false, "do not prompt")
-	TaskCtlCmd.AddCommand(initCmd)
 }
 
-func runInit(args []string) error {
+type initCmd struct {
+}
+
+func newInitCmd(parentCmd *TaskCtlCmd, configFunc func() (*config.Config, error)) {
+	f := initFlags{}
+
+	initCmd := &cobra.Command{
+		Use:   "init",
+		Short: `initializes the directory with a sample config file`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if parentCmd.viperConf.GetBool("no-prompt") && len(args) == 0 {
+				return fmt.Errorf("file name must be supplied when running in non-interactive mode")
+			}
+			return runInit(args, parentCmd.viperConf.GetString("dir"), parentCmd.viperConf.GetBool("no-prompt"))
+		},
+	}
+
+	initCmd.PersistentFlags().StringVar(&f.initDir, "dir", "", "directory to initialize")
+	_ = parentCmd.viperConf.BindPFlag("dir", initCmd.PersistentFlags().Lookup("dir"))
+
+	initCmd.PersistentFlags().BoolVar(&f.noPrompt, "no-prompt", false, "do not prompt")
+	_ = parentCmd.viperConf.BindPFlag("no-prompt", initCmd.PersistentFlags().Lookup("no-prompt"))
+
+	parentCmd.Cmd.AddCommand(initCmd)
+}
+
+func runInit(args []string, initDir string, noPrompt bool) error {
 	var file string
 	var accepted bool
 	if initDir == "" {

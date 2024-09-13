@@ -12,23 +12,6 @@ variables:
 #   LDFLAGS: -ldflags="-s -w -X \"github.com/{{.RepoOwner}})/{{.BinName}})/cmd/taskctl.Version={{.Version}}\" -X \"github.com/{{.RepoOwner}}/{{.BinName}})/cmd/taskctl.Revision={{.Revision}}\" -extldflags -static"
 
 pipelines:
-  build:
-    - name: Build "darwin"
-      task: build
-      env:
-        GOOS: darwin
-        BIN_OUT: bin/taskctl_darwin
-    - name: Build "linux"
-      task: build
-      env:
-        GOOS: linux
-        BIN_OUT: bin/taskctl_linux
-    - name: Build "windows"
-      task: build
-      env:
-        GOOS: windows
-        BIN_OUT: bin/taskctl_windows_amd64.exe
-
   fixcs:
     - task: goimports
       dir: "{{.Root}}"
@@ -84,10 +67,10 @@ tasks:
   test:
     command:
       - mkdir -p .coverage
-      - go test ./... -v -mod=readonly -coverprofile=.coverage/out > .coverage/test.out
+      - go test ./... -v -race -mod=readonly -coverprofile=.coverage/out > .coverage/test.out
       - cat .coverage/test.out | go-junit-report > .coverage/report-junit.xml
       - gocov convert .coverage/out | gocov-xml > .coverage/report-cobertura.xml
-      # - cat .coverage/test.out
+      - cat .coverage/test.out
 
   build:
     command:

@@ -3,43 +3,59 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/Ensono/taskctl/internal/config"
 	"github.com/Ensono/taskctl/pkg/scheduler"
 	"github.com/emicklei/dot"
 	"github.com/spf13/cobra"
 )
 
-var (
+type graphFlags struct {
 	leftToRight bool
-	graphCmd    = &cobra.Command{
+}
+
+type graphCmd struct {
+	configFunc func() (*config.Config, error)
+	conf       *config.Config
+}
+
+func newGraphCmd(parentCmd *TaskCtlCmd, configFunc func() (*config.Config, error)) {
+	f := &graphFlags{}
+	command := &graphCmd{
+		configFunc: configFunc,
+	}
+	graphCmd := &cobra.Command{
 		Use:     "graph",
 		Aliases: []string{"g"},
 		Short:   `visualizes pipeline execution graph`,
 		Long: `Generates a visual representation of pipeline execution plan.
 The output is in the DOT format, which can be used by GraphViz to generate charts.`,
-		Args: cobra.MinimumNArgs(1),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if err := initConfig(); err != nil {
-				return err
-			}
-			return buildTaskRunner(args)
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return graphCmdRun(args[0])
-		},
-		PostRunE: func(cmd *cobra.Command, args []string) error {
-			// return postRunReset()
-			return nil
-		},
+		Args:    cobra.MinimumNArgs(1),
+		PreRunE: command.preRunE(),
+		RunE:    command.runE(f),
 	}
-)
 
-func init() {
-	graphCmd.PersistentFlags().BoolVarP(&leftToRight, "lr", "", false, "orients outputted graph left-to-right")
+	graphCmd.PersistentFlags().BoolVarP(&f.leftToRight, "lr", "", false, "orients outputted graph left-to-right")
+	_ = parentCmd.viperConf.BindPFlag("lr", graphCmd.PersistentFlags().Lookup("lr"))
 
-	TaskCtlCmd.AddCommand(graphCmd)
+	parentCmd.Cmd.AddCommand(graphCmd)
 }
 
-func graphCmdRun(name string) error {
+func (c *graphCmd) preRunE() func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		var err error
+		c.conf, err = c.configFunc()
+		return err
+	}
+}
+
+func (c *graphCmd) runE(f *graphFlags) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		pipelineName := args[0]
+		return c.graphCmdRun(pipelineName, c.conf)
+	}
+}
+
+func (c *graphCmd) graphCmdRun(name string, conf *config.Config) error {
 
 	p := conf.Pipelines[name]
 	if p == nil {
@@ -48,7 +64,8 @@ func graphCmdRun(name string) error {
 
 	g := dot.NewGraph(dot.Directed)
 	g.Attr("center", "true")
-	if leftToRight {
+	isLr := conf.Options.GraphOrientationLeftRight
+	if isLr {
 		g.Attr("rankdir", "LR")
 	}
 

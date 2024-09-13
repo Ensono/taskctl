@@ -45,6 +45,13 @@ type Config struct {
 	Output                        output.OutputEnum
 
 	Variables variables.Container
+	// Options are computed cli or other API inputs
+	//
+	Options struct {
+		GraphOrientationLeftRight bool
+		InitDir                   string
+		InitNoPrompt              bool
+	}
 }
 
 func (cfg *Config) merge(src *Config) error {

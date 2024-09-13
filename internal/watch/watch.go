@@ -44,7 +44,7 @@ type Watcher struct {
 	isClosed bool
 	mu       sync.Mutex
 
-	eventsWg *sync.WaitGroup
+	eventsWg sync.WaitGroup
 }
 
 // NewWatcher creates new Watcher instance
@@ -56,7 +56,7 @@ func NewWatcher(name string, events, watch, exclude []string, t *task.Task) (w *
 		closed:   make(chan struct{}),
 		task:     t,
 		events:   make(map[string]bool),
-		eventsWg: &sync.WaitGroup{},
+		eventsWg: sync.WaitGroup{},
 	}
 
 	w.fsw, err = fsnotify.NewWatcher()

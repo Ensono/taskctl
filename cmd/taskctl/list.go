@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"html/template"
 	"slices"
-	"text/template"
 
+	"github.com/Ensono/taskctl/internal/config"
 	"github.com/Ensono/taskctl/pkg/utils"
 	"github.com/spf13/cobra"
 )
@@ -28,79 +29,54 @@ Watchers:
 {{end}}
 `
 
-var (
-	listCmd = &cobra.Command{
+type listCmd struct {
+	configFunc func() (*config.Config, error)
+}
+
+func newListCmd(parentCmd *cobra.Command, configFunc func() (*config.Config, error)) {
+	cc := &listCmd{configFunc: configFunc}
+	listAllCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{},
 		Short:   `lists contexts, pipelines, tasks and watchers`,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return initConfig()
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			t := template.Must(template.New("list").Parse(listTmpl))
-
-			contexts := utils.MapKeys(conf.Contexts)
-			pipelines := utils.MapKeys(conf.Pipelines)
-			tasks := utils.MapKeys(conf.Tasks)
-			watchers := utils.MapKeys(conf.Watchers)
-
-			slices.Sort(contexts)
-			slices.Sort(pipelines)
-			slices.Sort(tasks)
-			slices.Sort(watchers)
-
-			return t.Execute(ChannelOut, struct {
-				Contexts, Pipelines, Tasks, Watchers []string
-			}{
-				Contexts:  contexts,
-				Pipelines: pipelines,
-				Tasks:     tasks,
-				Watchers:  watchers,
-			})
-		},
-		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return nil //postRunReset()
-		},
+		RunE:    cc.runAllE(),
 	}
-	listPipelines = &cobra.Command{
+	listPipelines := &cobra.Command{
 		Use:   "pipelines",
 		Short: `lists pipelines`,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return initConfig()
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			conf, err := configFunc()
+			if err != nil {
+				return err
+			}
 			for _, name := range utils.MapKeys(conf.Pipelines) {
 				fmt.Fprintln(ChannelOut, name)
 			}
 			return nil
 		},
-		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return nil // postRunReset()
-		},
 	}
-	listTasks = &cobra.Command{
+	listTasks := &cobra.Command{
 		Use:   "tasks",
 		Short: `lists tasks`,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return initConfig()
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			conf, err := configFunc()
+			if err != nil {
+				return err
+			}
 			for _, name := range utils.MapKeys(conf.Tasks) {
 				fmt.Fprintln(ChannelOut, name)
 			}
 			return nil
 		},
-		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return nil //postRunReset()
-		},
 	}
-	listWatchers = &cobra.Command{
+	listWatchers := &cobra.Command{
 		Use:   "watchers",
 		Short: `lists watchers`,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return initConfig()
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			conf, err := configFunc()
+			if err != nil {
+				return err
+			}
 			for _, name := range utils.MapKeys(conf.Watchers) {
 				fmt.Fprintln(ChannelOut, name)
 			}
@@ -110,11 +86,38 @@ var (
 			return nil // postRunReset()
 		},
 	}
-)
 
-func init() {
-	listCmd.AddCommand(listPipelines)
-	listCmd.AddCommand(listTasks)
-	listCmd.AddCommand(listWatchers)
-	TaskCtlCmd.AddCommand(listCmd)
+	listAllCmd.AddCommand(listPipelines)
+	listAllCmd.AddCommand(listTasks)
+	listAllCmd.AddCommand(listWatchers)
+	parentCmd.AddCommand(listAllCmd)
+}
+
+func (c *listCmd) runAllE() func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		conf, err := c.configFunc()
+		if err != nil {
+			return err
+		}
+		t := template.Must(template.New("list").Parse(listTmpl))
+
+		contexts := utils.MapKeys(conf.Contexts)
+		pipelines := utils.MapKeys(conf.Pipelines)
+		tasks := utils.MapKeys(conf.Tasks)
+		watchers := utils.MapKeys(conf.Watchers)
+
+		slices.Sort(contexts)
+		slices.Sort(pipelines)
+		slices.Sort(tasks)
+		slices.Sort(watchers)
+
+		return t.Execute(ChannelOut, struct {
+			Contexts, Pipelines, Tasks, Watchers []string
+		}{
+			Contexts:  contexts,
+			Pipelines: pipelines,
+			Tasks:     tasks,
+			Watchers:  watchers,
+		})
+	}
 }
