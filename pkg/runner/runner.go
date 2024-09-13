@@ -78,7 +78,6 @@ func NewTaskRunner(opts ...Opts) (*TaskRunner, error) {
 // SetContexts sets task runner's contexts
 func (r *TaskRunner) SetContexts(contexts map[string]*ExecutionContext) *TaskRunner {
 	r.contexts = contexts
-
 	return r
 }
 
@@ -117,7 +116,7 @@ func (r *TaskRunner) Run(t *task.Task) error {
 		stdin = r.Stdin
 	}
 
-	taskOutput, err := output.NewTaskOutput(t, outputFormat, r.Stdout, r.Stderr)
+	taskOutput, err := output.NewTaskOutput(t, outputFormat, output.NewSafeWriter(r.Stdout), output.NewSafeWriter(r.Stderr))
 	if err != nil {
 		return err
 	}
