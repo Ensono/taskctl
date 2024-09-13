@@ -12,11 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newRunCmd(
-	parentCmd *cobra.Command,
-	configFunc func() (*config.Config, error),
-	taskRunnerFunc func(args []string, conf *config.Config) (*runner.TaskRunner, *argsToStringsMapper, error),
-) {
+func newRunCmd(rootCmd *TaskCtlCmd) {
 	runCmd := &cobra.Command{
 		Use:     "run",
 		Aliases: []string{},
@@ -26,7 +22,7 @@ func newRunCmd(
 		Args:         cobra.MinimumNArgs(0),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conf, err := configFunc()
+			conf, err := rootCmd.initConfig()
 			if err != nil {
 				return err
 			}
@@ -39,7 +35,7 @@ func newRunCmd(
 				args = append([]string{selected}, args[0:]...)
 			}
 
-			taskRunner, argsStringer, err := taskRunnerFunc(args, conf)
+			taskRunner, argsStringer, err := rootCmd.buildTaskRunner(args, conf)
 			if err != nil {
 				return err
 			}
@@ -53,11 +49,11 @@ func newRunCmd(
 		Example: `taskctl run pipeline pipeline:name`,
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conf, err := configFunc()
+			conf, err := rootCmd.initConfig()
 			if err != nil {
 				return err
 			}
-			taskRunner, argsStringer, err := taskRunnerFunc(args, conf)
+			taskRunner, argsStringer, err := rootCmd.buildTaskRunner(args, conf)
 			if err != nil {
 				return err
 			}
@@ -72,18 +68,18 @@ func newRunCmd(
 		Example: `taskctl run task1`,
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conf, err := configFunc()
+			conf, err := rootCmd.initConfig()
 			if err != nil {
 				return err
 			}
-			taskRunner, argsStringer, err := taskRunnerFunc(args, conf)
+			taskRunner, argsStringer, err := rootCmd.buildTaskRunner(args, conf)
 			if err != nil {
 				return err
 			}
 			return runTask(argsStringer.taskName, taskRunner)
 		},
 	})
-	parentCmd.AddCommand(runCmd)
+	rootCmd.Cmd.AddCommand(runCmd)
 }
 
 func runTarget(taskRunner *runner.TaskRunner, conf *config.Config, argsStringer *argsToStringsMapper) (err error) {

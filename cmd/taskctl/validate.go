@@ -3,17 +3,16 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/Ensono/taskctl/internal/config"
 	"github.com/spf13/cobra"
 )
 
-func newValidateCmd(parentCmd *cobra.Command, configFunc func() (*config.Config, error)) {
+func newValidateCmd(rootCmd *TaskCtlCmd) {
 	c := &cobra.Command{
 		Use:   "validate",
 		Short: `validates config file`,
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, err := configFunc()
+			_, err := rootCmd.initConfig()
 			if err != nil {
 				return err
 			}
@@ -24,5 +23,5 @@ func newValidateCmd(parentCmd *cobra.Command, configFunc func() (*config.Config,
 			return nil // postRunReset()
 		},
 	}
-	parentCmd.AddCommand(c)
+	rootCmd.Cmd.AddCommand(c)
 }

@@ -115,13 +115,13 @@ func NewTaskCtlCmd() *TaskCtlCmd {
 func (tc *TaskCtlCmd) InitCommand() error {
 	// add all sub commands
 	// TODO: perhaps think about a better way of doing this
-	newRunCmd(tc.Cmd, tc.initFromRoot, tc.buildTaskRunner)
-	newGraphCmd(tc, tc.initFromRoot)
-	newShowCmd(tc.Cmd, tc.initFromRoot)
-	newListCmd(tc.Cmd, tc.initFromRoot)
-	newInitCmd(tc, tc.initFromRoot)
-	newValidateCmd(tc.Cmd, tc.initFromRoot)
-	newWatchCmd(tc.Cmd, tc.initFromRoot, tc.buildTaskRunner)
+	newRunCmd(tc)
+	newGraphCmd(tc)
+	newShowCmd(tc)
+	newListCmd(tc)
+	newInitCmd(tc)
+	newValidateCmd(tc)
+	newWatchCmd(tc)
 	return nil
 }
 
@@ -142,7 +142,7 @@ var (
 	ErrIncompleteConfig = errors.New("config key is missing")
 )
 
-func (tc *TaskCtlCmd) initFromRoot() (*config.Config, error) {
+func (tc *TaskCtlCmd) initConfig() (*config.Config, error) {
 	// Viper magic here
 	tc.viperConf.AutomaticEnv()
 	configFilePath := tc.viperConf.GetString("config")

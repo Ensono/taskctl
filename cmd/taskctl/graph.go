@@ -13,49 +13,38 @@ type graphFlags struct {
 	leftToRight bool
 }
 
-type graphCmd struct {
-	configFunc func() (*config.Config, error)
-	conf       *config.Config
-}
+// type graphCmd struct {
+// 	configFunc func() (*config.Config, error)
+// 	conf       *config.Config
+// }
 
-func newGraphCmd(parentCmd *TaskCtlCmd, configFunc func() (*config.Config, error)) {
+func newGraphCmd(rootCmd *TaskCtlCmd) {
 	f := &graphFlags{}
-	command := &graphCmd{
-		configFunc: configFunc,
-	}
+
 	graphCmd := &cobra.Command{
 		Use:     "graph",
 		Aliases: []string{"g"},
 		Short:   `visualizes pipeline execution graph`,
 		Long: `Generates a visual representation of pipeline execution plan.
 The output is in the DOT format, which can be used by GraphViz to generate charts.`,
-		Args:    cobra.MinimumNArgs(1),
-		PreRunE: command.preRunE(),
-		RunE:    command.runE(f),
+		Args: cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			conf, err := rootCmd.initConfig()
+			if err != nil {
+				return err
+			}
+			pipelineName := args[0]
+			return graphCmdRun(pipelineName, conf)
+		},
 	}
 
 	graphCmd.PersistentFlags().BoolVarP(&f.leftToRight, "lr", "", false, "orients outputted graph left-to-right")
-	_ = parentCmd.viperConf.BindPFlag("lr", graphCmd.PersistentFlags().Lookup("lr"))
+	_ = rootCmd.viperConf.BindPFlag("lr", graphCmd.PersistentFlags().Lookup("lr"))
 
-	parentCmd.Cmd.AddCommand(graphCmd)
+	rootCmd.Cmd.AddCommand(graphCmd)
 }
 
-func (c *graphCmd) preRunE() func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		var err error
-		c.conf, err = c.configFunc()
-		return err
-	}
-}
-
-func (c *graphCmd) runE(f *graphFlags) func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		pipelineName := args[0]
-		return c.graphCmdRun(pipelineName, c.conf)
-	}
-}
-
-func (c *graphCmd) graphCmdRun(name string, conf *config.Config) error {
+func graphCmdRun(name string, conf *config.Config) error {
 
 	p := conf.Pipelines[name]
 	if p == nil {

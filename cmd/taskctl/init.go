@@ -41,30 +41,27 @@ type initFlags struct {
 	noPrompt bool
 }
 
-type initCmd struct {
-}
-
-func newInitCmd(parentCmd *TaskCtlCmd, configFunc func() (*config.Config, error)) {
+func newInitCmd(rootCmd *TaskCtlCmd) {
 	f := initFlags{}
 
 	initCmd := &cobra.Command{
 		Use:   "init",
 		Short: `initializes the directory with a sample config file`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if parentCmd.viperConf.GetBool("no-prompt") && len(args) == 0 {
+			if rootCmd.viperConf.GetBool("no-prompt") && len(args) == 0 {
 				return fmt.Errorf("file name must be supplied when running in non-interactive mode")
 			}
-			return runInit(args, parentCmd.viperConf.GetString("dir"), parentCmd.viperConf.GetBool("no-prompt"))
+			return runInit(args, rootCmd.viperConf.GetString("dir"), rootCmd.viperConf.GetBool("no-prompt"))
 		},
 	}
 
 	initCmd.PersistentFlags().StringVar(&f.initDir, "dir", "", "directory to initialize")
-	_ = parentCmd.viperConf.BindPFlag("dir", initCmd.PersistentFlags().Lookup("dir"))
+	_ = rootCmd.viperConf.BindPFlag("dir", initCmd.PersistentFlags().Lookup("dir"))
 
 	initCmd.PersistentFlags().BoolVar(&f.noPrompt, "no-prompt", false, "do not prompt")
-	_ = parentCmd.viperConf.BindPFlag("no-prompt", initCmd.PersistentFlags().Lookup("no-prompt"))
+	_ = rootCmd.viperConf.BindPFlag("no-prompt", initCmd.PersistentFlags().Lookup("no-prompt"))
 
-	parentCmd.Cmd.AddCommand(initCmd)
+	rootCmd.Cmd.AddCommand(initCmd)
 }
 
 func runInit(args []string, initDir string, noPrompt bool) error {

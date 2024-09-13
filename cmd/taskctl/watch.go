@@ -3,26 +3,24 @@ package cmd
 import (
 	"sync"
 
-	"github.com/Ensono/taskctl/internal/config"
 	"github.com/Ensono/taskctl/internal/watch"
-	"github.com/Ensono/taskctl/pkg/runner"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-func newWatchCmd(parentCmd *cobra.Command, configFunc func() (*config.Config, error), taskRunnerFunc func(args []string, conf *config.Config) (*runner.TaskRunner, *argsToStringsMapper, error)) {
+func newWatchCmd(rootCmd *TaskCtlCmd) {
 	rc := &cobra.Command{
 		Use:   "watch",
 		Short: `watch [WATCHERS...]`,
 		Long:  "starts watching for filesystem events",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conf, err := configFunc()
+			conf, err := rootCmd.initConfig()
 			if err != nil {
 				return err
 			}
-			taskRunner, _, err := taskRunnerFunc(args, conf)
+			taskRunner, _, err := rootCmd.buildTaskRunner(args, conf)
 			if err != nil {
 				return err
 			}
@@ -51,5 +49,5 @@ func newWatchCmd(parentCmd *cobra.Command, configFunc func() (*config.Config, er
 			return nil
 		},
 	}
-	parentCmd.AddCommand(rc)
+	rootCmd.Cmd.AddCommand(rc)
 }
