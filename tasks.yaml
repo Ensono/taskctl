@@ -104,25 +104,6 @@ tasks:
       RepoOwner: Ensono
       BinName: taskctl
 
-  variationsTester:noReset:
-    command:
-      - echo "VAR1 is $VAR1"
-    variations:
-      - VAR1: var1
-      - VAR1: var2
-      - VAR1: var3
-      - VAR1: var4
-
-  variationsTester:withReset:
-    command:
-      - echo "VAR1 is $VAR1"
-    variations:
-      - VAR1: var11
-      - VAR1: var22
-      - VAR1: var3
-      - VAR1: var4
-    reset_context: true
-
   golint:
   # in CI it is run 
     command:
@@ -153,6 +134,7 @@ tasks:
   generateschema:
     command:
       - go run tools/schemagenerator/main.go
+      - 
       # todo: error in CI if changes detected 
       # git diff --porcelain
   show_coverage:
