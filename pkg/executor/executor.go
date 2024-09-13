@@ -61,7 +61,7 @@ func NewDefaultExecutor(stdin io.Reader, stdout, stderr io.Writer) (*DefaultExec
 	}
 
 	e.interp, err = interp.New(
-		interp.StdIO(stdin, io.MultiWriter(output.NewSafeWriter(&e.buf), stdout), io.MultiWriter(output.NewSafeWriter(&e.buf), stderr)),
+		interp.StdIO(stdin, output.NewSafeWriter(io.MultiWriter(&e.buf, stdout)), output.NewSafeWriter(io.MultiWriter(&e.buf, stderr))),
 	)
 	if err != nil {
 		return nil, err

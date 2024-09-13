@@ -125,7 +125,7 @@ func Test_DockerExec_Cmd(t *testing.T) {
 			}
 			defer runner.Finish()
 
-			testOut, testErr := output.NewSafeWriter(&bytes.Buffer{}), output.NewSafeWriter(&bytes.Buffer{})
+			testOut, testErr := &bytes.Buffer{}, &bytes.Buffer{}
 			runner.Stdout, runner.Stderr = testOut, testErr
 			runner.SetVariables(variables.FromMap(map[string]string{"Root": "/tmp"}))
 			runner.WithVariable("Root", "/")
