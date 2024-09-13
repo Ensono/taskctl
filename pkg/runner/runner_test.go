@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Ensono/taskctl/pkg/output"
 	"github.com/Ensono/taskctl/pkg/utils"
 	"github.com/Ensono/taskctl/pkg/variables"
 
@@ -124,7 +125,7 @@ func Test_DockerExec_Cmd(t *testing.T) {
 			}
 			defer runner.Finish()
 
-			testOut, testErr := &bytes.Buffer{}, &bytes.Buffer{}
+			testOut, testErr := output.NewSafeWriter(&bytes.Buffer{}), output.NewSafeWriter(&bytes.Buffer{})
 			runner.Stdout, runner.Stderr = testOut, testErr
 			runner.SetVariables(variables.FromMap(map[string]string{"Root": "/tmp"}))
 			runner.WithVariable("Root", "/")
@@ -143,7 +144,7 @@ func Test_DockerExec_Cmd(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if len(testErr.Bytes()) > 0 {
+			if len(testErr.String()) > 0 {
 				t.Fatalf("got: %s, wanted nil", testErr.String())
 			}
 		})
@@ -152,7 +153,7 @@ func Test_DockerExec_Cmd(t *testing.T) {
 
 func ExampleTaskRunner_Run() {
 	t := taskpkg.FromCommands("t1", "go doc github.com/Ensono/taskctl/pkg/runner.Runner")
-	ob := &bytes.Buffer{}
+	ob := output.NewSafeWriter(&bytes.Buffer{})
 	r, err := NewTaskRunner(func(tr *TaskRunner) {
 		tr.Stdout = ob
 	})

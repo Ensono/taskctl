@@ -12,6 +12,8 @@ jobs:
   build:
     name: Test
     runs-on: ubuntu-latest
+    # container:
+    #   image: golang:1.23-bullseye
     env:
       TASKCTL_CONFIG_FILE: tasks.yaml
 
