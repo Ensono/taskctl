@@ -34,18 +34,16 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
     
-    # - name: check schema
-    #   run: CI=true go run cmd/main.go generateschema
+    - name: check schema
+      run: CI=true go run cmd/main.go generateschema
 
-    # - name: go vet
-    #   run: |
-    #     go run cmd/main.go run task govet
+    - name: go vet
+      run: |
+        go run cmd/main.go run task govet
     
     - name: Test
       run: |
-        mkdir -p .coverage
-        go test ./... -v -race -mod=readonly -coverprofile=.coverage/out 
-        # go run cmd/main.go run pipeline test:unit
+        go run cmd/main.go run pipeline test:unit
     
     - name: Publish Junit style Test Report
       uses: mikepenz/action-junit-report@v3
