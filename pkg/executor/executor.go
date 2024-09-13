@@ -20,6 +20,7 @@ import (
 	"mvdan.cc/sh/v3/interp"
 	"mvdan.cc/sh/v3/syntax"
 
+	"github.com/Ensono/taskctl/pkg/output"
 	"github.com/Ensono/taskctl/pkg/utils"
 )
 
@@ -34,7 +35,7 @@ type DefaultExecutor struct {
 	dir    string
 	env    []string
 	interp *interp.Runner
-	buf    bytes.Buffer
+	buf    *bytes.Buffer
 	// doReset resets the execution environment after each run
 	doReset bool
 }
@@ -58,9 +59,9 @@ func NewDefaultExecutor(stdin io.Reader, stdout, stderr io.Writer) (*DefaultExec
 	if stderr == nil {
 		stderr = io.Discard
 	}
-
+	// e.buf = output.NewSafeWriter(&bytes.Buffer{})
 	e.interp, err = interp.New(
-		interp.StdIO(stdin, io.MultiWriter(&e.buf, stdout), io.MultiWriter(&e.buf, stderr)),
+		interp.StdIO(stdin, io.MultiWriter(output.NewSafeWriter(e.buf), stdout), io.MultiWriter(output.NewSafeWriter(e.buf), stderr)),
 	)
 	if err != nil {
 		return nil, err
