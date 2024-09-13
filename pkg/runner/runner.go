@@ -116,7 +116,7 @@ func (r *TaskRunner) Run(t *task.Task) error {
 		stdin = r.Stdin
 	}
 
-	taskOutput, err := output.NewTaskOutput(t, outputFormat, output.NewSafeWriter(r.Stdout), output.NewSafeWriter(r.Stderr))
+	taskOutput, err := output.NewTaskOutput(t, outputFormat, r.Stdout, r.Stderr)
 	if err != nil {
 		return err
 	}

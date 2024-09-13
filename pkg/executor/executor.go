@@ -61,7 +61,7 @@ func NewDefaultExecutor(stdin io.Reader, stdout, stderr io.Writer) (*DefaultExec
 	}
 
 	e.interp, err = interp.New(
-		interp.StdIO(stdin, output.NewSafeWriter(io.MultiWriter(&e.buf, stdout)), output.NewSafeWriter(io.MultiWriter(&e.buf, stderr))),
+		interp.StdIO(stdin, io.MultiWriter(output.NewSafeWriter(&e.buf), output.NewSafeWriter(stdout)), io.MultiWriter(output.NewSafeWriter(&e.buf), output.NewSafeWriter(stderr))),
 	)
 	if err != nil {
 		return nil, err
@@ -112,14 +112,15 @@ func (e *DefaultExecutor) Execute(ctx context.Context, job *Job) ([]byte, error)
 	}()
 
 	offset := e.buf.Len()
+
 	// Reset needs to be called before Run
 	// even the first time around else the vars won't be cleared correctly
 	// and re-injected by the mvdan shell
 	if e.doReset {
 		e.interp.Reset()
 	}
-	err = e.interp.Run(ctx, cmd)
-	if err != nil {
+
+	if err := e.interp.Run(ctx, cmd); err != nil {
 		return e.buf.Bytes()[offset:], err
 	}
 	return e.buf.Bytes()[offset:], nil

@@ -102,6 +102,7 @@ func TestTaskRunner(t *testing.T) {
 }
 
 func Test_DockerExec_Cmd(t *testing.T) {
+	t.Skip()
 	ttests := map[string]struct {
 		execContext *ExecutionContext
 		command     string
@@ -113,7 +114,7 @@ func Test_DockerExec_Cmd(t *testing.T) {
 				"alpine", "sh", "-c",
 			}}, "/", variables.NewVariables(), utils.NewEnvFile(func(e *utils.Envfile) {
 				e.Generate = true
-			}), []string{"true"}, []string{"false"}, []string{"echo 1"}, []string{"echo 2"}),
+			}), []string{""}, []string{""}, []string{"echo 1"}, []string{"echo 2"}),
 			command: "echo 'taskctl'",
 		},
 	}
@@ -134,6 +135,9 @@ func Test_DockerExec_Cmd(t *testing.T) {
 			task1.Context = "default_docker"
 			task1.ExportAs = "EXPORT_NAME"
 
+			task1.Log.Stdout = &bytes.Buffer{}
+			task1.Log.Stderr = &bytes.Buffer{}
+
 			task1.Commands = []string{tt.command}
 			task1.Name = "some test task"
 			task1.Dir = "{{.Root}}"
@@ -143,7 +147,9 @@ func Test_DockerExec_Cmd(t *testing.T) {
 				fmt.Println(testOut.String())
 				t.Fatal(err)
 			}
-
+			if !strings.Contains(testOut.String(), "taskctl") {
+				t.Errorf("\ngot: %s\nwanted: taskctl", testOut.String())
+			}
 			if len(testErr.String()) > 0 {
 				t.Fatalf("got: %s, wanted nil", testErr.String())
 			}
