@@ -55,7 +55,12 @@ func NewDefaultExecutor(stdin io.Reader, stdout, stderr io.Writer) (*DefaultExec
 
 	e.outBuf = &bytes.Buffer{}
 	e.errBuf = &bytes.Buffer{}
-
+	if stdout == nil {
+		stdout = io.Discard
+	}
+	if stderr == nil {
+		stderr = io.Discard
+	}
 	if _, ok := stdout.(*output.SafeWriter); !ok {
 		stdout = output.NewSafeWriter(stdout)
 	}

@@ -3,7 +3,6 @@ package runner
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"strings"
 	"testing"
 	"time"
@@ -30,7 +29,7 @@ func TestTaskRunner(t *testing.T) {
 		t.Error()
 	}
 
-	runner.Stdout, runner.Stderr = io.Discard, io.Discard
+	runner.Stdout, runner.Stderr = &bytes.Buffer{}, &bytes.Buffer{}
 	runner.SetVariables(variables.FromMap(map[string]string{"Root": "/tmp"}))
 	runner.WithVariable("Root", "/")
 
@@ -134,9 +133,6 @@ func Test_DockerExec_Cmd(t *testing.T) {
 			task1.Context = "default_docker"
 			task1.ExportAs = "EXPORT_NAME"
 
-			task1.Log.Stdout = &bytes.Buffer{}
-			task1.Log.Stderr = &bytes.Buffer{}
-
 			task1.Commands = []string{tt.command}
 			task1.Name = "some test task"
 			task1.Dir = "{{.Root}}"
@@ -146,8 +142,8 @@ func Test_DockerExec_Cmd(t *testing.T) {
 				fmt.Println(testOut.String())
 				t.Fatal(err)
 			}
-			// if !strings.Contains(task1.Log.Stdout.String(), "taskctl") {
-			// 	t.Errorf("\ngot: %s\nwanted: taskctl", task1.Log.Stdout.String())
+			// if !strings.Contains(task1.Output(), "taskctl") {
+			// 	t.Errorf("\ngot: %s\nwanted: taskctl", task1.Output())
 			// }
 			if len(testErr.String()) > 0 {
 				t.Fatalf("got: %s, wanted nil", testErr.String())
