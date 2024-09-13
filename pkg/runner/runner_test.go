@@ -102,7 +102,6 @@ func TestTaskRunner(t *testing.T) {
 }
 
 func Test_DockerExec_Cmd(t *testing.T) {
-	t.Skip()
 	ttests := map[string]struct {
 		execContext *ExecutionContext
 		command     string
