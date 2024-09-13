@@ -41,6 +41,7 @@ jobs:
     
     - name: Test
       run: |
+        mkdir -p .coverage
         go test ./... -v -race -mod=readonly -coverprofile=.coverage/out 
         # go run cmd/main.go run pipeline test:unit
     
