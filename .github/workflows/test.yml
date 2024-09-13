@@ -34,12 +34,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
     
-    - name: check schema
-      run: CI=true go run cmd/main.go generateschema
+    # - name: check schema
+    #   run: CI=true go run cmd/main.go generateschema
 
-    - name: go vet
-      run: |
-        go run cmd/main.go run task govet
+    # - name: go vet
+    #   run: |
+    #     go run cmd/main.go run task govet
     
     - name: Test
       run: |

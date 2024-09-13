@@ -35,7 +35,7 @@ type DefaultExecutor struct {
 	dir    string
 	env    []string
 	interp *interp.Runner
-	buf    *bytes.Buffer
+	buf    bytes.Buffer
 	// doReset resets the execution environment after each run
 	doReset bool
 }
@@ -59,9 +59,9 @@ func NewDefaultExecutor(stdin io.Reader, stdout, stderr io.Writer) (*DefaultExec
 	if stderr == nil {
 		stderr = io.Discard
 	}
-	// e.buf = output.NewSafeWriter(&bytes.Buffer{})
+
 	e.interp, err = interp.New(
-		interp.StdIO(stdin, io.MultiWriter(output.NewSafeWriter(e.buf), stdout), io.MultiWriter(output.NewSafeWriter(e.buf), stderr)),
+		interp.StdIO(stdin, io.MultiWriter(output.NewSafeWriter(&e.buf), stdout), io.MultiWriter(output.NewSafeWriter(&e.buf), stderr)),
 	)
 	if err != nil {
 		return nil, err
