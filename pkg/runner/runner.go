@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -174,7 +173,9 @@ func (r *TaskRunner) Run(t *task.Task) error {
 	if err != nil {
 		return err
 	}
-	r.storeTaskOutput(t)
+	if err := r.storeTaskOutput(t); err != nil {
+		return err
+	}
 
 	return r.after(r.ctx, t, env, vars)
 }
@@ -325,20 +326,21 @@ func (r *TaskRunner) checkTaskCondition(t *task.Task) (bool, error) {
 	return true, nil
 }
 
-func (r *TaskRunner) storeTaskOutput(t *task.Task) {
-	envVarName := t.ExportAs
-	// TODO: chagne this to only store output if specified
-	// and do not just scrape the stdout
-	compoundedTaskOutput := t.Log.Stdout.String()
-	varName := fmt.Sprintf("Tasks.%s.Output", utils.ConvertStringToMachineFriendly(t.Name))
-	if envVarName == "" {
-		envVarName = fmt.Sprintf("%s_OUTPUT", strings.ToTitle(utils.ConvertStringToMachineFriendly(t.Name)))
-		// TODO: need to think about this as this is not a very good replacement technique
-		// envVarName = regexp.MustCompile("[^a-zA-Z0-9_]").ReplaceAllString(envVarName, "_")
+func (r *TaskRunner) storeTaskOutput(t *task.Task) error {
+	// don't do anything if no artifacts are assigned
+	if t.Artifacts == nil {
+		return nil
 	}
-
-	r.env.Set(envVarName, compoundedTaskOutput)
-	r.variables.Set(varName, compoundedTaskOutput)
+	if t.Artifacts.Type == task.DotEnvArtifactType {
+		dotEnvVars, err := utils.ReadEnvFile(t.Artifacts.Path)
+		if err != nil {
+			return err
+		}
+		for envKey, envVar := range dotEnvVars {
+			r.env.Set(envKey, envVar)
+		}
+	}
+	return nil
 }
 
 // execute
@@ -350,13 +352,10 @@ func (r *TaskRunner) execute(ctx context.Context, t *task.Task, job *executor.Jo
 	}
 
 	t.Start = time.Now()
-	var prevOutput []byte
 
 	for nextJob := job; nextJob != nil; nextJob = nextJob.Next {
 		var err error
-		nextJob.Vars.Set("Output", string(prevOutput))
-
-		prevOutput, err = exec.Execute(ctx, nextJob)
+		_, err = exec.Execute(ctx, nextJob)
 		if err != nil {
 			logrus.Debug(err.Error())
 			if status, ok := executor.IsExitStatus(err); ok {

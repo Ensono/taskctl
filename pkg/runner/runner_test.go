@@ -35,7 +35,7 @@ func TestTaskRunner(t *testing.T) {
 
 	task1 := taskpkg.NewTask("t1")
 	task1.Context = "local"
-	task1.ExportAs = "EXPORT_NAME"
+	// task1.ExportAs = "EXPORT_NAME"
 
 	task1.Commands = []string{"echo 'taskctl'"}
 	task1.Name = "some test task"
@@ -131,7 +131,7 @@ func Test_DockerExec_Cmd(t *testing.T) {
 
 			task1 := taskpkg.NewTask("default:docker")
 			task1.Context = "default_docker"
-			task1.ExportAs = "EXPORT_NAME"
+			// task1.ExportAs = "EXPORT_NAME"
 
 			task1.Commands = []string{tt.command}
 			task1.Name = "some test task"

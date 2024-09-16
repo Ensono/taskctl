@@ -3,6 +3,7 @@ package config
 import (
 	"time"
 
+	"github.com/Ensono/taskctl/pkg/task"
 	"github.com/Ensono/taskctl/pkg/utils"
 )
 
@@ -17,15 +18,15 @@ import (
 type ConfigDefinition struct {
 	// Import is a list of additional resources to bring into the main config
 	// these can be remote or local resources
-	Import []string `mapstructure:"import" yaml:"import" json:"import,omitempty"`
+	Import []string `mapstructure:"import" yaml:"import" json:"import,omitempty" jsonschema:"anyOf_required=import"`
 	// Contexts is a map of contexts to use
 	// for specific tasks
-	Contexts map[string]*ContextDefinition `mapstructure:"contexts" yaml:"contexts" json:"contexts,omitempty"`
+	Contexts map[string]*ContextDefinition `mapstructure:"contexts" yaml:"contexts" json:"contexts,omitempty" jsonschema:"anyOf_required=contexts"`
 	// Pipelines are a set of tasks wrapped in additional run conditions
 	// e.g. depends on or allow failure
-	Pipelines map[string][]*PipelineDefinition `mapstructure:"pipelines" yaml:"pipelines" json:"pipelines,omitempty"`
+	Pipelines map[string][]*PipelineDefinition `mapstructure:"pipelines" yaml:"pipelines" json:"pipelines,omitempty" jsonschema:"anyOf_required=pipelines"`
 	// Tasks are the most basic building blocks of taskctl
-	Tasks    map[string]*TaskDefinition    `mapstructure:"tasks" yaml:"tasks" json:"tasks"`
+	Tasks    map[string]*TaskDefinition    `mapstructure:"tasks" yaml:"tasks" json:"tasks,omitempty" jsonschema:"anyOf_required=tasks"`
 	Watchers map[string]*WatcherDefinition `mapstructure:"watchers" yaml:"watchers" json:"watchers,omitempty"`
 	Debug    bool                          `json:"debug,omitempty"`
 	DryRun   bool                          `json:"dry_run,omitempty"`
@@ -66,7 +67,7 @@ type ContextDefinition struct {
 	Variables map[string]string `mapstructure:"variables" yaml:"variables" json:"variables,omitempty"`
 	// Executable block holds the exec info
 	Executable *utils.Binary `mapstructure:"executable" yaml:"executable" json:"executable,omitempty"`
-	// Quote is the quote char to use when parsing commands into non-mvdan shells
+	// Quote is the quote char to use when parsing commands into executables like docker
 	Quote string `mapstructure:"quote" yaml:"quote" json:"quote,omitempty"`
 }
 
@@ -117,11 +118,11 @@ type TaskDefinition struct {
 	Timeout      *time.Duration    `mapstructure:"timeout" yaml:"timeout,omitempty" json:"timeout,omitempty"`
 	AllowFailure bool              `mapstructure:"allow_failure" yaml:"allow_failure,omitempty" json:"allow_failure,omitempty"`
 	Interactive  bool              `mapstructure:"interactive" yaml:"interactive,omitempty" json:"interactive,omitempty"`
-	ExportAs     string            `mapstructure:"export_as" yaml:"export_as,omitempty" json:"export_as,omitempty"`
+	Artifacts    *task.Artifact    `mapstructure:"artifacts" yaml:"artifacts,omitempty" json:"artifacts,omitempty"`
 	Env          map[string]string `mapstructure:"env" yaml:"env,omitempty" json:"env,omitempty"`
 	// EnvFile string pointing to the file that could be read in as an envFile
 	// contents will be merged with the Env (os.Environ())
-	EnvFile string `mapstructure:"env_file" yaml:"env_file,omitempty" json:"env_file,omitempty"`
+	Envfile *utils.Envfile `mapstructure:"envfile" yaml:"envfile,omitempty" json:"envfile,omitempty"`
 	// Variables merged with others if any already priovided
 	// These will overwrite any previously set keys
 	Variables map[string]string `mapstructure:"variables" yaml:"variables,omitempty" json:"variables,omitempty" jsonschema:"oneof_type=string;integer"`

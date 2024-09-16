@@ -16,27 +16,25 @@ func buildTask(def *TaskDefinition, lc *loaderContext) (*task.Task, error) {
 	t.Description = def.Description
 	t.Condition = def.Condition
 	t.Commands = def.Command
-	// t.Env = variables.FromMap(def.Env)
-	// t.Variables = variables.FromMap(def.Variables)
 	t.Variations = def.Variations
 	t.Dir = def.Dir
 	t.Timeout = def.Timeout
 	t.AllowFailure = def.AllowFailure
 	t.After = def.After
 	t.Before = def.Before
-	t.ExportAs = def.ExportAs
+	t.Artifacts = def.Artifacts
 	t.Context = def.Context
 	t.Interactive = def.Interactive
 	t.ResetContext = def.ResetContext
 
-	t.Env.Merge(variables.FromMap(def.Env))
-	t.Variables.Merge(variables.FromMap(def.Variables))
+	t.Env = variables.FromMap(def.Env).Merge(t.Env)
+	t.Variables = variables.FromMap(def.Variables).Merge(t.Variables)
 
 	t.Variables.Set("Context.Name", t.Context)
 	t.Variables.Set("Task.Name", t.Name)
 
-	if def.EnvFile != "" {
-		filename := def.EnvFile
+	if def.Envfile != nil && def.Envfile.Path != "" {
+		filename := def.Envfile.Path
 		if !filepath.IsAbs(filename) && lc.Dir != "" {
 			filename = filepath.Join(lc.Dir, filename)
 		}
@@ -46,7 +44,7 @@ func buildTask(def *TaskDefinition, lc *loaderContext) (*task.Task, error) {
 			return nil, err
 		}
 
-		t.Env = variables.FromMap(envs).Merge(t.Env)
+		t.Env.Merge(variables.FromMap(envs))
 	}
 
 	return t, nil

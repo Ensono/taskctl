@@ -72,7 +72,7 @@ func NewTaskCtlCmd() *TaskCtlCmd {
 	tc.viperConf.SetEnvPrefix("TASKCTL")
 	tc.viperConf.SetConfigName("taskctl_conf")
 
-	tc.Cmd.PersistentFlags().StringVarP(&tc.rootFlags.CfgFilePath, "config", "c", "tasks.yaml", "config file to use") // tasks.yaml or taskctl.yaml
+	tc.Cmd.PersistentFlags().StringVarP(&tc.rootFlags.CfgFilePath, "config", "c", "taskctl.yaml", "config file to use") // tasks.yaml or taskctl.yaml
 	if err := tc.viperConf.BindEnv("config", "TASKCTL_CONFIG_FILE"); err != nil {
 		log.Fatal(err)
 	}

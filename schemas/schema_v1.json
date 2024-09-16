@@ -3,6 +3,34 @@
   "$id": "https://github.com/Ensono/taskctl/internal/config/config-definition",
   "$ref": "#/$defs/ConfigDefinition",
   "$defs": {
+    "Artifact": {
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name is the key under which the artifacts will be stored\n\nCurrently this is unused"
+        },
+        "path": {
+          "type": "string",
+          "description": "Path is the glob like pattern to the\nsource of the file(s) to store as an output"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "dotenv",
+            "file"
+          ],
+          "description": "Type is the artifact type\nvalid values are `file`|`dotenv`",
+          "default": "file"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "path",
+        "type"
+      ],
+      "description": "Artifact holds the information about the artifact to produce for the specific task."
+    },
     "Binary": {
       "properties": {
         "bin": {
@@ -90,9 +118,6 @@
       },
       "additionalProperties": false,
       "type": "object",
-      "required": [
-        "tasks"
-      ],
       "description": "ConfigDefinition holds the top most config definition this can be parsed from a yaml, json, toml files/mediaTypes"
     },
     "ContextDefinition": {
@@ -148,7 +173,7 @@
         },
         "quote": {
           "type": "string",
-          "description": "Quote is the quote char to use when parsing commands into non-mvdan shells"
+          "description": "Quote is the quote char to use when parsing commands into executables like docker"
         }
       },
       "additionalProperties": false,
@@ -359,8 +384,8 @@
         "interactive": {
           "type": "boolean"
         },
-        "export_as": {
-          "type": "string"
+        "artifacts": {
+          "$ref": "#/$defs/Artifact"
         },
         "env": {
           "additionalProperties": {
@@ -368,8 +393,8 @@
           },
           "type": "object"
         },
-        "env_file": {
-          "type": "string",
+        "envfile": {
+          "$ref": "#/$defs/Envfile",
           "description": "EnvFile string pointing to the file that could be read in as an envFile\ncontents will be merged with the Env (os.Environ())"
         },
         "variables": {

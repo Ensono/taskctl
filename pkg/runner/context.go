@@ -32,7 +32,9 @@ type ExecutionContext struct {
 	Env        variables.Container
 	Envfile    *utils.Envfile
 	Variables  variables.Container
-	Quote      string
+	// Quote character to use around a command
+	// when passed to another executable, e.g. docker
+	Quote string
 
 	up     []string
 	down   []string
@@ -203,11 +205,6 @@ func (c *ExecutionContext) GenerateEnvfile() error {
 		// sanitize variable values from newline and space characters
 		// replace any newline characters with a space, this is to prevent multiline variables being passed in
 		// quote the value if it has spaces in it
-		// TODO: this should be discussed? why?
-		// supplied values should be left in-tact?
-		//
-		// value := strings.NewReplacer("\n", c.Envfile.ReplaceChar, `\s`, "").Replace(varValue)
-
 		// Add the name and the value to the string builder
 		envstr := fmt.Sprintf("%s=%s", varName, varValue)
 		builder = append(builder, envstr)
@@ -263,6 +260,9 @@ func DefaultContext() *ExecutionContext {
 // WithQuote is functional option to set Quote for ExecutionContext
 func WithQuote(quote string) ExecutionContextOption {
 	return func(c *ExecutionContext) {
-		c.Quote = quote
+		c.Quote = "'"
+		if quote != "" {
+			c.Quote = quote
+		}
 	}
 }
