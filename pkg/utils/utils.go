@@ -275,7 +275,7 @@ func ReadEnvFile(filename string) (map[string]string, error) {
 }
 
 // ConvertStringToMachineFriendly takes astring and replaces
-// any occurence of non machine friendly chars with machine friendly ones
+// any occurrence of non machine friendly chars with machine friendly ones
 func ConvertStringToMachineFriendly(str string) string {
 	// These pairs can be extended cane
 	return strings.NewReplacer(":", "_", ` `, "__").Replace(str)
