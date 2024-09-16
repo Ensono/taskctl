@@ -134,7 +134,8 @@ func ConvertFromEnv(env []string) map[string]string {
 	envMap := make(map[string]string)
 	for _, val := range env {
 		v := strings.Split(val, "=")
-		envMap[v[0]] = v[1]
+		// TODO: add test to ensure vars with `=` are not missed
+		envMap[v[0]] = strings.Join(v[1:], "=")
 	}
 	return envMap
 }
@@ -232,9 +233,13 @@ func MustGetwd() string {
 func GetFullPath(path string) string {
 	fileIsLocal := filepath.IsLocal(path)
 	if fileIsLocal {
-		return filepath.Join(MustGetwd(), path)
+		return escapeWinPaths(filepath.Join(MustGetwd(), path))
 	}
-	return path
+	return escapeWinPaths(path)
+}
+
+func escapeWinPaths(path string) string {
+	return strings.NewReplacer(`\`, `\\`).Replace(path)
 }
 
 // MustGetUserHomeDir returns current working directory.
