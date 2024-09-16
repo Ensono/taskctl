@@ -13,6 +13,7 @@ permissions:
   contents: write
   statuses: write
   checks: write
+  pull-requests: write
 
 jobs:
   build:
@@ -66,5 +67,14 @@ jobs:
         filename: '.coverage/report-cobertura.xml'
         badge: true
         format: markdown
+        fail_below_min: true
+        output: both
+        thresholds: '60 80'
 
+    - name: Add Coverage PR Comment
+      uses: marocchino/sticky-pull-request-comment@v2
+      if: github.event_name == 'pull_request'
+      with:
+        recreate: true
+        path: code-coverage-results.md
     # TODO: add sonar cloud
