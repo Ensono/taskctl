@@ -126,6 +126,7 @@ func (r *TaskRunner) Run(t *task.Task) error {
 		if err != nil {
 			logrus.Error(err)
 		}
+		taskOutput.Close()
 
 		err = execContext.After()
 		if err != nil {
@@ -196,7 +197,6 @@ func (r *TaskRunner) Finish() {
 		value.(*ExecutionContext).Down()
 		return true
 	})
-	output.Close()
 }
 
 // WithVariable adds variable to task runner's variables list.

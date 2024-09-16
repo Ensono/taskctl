@@ -47,8 +47,8 @@ func (tw *SafeWriter) Len() int {
 	return len(tw.bytesWritten)
 }
 
-var closed = false
-var closeCh = make(chan bool)
+// var closed = false
+// var closeCh = make(chan bool)
 
 // DecoratedOutputWriter is a decorator for task output.
 // It extends io.Writer with methods to write header before output starts and footer after execution completes
@@ -62,26 +62,35 @@ type DecoratedOutputWriter interface {
 type TaskOutput struct {
 	t         *task.Task
 	decorator DecoratedOutputWriter
+	isClosed  bool
+	closeCh   chan bool
 }
 
 // NewTaskOutput creates new TaskOutput instance for given task.
 func NewTaskOutput(t *task.Task, format string, stdout, stderr io.Writer) (*TaskOutput, error) {
 	o := &TaskOutput{
-		t: t,
+		t:        t,
+		isClosed: false,
+		closeCh:  make(chan bool),
 	}
 
 	switch OutputEnum(format) {
 	case RawOutput:
 		o.decorator = newRawOutputWriter(NewSafeWriter(stdout))
 	case PrefixedOutput:
-		o.decorator = newPrefixedOutputWriter(t, NewSafeWriter(stdout))
+		o.decorator = NewPrefixedOutputWriter(t, NewSafeWriter(stdout))
 	case CockpitOutput:
-		o.decorator = newCockpitOutputWriter(t, NewSafeWriter(stdout), closeCh)
+		o.decorator = NewCockpitOutputWriter(t, NewSafeWriter(stdout), o.closeCh)
 	default:
 		return nil, fmt.Errorf("unknown decorator \"%s\" requested", format)
 	}
 
 	return o, nil
+}
+
+func (t *TaskOutput) WithCloseCh(closeCh chan bool) *TaskOutput {
+	t.closeCh = closeCh
+	return t
 }
 
 // Stdout returns io.Writer that can be used for Job's STDOUT
@@ -105,9 +114,9 @@ func (o TaskOutput) Finish() error {
 }
 
 // Close releases resources and closes underlying decorators
-func Close() {
-	if !closed {
-		closed = true
-		close(closeCh)
+func (t *TaskOutput) Close() {
+	if !t.isClosed {
+		t.isClosed = true
+		close(t.closeCh)
 	}
 }
