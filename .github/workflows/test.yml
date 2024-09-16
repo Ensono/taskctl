@@ -59,6 +59,9 @@ jobs:
       if: always() # always run even if the previous step fails
       with:
         report_paths: '.coverage/report-junit.xml'
+        commit: ${{ github.sha }}
+        fail_on_failure: true
+        check_name: Taskctl Unit Tests
 
     - name: Code Coverage Summary Report
       uses: irongut/CodeCoverageSummary@v1.3.0
