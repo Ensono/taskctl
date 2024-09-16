@@ -134,7 +134,7 @@ func ConvertFromEnv(env []string) map[string]string {
 	envMap := make(map[string]string)
 	for _, val := range env {
 		v := strings.Split(val, "=")
-		// TODO: add test to ensure vars with `=` are not missed
+		// ensure vars with `=` are not truncated
 		envMap[v[0]] = strings.Join(v[1:], "=")
 	}
 	return envMap
@@ -278,7 +278,7 @@ func ReadEnvFile(filename string) (map[string]string, error) {
 // any occurrence of non machine friendly chars with machine friendly ones
 func ConvertStringToMachineFriendly(str string) string {
 	// These pairs can be extended cane
-	return strings.NewReplacer(":", "_", ` `, "__").Replace(str)
+	return strings.NewReplacer(":", "__", ` `, "___").Replace(str)
 }
 
 // ConvertStringToHumanFriendly takes a ConvertStringToMachineFriendly generated string and
@@ -287,5 +287,5 @@ func ConvertStringToHumanFriendly(str string) string {
 	// Order is important
 	// pass in the __ first to replace that with spaces
 	// and only _ should be left to go back to :
-	return strings.NewReplacer("__", ` `, "_", ":").Replace(str)
+	return strings.NewReplacer("___", ` `, "__", ":").Replace(str)
 }
