@@ -137,7 +137,7 @@ var ErrMutuallyExclusiveVarSet = errors.New("mutually exclusive vars have been s
 // the file names are generated using the `generated_{Task_Name}_{UNIX_timestamp}.env`.
 //
 // Note: it will create the directory
-func (c *ExecutionContext) GenerateEnvfile() error {
+func (c *ExecutionContext) GenerateEnvfile(env variables.Container) error {
 	// return an error if the include and exclude have both been specified
 	if len(c.Envfile.Exclude) > 0 && len(c.Envfile.Include) > 0 {
 		return fmt.Errorf("include and exclude lists are mutually exclusive, %w", ErrMutuallyExclusiveVarSet)
@@ -148,7 +148,7 @@ func (c *ExecutionContext) GenerateEnvfile() error {
 	builder := []string{}
 
 	// iterate around all of the environment variables and add the selected ones to the builder
-	for varName, varValue := range c.Env.Map() {
+	for varName, varValue := range env.Map() {
 		// check to see if the env matches an invalid variable, if it does
 		// move onto the next item in the  loop
 		if slices.Contains(invalidEnvVarKeys, varName) {

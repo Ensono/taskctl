@@ -69,6 +69,70 @@ type ContextDefinition struct {
 	Executable *utils.Binary `mapstructure:"executable" yaml:"executable" json:"executable,omitempty"`
 	// Quote is the quote char to use when parsing commands into executables like docker
 	Quote string `mapstructure:"quote" yaml:"quote" json:"quote,omitempty"`
+	// Container is the new container context
+	//
+	// Note: Envfile in the container context will ignore the generate flag
+	// it will however respect all the other directives of include/exclude and modify operations
+	//
+	// Example:
+	//
+	// ```yaml
+	// container:
+	//   image:
+	//     name: alpine
+	//     # entrypoint: ""
+	//     # shell: sh # default sh
+	//     # args: nil
+	// ```
+	Container *Container `mapstructure:"container" yaml:"container,omitempty" json:"container,omitempty"`
+}
+
+// Container is the specific context for containers
+// only available to docker API compliant implementations
+//
+// e.g. docker and podman
+//
+// The aim is to remove some of the boilerplate away from the existing more
+// generic context and introduce a specific context for tasks run in containers.
+type Container struct {
+	// Image
+	Image *Image `mapstructure:"image" yaml:"image,omitempty" json:"image,omitempty"`
+}
+
+type Image struct {
+	// Name is the name of the container
+	//
+	// can be specified in the following formats
+	//
+	// - <image-name> (Same as using <image-name> with the latest tag)
+	//
+	// - <image-name>:<tag>
+	//
+	// - <image-name>@<digest>
+	//
+	// If the known runtime is podman it should include the registry domain
+	// e.g. `docker.io/alpine:latest`
+	Name string `mapstructure:"name" yaml:"name" json:"name"`
+	// Entrypoint Overwrites the default ENTRYPOINT of the image
+	Entrypoint string `mapstructure:"entrypoint" yaml:"entrypoint,omitempty" json:"entrypoint,omitempty"`
+	// EnableDinD mounts the docker sock...
+	//
+	// highly discouraged
+	EnableDinD bool `mapstructure:"enable_dind" yaml:"enable_dind,omitempty" json:"enable_dind,omitempty"`
+	// ContainerArgs are additional args used for the container supplied by the user
+	//
+	// e.g. dcoker run (TASKCTL_ARGS...) (CONTAINER_ARGS...) image (command)
+	//
+	// @DEPRECATED
+	ContainerArgs []string `mapstructure:"container_args" yaml:"container_args,omitempty" json:"container_args,omitempty"`
+	// Shell will be used to run the command in a specific shell on the container
+	//
+	// Must exist in the container
+	Shell string `mapstructure:"shell" yaml:"shell,omitempty" json:"shell,omitempty"`
+	// Args are additional args to pass to the shell if provided
+	//
+	// // e.g. dcoker run (TASKCTL_ARGS...) (CONTAINER_ARGS...) image (shell) (SHELL_ARGS...) (command)
+	ShellArgs []string `mapstructure:"shell_args" yaml:"shell_args,omitempty" json:"shell_args,omitempty"`
 }
 
 type PipelineDefinition struct {

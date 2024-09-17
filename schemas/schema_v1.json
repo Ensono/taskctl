@@ -120,6 +120,17 @@
       "type": "object",
       "description": "ConfigDefinition holds the top most config definition this can be parsed from a yaml, json, toml files/mediaTypes"
     },
+    "Container": {
+      "properties": {
+        "image": {
+          "$ref": "#/$defs/Image",
+          "description": "Image"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "description": "Container is the specific context for containers only available to docker API compliant implementations"
+    },
     "ContextDefinition": {
       "properties": {
         "dir": {
@@ -174,6 +185,10 @@
         "quote": {
           "type": "string",
           "description": "Quote is the quote char to use when parsing commands into executables like docker"
+        },
+        "container": {
+          "$ref": "#/$defs/Container",
+          "description": "Container is the new container context\n\nNote: Envfile in the container context will ignore the generate flag\nit will however respect all the other directives of include/exclude and modify operations\n\nExample:\n\n```yaml\ncontainer:\n  image:\n    name: alpine\n    # entrypoint: \"\"\n    # shell: sh # default sh\n    # args: nil\n```"
         }
       },
       "additionalProperties": false,
@@ -227,6 +242,45 @@
       "additionalProperties": false,
       "type": "object",
       "description": "Envile is a structure for storing the information required to generate an envfile which can be consumed by the specified binary"
+    },
+    "Image": {
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name is the name of the container\n\ncan be specified in the following formats\n\n- \u003cimage-name\u003e (Same as using \u003cimage-name\u003e with the latest tag)\n\n- \u003cimage-name\u003e:\u003ctag\u003e\n\n- \u003cimage-name\u003e@\u003cdigest\u003e\n\nIf the known runtime is podman it should include the registry domain\ne.g. `docker.io/alpine:latest`"
+        },
+        "entrypoint": {
+          "type": "string",
+          "description": "Entrypoint Overwrites the default ENTRYPOINT of the image"
+        },
+        "enable_dind": {
+          "type": "boolean",
+          "description": "EnableDinD mounts the docker sock...\n\nhighly discouraged"
+        },
+        "container_args": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "description": "ContainerArgs are additional args used for the container supplied by the user\n\ne.g. dcoker run (TASKCTL_ARGS...) (CONTAINER_ARGS...) image (command)\n\n@DEPRECATED"
+        },
+        "shell": {
+          "type": "string",
+          "description": "Shell will be used to run the command in a specific shell on the container\n\nMust exist in the container"
+        },
+        "shell_args": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "description": "Args are additional args to pass to the shell if provided\n\n// e.g. dcoker run (TASKCTL_ARGS...) (CONTAINER_ARGS...) image (shell) (SHELL_ARGS...) (command)"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name"
+      ]
     },
     "ModifyEnv": {
       "properties": {

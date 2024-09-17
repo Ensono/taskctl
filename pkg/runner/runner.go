@@ -89,6 +89,9 @@ func (r *TaskRunner) SetVariables(vars variables.Container) *TaskRunner {
 
 // Run run provided task.
 // TaskRunner first compiles task into linked list of Jobs, then passes those jobs to Executor
+//
+// Env on the runner is global to all tasks
+// it is built using the dotenv output only for now
 func (r *TaskRunner) Run(t *task.Task) error {
 	defer func() {
 		r.cancelMutex.RLock()

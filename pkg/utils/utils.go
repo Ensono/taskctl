@@ -25,16 +25,6 @@ func IsURL(s string) bool {
 	return strings.HasPrefix(u.Scheme, "http")
 }
 
-// Binary is a structure for storing binary file path and arguments that should be passed on binary's invocation
-type Binary struct {
-	// Bin is the name of the executable to run
-	// it must exist on the path
-	// If using a default mvdn.sh context then
-	// ensure it is on your path as symlink if you are only using aliases.
-	Bin  string   `mapstructure:"bin" yaml:"bin" json:"bin"`
-	Args []string `mapstructure:"args" yaml:"args,omitempty" json:"args,omitempty"`
-}
-
 // Envile is a structure for storing the information required to generate an envfile which can be consumed
 // by the specified binary
 type Envfile struct {

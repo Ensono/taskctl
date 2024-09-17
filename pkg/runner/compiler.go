@@ -5,7 +5,6 @@ import (
 	"io"
 	"path/filepath"
 	"reflect"
-	"slices"
 	"strings"
 	"time"
 
@@ -42,6 +41,7 @@ func (tc *TaskCompiler) CompileTask(t *task.Task, executionContext *ExecutionCon
 		}
 		vars.Set(k, v)
 	}
+
 	// creating multiple versions of the same task with different env input
 	for _, variant := range t.GetVariations() {
 		// each command in the array needs compiling
@@ -111,26 +111,11 @@ func (tc *TaskCompiler) CompileCommand(
 				fmt.Sprintf("generated_%s_%v.env", utils.ConvertStringToMachineFriendly(taskName), time.Now().UnixNano()),
 			))
 
-		if executionCtx.Executable != nil &&
-			slices.Contains([]string{"docker", "podman"}, strings.ToLower(executionCtx.Executable.Bin)) {
-			// does the args contain the --env-file string
-			// currently we will always either overwrite or just append the `--env-file flag`
-			idx := slices.Index(executionCtx.Executable.Args, "--env-file")
-			// the envfile has been added to the args, need to overwrite the value
-			if idx > -1 {
-				executionCtx.Executable.Args[idx+1] = filename
-			} else {
-				// the envfile has NOT been added to the args, so this needs to be added in
-				// as the docker args order is important, these will be prepended to the array
-				executionCtx.Executable.Args = append([]string{executionCtx.Executable.Args[0], "--env-file", filename}, executionCtx.Executable.Args[1:]...)
-			}
-		}
-
+		executionCtx.Executable.BuildArgsWithEnvFile(filename)
 		// set the path to the generated envfile
 		executionCtx.Envfile.Path = filename
-
-		// generate the envfile
-		err := executionCtx.GenerateEnvfile()
+		// generate the envfile with supplied env only
+		err := executionCtx.GenerateEnvfile(env)
 		if err != nil {
 			return nil, err
 		}

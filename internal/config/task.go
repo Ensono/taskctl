@@ -1,9 +1,6 @@
 package config
 
 import (
-	"path/filepath"
-
-	"github.com/Ensono/taskctl/pkg/utils"
 	"github.com/Ensono/taskctl/pkg/variables"
 
 	"github.com/Ensono/taskctl/pkg/task"
@@ -33,19 +30,19 @@ func buildTask(def *TaskDefinition, lc *loaderContext) (*task.Task, error) {
 	t.Variables.Set("Context.Name", t.Context)
 	t.Variables.Set("Task.Name", t.Name)
 
-	if def.Envfile != nil && def.Envfile.Path != "" {
-		filename := def.Envfile.Path
-		if !filepath.IsAbs(filename) && lc.Dir != "" {
-			filename = filepath.Join(lc.Dir, filename)
-		}
+	// if def.Envfile != nil && def.Envfile.Path != "" {
+	// 	filename := def.Envfile.Path
+	// 	if !filepath.IsAbs(filename) && lc.Dir != "" {
+	// 		filename = filepath.Join(lc.Dir, filename)
+	// 	}
 
-		envs, err := utils.ReadEnvFile(filename)
-		if err != nil {
-			return nil, err
-		}
+	// 	envs, err := utils.ReadEnvFile(filename)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
 
-		t.Env.Merge(variables.FromMap(envs))
-	}
+	// 	t.Env = t.Env.Merge(variables.FromMap(envs))
+	// }
 
 	return t, nil
 }

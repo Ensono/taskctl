@@ -156,13 +156,28 @@ func (tc *TaskCtlCmd) initConfig() (*config.Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	// if cmd line flags were passed in, they override anything
+	// parsed from theconfig file
+	if !conf.Debug {
+		conf.Debug = tc.viperConf.GetBool("debug") // this is bound to viper env flag
+	}
 
-	conf.Debug = tc.viperConf.GetBool("debug")
-	conf.Quiet = tc.viperConf.GetBool("quiet")
-	conf.DryRun = tc.viperConf.GetBool("dry-run")
-	conf.Summary = tc.viperConf.GetBool("summary")
+	if !conf.Quiet {
+		conf.Quiet = tc.rootFlags.Quiet
+	}
+	if !conf.DryRun {
+		conf.DryRun = tc.rootFlags.Quiet
+	}
+	if !conf.Summary {
+		conf.Summary = tc.rootFlags.Summary
+	}
 
-	conf.Output = outputpkg.OutputEnum(tc.viperConf.GetString("output"))
+	if conf.Output == "" {
+		conf.Output = outputpkg.OutputEnum(tc.viperConf.GetString("output"))
+	}
+
+	// if cmdline flags for output shorthand has been provided we
+	// overwrite the output
 	if tc.viperConf.GetBool("raw") {
 		conf.Output = outputpkg.RawOutput
 	}
@@ -171,6 +186,7 @@ func (tc *TaskCtlCmd) initConfig() (*config.Config, error) {
 		conf.Output = outputpkg.CockpitOutput
 	}
 
+	// these are CLI args only
 	conf.Options.GraphOrientationLeftRight = tc.viperConf.GetBool("lr")
 	conf.Options.InitDir = tc.viperConf.GetString("dir")
 	conf.Options.InitNoPrompt = tc.viperConf.GetBool("no-prompt")

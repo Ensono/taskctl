@@ -3,13 +3,8 @@
 debug: true
 output: cockpit
 # TODO: top level variables are not being munged int
-variables:
-  foo: 1
-
 # variables:
-#   RepoOwner: Ensono
-#   BinName: taskctl
-#   LDFLAGS: -ldflags="-s -w -X \"github.com/{{.RepoOwner}})/{{.BinName}})/cmd/taskctl.Version={{.Version}}\" -X \"github.com/{{.RepoOwner}}/{{.BinName}})/cmd/taskctl.Revision={{.Revision}}\" -extldflags -static"
+#   foo: 1
 
 pipelines:
   fixcs:
