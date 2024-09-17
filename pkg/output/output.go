@@ -47,9 +47,6 @@ func (tw *SafeWriter) Len() int {
 	return len(tw.bytesWritten)
 }
 
-// var closed = false
-// var closeCh = make(chan bool)
-
 // DecoratedOutputWriter is a decorator for task output.
 // It extends io.Writer with methods to write header before output starts and footer after execution completes
 type DecoratedOutputWriter interface {
@@ -78,7 +75,7 @@ func NewTaskOutput(t *task.Task, format string, stdout, stderr io.Writer) (*Task
 	case RawOutput:
 		o.decorator = newRawOutputWriter(NewSafeWriter(stdout))
 	case PrefixedOutput:
-		o.decorator = NewPrefixedOutputWriter(t, NewSafeWriter(stdout))
+		o.decorator = NewPrefixedOutputWriter(t, stdout)
 	case CockpitOutput:
 		o.decorator = NewCockpitOutputWriter(t, NewSafeWriter(stdout), o.closeCh)
 	default:

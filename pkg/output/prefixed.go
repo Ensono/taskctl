@@ -1,7 +1,6 @@
 package output
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"regexp"
@@ -17,73 +16,78 @@ var ansiRegexp = regexp.MustCompile(ansi)
 
 type prefixedOutputDecorator struct {
 	t *task.Task
-	w *bufio.Writer
+	w *SafeWriter
 }
 
 func NewPrefixedOutputWriter(t *task.Task, w io.Writer) *prefixedOutputDecorator {
 	return &prefixedOutputDecorator{
 		t: t,
-		w: bufio.NewWriter(&lineWriter{t: t, dst: w}),
+		w: NewSafeWriter(w),
 	}
 }
 
 func (d *prefixedOutputDecorator) Write(p []byte) (int, error) {
-	n := len(p)
-	for {
-		advance, line, err := bufio.ScanLines(p, true)
-		if err != nil {
-			return 0, err
-		}
+	p = ansiRegexp.ReplaceAllLiteral(p, []byte{})
+	return d.w.Write([]byte(fmt.Sprintf("\x1b[18m%s\x1b[0m: %s\r\n", d.t.Name, p)))
+	// _, err = fmt.Fprintf(l.dst, "\x1b[18m%s\x1b[0m: %s\r\n", l.t.Name, p)
 
-		if advance == 0 {
-			break
-		}
+	// return n, err
+	// n := len(p)
+	// for {
+	// 	advance, line, err := bufio.ScanLines(p, true)
+	// 	if err != nil {
+	// 		return 0, err
+	// 	}
 
-		_, err = d.w.Write(line)
-		if err != nil {
-			return 0, err
-		}
+	// 	if advance == 0 {
+	// 		break
+	// 	}
 
-		err = d.w.Flush()
-		if err != nil {
-			return 0, err
-		}
+	// 	_, err = d.w.Write(line)
+	// 	if err != nil {
+	// 		return 0, err
+	// 	}
 
-		p = p[advance:]
-	}
+	// 	err = d.w.Flush()
+	// 	if err != nil {
+	// 		return 0, err
+	// 	}
 
-	_, err := d.w.Write(p)
-	if err != nil {
-		return 0, err
-	}
+	// 	p = p[advance:]
+	// }
 
-	return n, nil
+	// _, err := d.w.Write(p)
+	// if err != nil {
+	// 	return 0, err
+	// }
+
+	// return n, nil
 }
 
 func (d *prefixedOutputDecorator) WriteHeader() error {
 	logrus.Infof("Running task %s...", d.t.Name)
+	// d.w.Write([]byte(fmt.Sprintf("Running task %s...", d.t.Name)))
 	return nil
 }
 
 func (d *prefixedOutputDecorator) WriteFooter() error {
-	err := d.w.Flush()
-	if err != nil {
-		logrus.Warning(err)
-	}
-
+	// err := d.w.Flush()
+	// if err != nil {
+	// 	logrus.Warning(err)
+	// }
 	logrus.Infof("%s finished. Duration %s", d.t.Name, d.t.Duration())
 	return nil
 }
 
-type lineWriter struct {
-	t   *task.Task
-	dst io.Writer
-}
+// type lineWriter struct {
+// 	t   *task.Task
+// 	dst io.Writer
+// }
 
-func (l lineWriter) Write(p []byte) (n int, err error) {
-	n = len(p)
-	p = ansiRegexp.ReplaceAllLiteral(p, []byte{})
-	_, err = fmt.Fprintf(l.dst, "\x1b[18m%s\x1b[0m: %s\r\n", l.t.Name, p)
+// func (l lineWriter) Write(p []byte) (n int, err error) {
+// 	n = len(p)
+// 	p = ansiRegexp.ReplaceAllLiteral(p, []byte{})
+// 	_, err = fmt.Fprintf(l.dst, "\x1b[18m%s\x1b[0m: %s\r\n", l.t.Name, p)
 
-	return n, err
-}
+// 	return n, err
+// }
