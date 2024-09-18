@@ -90,7 +90,7 @@ func NewCockpitOutputWriter(t *task.Task, w io.Writer, close chan bool) *cockpit
 	if base == nil {
 		base = &baseCockpit{
 			charSet: 14,
-			w:       w,
+			w:       NewSafeWriter(w),
 			tasks:   make([]*task.Task, 0),
 			closeCh: close,
 		}

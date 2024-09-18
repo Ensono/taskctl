@@ -61,7 +61,8 @@ type ContextDefinition struct {
 	// Envfile is a special block for use in executables that support file mapping
 	// e.g. podman or docker
 	//
-	// the generated outputs will be merged with existing os.Environ()
+	// Note: Envfile in the container context will ignore the generate flag
+	// it will however respect all the other directives of include/exclude and modify operations
 	Envfile *utils.Envfile `mapstructure:"envfile" yaml:"envfile,omitempty" json:"envfile,omitempty"`
 	// Variables
 	Variables map[string]string `mapstructure:"variables" yaml:"variables" json:"variables,omitempty"`
@@ -69,10 +70,13 @@ type ContextDefinition struct {
 	Executable *utils.Binary `mapstructure:"executable" yaml:"executable" json:"executable,omitempty"`
 	// Quote is the quote char to use when parsing commands into executables like docker
 	Quote string `mapstructure:"quote" yaml:"quote" json:"quote,omitempty"`
-	// Container is the new container context
+	// Container is the specific context for containers
+	// only available to docker API compliant implementations
 	//
-	// Note: Envfile in the container context will ignore the generate flag
-	// it will however respect all the other directives of include/exclude and modify operations
+	// e.g. docker and podman
+	//
+	// The aim is to remove some of the boilerplate away from the existing more
+	// generic context and introduce a specific context for tasks run in containers.
 	//
 	// Example:
 	//
@@ -84,7 +88,7 @@ type ContextDefinition struct {
 	//     # shell: sh # default sh
 	//     # args: nil
 	// ```
-	Container *Container `mapstructure:"container" yaml:"container,omitempty" json:"container,omitempty"`
+	Container *Image `mapstructure:"container" yaml:"container,omitempty" json:"container,omitempty"`
 }
 
 // Container is the specific context for containers

@@ -26,68 +26,23 @@ func NewPrefixedOutputWriter(t *task.Task, w io.Writer) *prefixedOutputDecorator
 	}
 }
 
+func chunkByteSlice(items []byte, chunkSize int) (chunks [][]byte) {
+	for chunkSize < len(items) {
+		items, chunks = items[chunkSize:], append(chunks, items[0:chunkSize:chunkSize])
+	}
+	return append(chunks, items)
+}
+
 func (d *prefixedOutputDecorator) Write(p []byte) (int, error) {
-	p = ansiRegexp.ReplaceAllLiteral(p, []byte{})
 	return d.w.Write([]byte(fmt.Sprintf("\x1b[18m%s\x1b[0m: %s\r\n", d.t.Name, p)))
-	// _, err = fmt.Fprintf(l.dst, "\x1b[18m%s\x1b[0m: %s\r\n", l.t.Name, p)
-
-	// return n, err
-	// n := len(p)
-	// for {
-	// 	advance, line, err := bufio.ScanLines(p, true)
-	// 	if err != nil {
-	// 		return 0, err
-	// 	}
-
-	// 	if advance == 0 {
-	// 		break
-	// 	}
-
-	// 	_, err = d.w.Write(line)
-	// 	if err != nil {
-	// 		return 0, err
-	// 	}
-
-	// 	err = d.w.Flush()
-	// 	if err != nil {
-	// 		return 0, err
-	// 	}
-
-	// 	p = p[advance:]
-	// }
-
-	// _, err := d.w.Write(p)
-	// if err != nil {
-	// 	return 0, err
-	// }
-
-	// return n, nil
 }
 
 func (d *prefixedOutputDecorator) WriteHeader() error {
 	logrus.Infof("Running task %s...", d.t.Name)
-	// d.w.Write([]byte(fmt.Sprintf("Running task %s...", d.t.Name)))
 	return nil
 }
 
 func (d *prefixedOutputDecorator) WriteFooter() error {
-	// err := d.w.Flush()
-	// if err != nil {
-	// 	logrus.Warning(err)
-	// }
 	logrus.Infof("%s finished. Duration %s", d.t.Name, d.t.Duration())
 	return nil
 }
-
-// type lineWriter struct {
-// 	t   *task.Task
-// 	dst io.Writer
-// }
-
-// func (l lineWriter) Write(p []byte) (n int, err error) {
-// 	n = len(p)
-// 	p = ansiRegexp.ReplaceAllLiteral(p, []byte{})
-// 	_, err = fmt.Fprintf(l.dst, "\x1b[18m%s\x1b[0m: %s\r\n", l.t.Name, p)
-
-// 	return n, err
-// }

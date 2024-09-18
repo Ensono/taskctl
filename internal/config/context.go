@@ -20,8 +20,12 @@ func buildContext(def *ContextDefinition) (*runner.ExecutionContext, error) {
 	if dir == "" {
 		dir = utils.MustGetwd()
 	}
-	if def.Container == nil && def.Executable == nil {
-		return nil, fmt.Errorf("either container or an executable must be specified, %w", ErrBuildContextIncorrect)
+	if def.Container != nil && def.Container.Name == "" {
+		return nil, fmt.Errorf("either container image must be specified, %w", ErrBuildContextIncorrect)
+	}
+
+	if def.Executable != nil && def.Executable.Bin == "" {
+		return nil, fmt.Errorf("executable binary must be specified, %w", ErrBuildContextIncorrect)
 	}
 
 	osEnvVars := variables.FromMap(utils.ConvertFromEnv(os.Environ()))
@@ -78,7 +82,7 @@ func newEnvFile(defEnvFile *utils.Envfile, isContainerContext bool) (*utils.Envf
 }
 
 func contextExecutable(def *ContextDefinition) *utils.Binary {
-	if def.Container != nil && def.Container.Image != nil {
+	if def.Container != nil && def.Container.Name != "" {
 		// docker run --rm --env-file $EVNFILE --entrypoint $ENTRYPOINT -v ${PWD}:/workspace/.taskctl  $IMAGE
 		// args := def.Container.Image.ContainerArgs
 		executable := &utils.Binary{
@@ -92,21 +96,21 @@ func contextExecutable(def *ContextDefinition) *utils.Binary {
 
 		// CONTAINER ARGS these are best left to be tightly controlled
 		containerArgs := []string{"-v", "${PWD}:/workspace/.taskctl"}
-		if def.Container.Image.Entrypoint != "" {
-			containerArgs = append(containerArgs, "--entrypoint", def.Container.Image.Entrypoint)
+		if def.Container.Entrypoint != "" {
+			containerArgs = append(containerArgs, "--entrypoint", def.Container.Entrypoint)
 		}
-		if def.Container.Image.EnableDinD {
+		if def.Container.EnableDinD {
 			containerArgs = append(containerArgs, "-v", "/var/run/docker.sock:/var/run/docker.sock")
 		}
 		// always append current workspace and image to run
-		containerArgs = append(containerArgs, "-w", "/workspace/.taskctl", def.Container.Image.Name)
+		containerArgs = append(containerArgs, "-w", "/workspace/.taskctl", def.Container.Name)
 		executable.WithContainerArgs(containerArgs)
 		shellArgs := []string{"sh", "-c"}
-		if def.Container.Image.Shell != "" {
+		if def.Container.Shell != "" {
 			// SHELL ARGS
-			shellArgs = []string{def.Container.Image.Shell}
-			if def.Container.Image.ShellArgs != nil {
-				shellArgs = append(shellArgs, def.Container.Image.ShellArgs...)
+			shellArgs = []string{def.Container.Shell}
+			if def.Container.ShellArgs != nil {
+				shellArgs = append(shellArgs, def.Container.ShellArgs...)
 			}
 		}
 		executable.WithShellArgs(shellArgs)

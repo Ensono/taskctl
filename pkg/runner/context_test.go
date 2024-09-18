@@ -153,15 +153,16 @@ func Test_Generate_Env_file(t *testing.T) {
 
 		osEnvVars := variables.FromMap(map[string]string{"var1": "original", "var2": "original222", "!::": "whatever val will never be added", "incld1": "welcome var", "exclude3": "sadgfddf"})
 		userEnvVars := variables.FromMap(map[string]string{"foo": "bar", "var1": "userOverwrittemdd", "userSuppliedButExcluded": `¯\_(ツ)_/¯`})
+		envVars := osEnvVars.Merge(userEnvVars)
 
-		execContext := runner.NewExecutionContext(nil, "", osEnvVars.Merge(userEnvVars), utils.NewEnvFile(func(e *utils.Envfile) {
+		execContext := runner.NewExecutionContext(nil, "", envVars, utils.NewEnvFile(func(e *utils.Envfile) {
 			e.Generate = true
 			e.Path = outputFilePath
 			e.Exclude = append(e.Exclude, []string{"excld1", "exclude3", "userSuppliedButExcluded"}...)
 			e.Include = append(e.Include, "incld1")
 		}), []string{}, []string{}, []string{}, []string{})
 
-		if err := execContext.GenerateEnvfile(); err == nil {
+		if err := execContext.GenerateEnvfile(envVars); err == nil {
 			t.Fatal("got nil, wanted an error")
 		}
 
@@ -174,7 +175,7 @@ func genEnvFileHelperTestRunner(t *testing.T, envVars variables.Container, envFi
 
 	execContext := runner.NewExecutionContext(nil, "", envVars, envFile, []string{}, []string{}, []string{}, []string{})
 
-	err := execContext.GenerateEnvfile()
+	err := execContext.GenerateEnvfile(envVars)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,8 +198,8 @@ func ExampleExecutionContext_GenerateEnvfile() {
 	osEnvVars := variables.FromMap(map[string]string{"TF_VAR_CAPPED_BY_MSFT": "some value"})
 	//  "var2": "original222", "!::": "whatever val will never be added", "incld1": "welcome var", "exclude3": "sadgfddf"})
 	userEnvVars := variables.FromMap(map[string]string{})
-
-	execContext := runner.NewExecutionContext(nil, "", osEnvVars.Merge(userEnvVars), utils.NewEnvFile(func(e *utils.Envfile) {
+	envVars := osEnvVars.Merge(userEnvVars)
+	execContext := runner.NewExecutionContext(nil, "", envVars, utils.NewEnvFile(func(e *utils.Envfile) {
 		e.Generate = true
 		e.Path = outputFilePath
 		e.Exclude = append(e.Exclude, []string{"excld1", "exclude3", "userSuppliedButExcluded"}...)
@@ -207,7 +208,7 @@ func ExampleExecutionContext_GenerateEnvfile() {
 		}...)
 	}), []string{}, []string{}, []string{}, []string{})
 
-	_ = execContext.GenerateEnvfile()
+	_ = execContext.GenerateEnvfile(envVars)
 
 	contents, _ := os.ReadFile(outputFilePath)
 	// for the purposes of the test example we need to make sure the map is
