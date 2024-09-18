@@ -156,49 +156,9 @@ func (c *ExecutionContext) GenerateEnvfile(env variables.Container) error {
 			continue
 		}
 
-		// iterate around the modify options to see if the name needs to be
-		// modified at all
-		for _, modify := range c.Envfile.Modify {
-
-			// use the pattern to determine if the string has been identified
-			// this assumes 1 capture group so this will be used as the name to transform
-			re := regexp.MustCompile(modify.Pattern)
-			match := re.FindStringSubmatch(varName)
-			if len(match) > 0 {
-
-				keyword := match[re.SubexpIndex("keyword")]
-				varname := match[re.SubexpIndex("varname")]
-
-				// perform the operation on the varname
-				switch modify.Operation {
-				case "lower":
-					varname = strings.ToLower(varname)
-				case "upper":
-					varname = strings.ToUpper(varname)
-				}
-
-				// Build up the name
-				varName = fmt.Sprintf("%s%s", keyword, varname)
-
-				break
-			}
-		}
-
+		varName = c.modifyName(varName)
 		// determine if the variable should be included or excluded
-		// ShouldExclude will be true if any varName
-		shouldExclude := slices.ContainsFunc(c.Envfile.Exclude, func(v string) bool {
-			return strings.HasPrefix(varName, v)
-		})
-
-		shouldInclude := true
-		if len(c.Envfile.Include) > 0 {
-			shouldInclude = slices.ContainsFunc(c.Envfile.Include, func(v string) bool {
-				return strings.HasPrefix(varName, v)
-			})
-		}
-
-		// if the variable should excluded or not explicitly included then move onto the next variable
-		if shouldExclude || !shouldInclude {
+		if c.includeExcludeSkip(varName) {
 			continue
 		}
 
@@ -218,6 +178,51 @@ func (c *ExecutionContext) GenerateEnvfile(env variables.Container) error {
 	}
 
 	return os.WriteFile(c.Envfile.Path, []byte(strings.Join(builder, "\n")), 0700)
+}
+
+func (c *ExecutionContext) includeExcludeSkip(varName string) bool {
+	// ShouldExclude will be true if any varName
+	shouldExclude := slices.ContainsFunc(c.Envfile.Exclude, func(v string) bool {
+		return strings.HasPrefix(varName, v)
+	})
+
+	shouldInclude := true
+	if len(c.Envfile.Include) > 0 {
+		shouldInclude = slices.ContainsFunc(c.Envfile.Include, func(v string) bool {
+			return strings.HasPrefix(varName, v)
+		})
+	}
+
+	// if the variable should excluded or not explicitly included then move onto the next variable
+	return shouldExclude || !shouldInclude
+}
+
+func (c *ExecutionContext) modifyName(varName string) string {
+	// iterate around the modify options to see if the name needs to be
+	// modified at all
+	for _, modify := range c.Envfile.Modify {
+
+		// use the pattern to determine if the string has been identified
+		// this assumes 1 capture group so this will be used as the name to transform
+		re := regexp.MustCompile(modify.Pattern)
+		match := re.FindStringSubmatch(varName)
+		if len(match) > 0 {
+
+			keyword := match[re.SubexpIndex("keyword")]
+			matchedVarName := match[re.SubexpIndex("varname")]
+
+			// perform the operation on the varname
+			switch modify.Operation {
+			case "lower":
+				matchedVarName = strings.ToLower(matchedVarName)
+			case "upper":
+				matchedVarName = strings.ToUpper(matchedVarName)
+			}
+			// Build up the name
+			return fmt.Sprintf("%s%s", keyword, matchedVarName)
+		}
+	}
+	return varName
 }
 
 func (c *ExecutionContext) runServiceCommand(command string) (err error) {

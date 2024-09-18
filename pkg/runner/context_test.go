@@ -101,12 +101,16 @@ func Test_Generate_Env_file(t *testing.T) {
 
 		osEnvVars := variables.FromMap(map[string]string{"var1": "original", "var2": "original222", "!::": "whatever val will never be added", "=::": "whatever val will never be added",
 			"": "::=::", " ": "::=::", "excld1": "bye bye", "exclude3": "sadgfddf"})
-		userEnvVars := variables.FromMap(map[string]string{"foo": "bar", "var1": "userOverwrittemdd", "userSuppliedButExcluded": `¯\_(ツ)_/¯`})
+		userEnvVars := variables.FromMap(map[string]string{"foo": "bar", "var1": "userOverwrittemdd", "userSuppliedButExcluded": `¯\_(ツ)_/¯`, "UPPER_VAR_make_me_bigger": "this_key_is_large"})
 
 		contents := genEnvFileHelperTestRunner(t, osEnvVars.Merge(userEnvVars), utils.NewEnvFile(func(e *utils.Envfile) {
 			e.Generate = true
 			e.Path = outputFilePath
 			e.Exclude = append(e.Exclude, []string{"excld1", "exclude3", "userSuppliedButExcluded"}...)
+			e.Modify = append(e.Modify, []utils.ModifyEnv{
+				{Pattern: "^(?P<keyword>TF_VAR_)(?P<varname>.*)", Operation: "lower"},
+				{Pattern: "^(?P<keyword>UPPER_VAR_)(?P<varname>.*)", Operation: "upper"},
+			}...)
 		}))
 
 		for _, excluded := range []string{"excld1=bye bye", "exclude3=sadgfddf", `userSuppliedButExcluded=¯\_(ツ)_/¯`} {
@@ -121,6 +125,10 @@ func Test_Generate_Env_file(t *testing.T) {
 
 		if slices.Contains(strings.Split(contents, "\n"), "!::=whatever val will never be added") {
 			t.Fatal("invalid chars not skipped properly and overwritten env vars")
+		}
+
+		if !slices.Contains(strings.Split(contents, "\n"), "UPPER_VAR_MAKE_ME_BIGGER=this_key_is_large") {
+			t.Fatal("Modify not changed the values properly")
 		}
 	})
 
@@ -206,6 +214,7 @@ func ExampleExecutionContext_GenerateEnvfile() {
 		e.Modify = append(e.Modify, []utils.ModifyEnv{
 			{Pattern: "^(?P<keyword>TF_VAR_)(?P<varname>.*)", Operation: "lower"},
 		}...)
+
 	}), []string{}, []string{}, []string{}, []string{})
 
 	_ = execContext.GenerateEnvfile(envVars)
