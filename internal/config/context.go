@@ -65,7 +65,6 @@ func newEnvFile(defEnvFile *utils.Envfile, isContainerContext bool) (*utils.Envf
 		if isContainerContext {
 			e.Generate = true
 		}
-		e.Delay = defEnvFile.Delay
 		e.Exclude = defEnvFile.Exclude
 		// add default excludes from host to container
 		if isContainerContext {

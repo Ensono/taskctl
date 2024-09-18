@@ -48,8 +48,6 @@ type Envfile struct {
 	Path        string `mapstructure:"path" yaml:"path,omitempty" json:"path,omitempty"`
 	ReplaceChar string `mapstructure:"replace_char" yaml:"replace_char,omitempty" json:"replace_char,omitempty"`
 	Quote       bool   `mapstructure:"quote" yaml:"quote,omitempty" json:"quote,omitempty"`
-	// Delay can be removed
-	Delay int `mapstructure:"delay" yaml:"delay,omitempty" json:"delay,omitempty"`
 	// Modify specifies the modifications to make to each env var and whether it meets the criteria
 	// example:
 	// - pattern: "^(?P<keyword>TF_VAR_)(?P<varname>.*)"

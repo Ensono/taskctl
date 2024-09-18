@@ -35,7 +35,6 @@ func TestTaskRunner(t *testing.T) {
 
 	task1 := taskpkg.NewTask("t1")
 	task1.Context = "local"
-	// task1.ExportAs = "EXPORT_NAME"
 
 	task1.Commands = []string{"echo 'taskctl'"}
 	task1.Name = "some test task"
@@ -131,7 +130,6 @@ func Test_DockerExec_Cmd(t *testing.T) {
 
 			task1 := taskpkg.NewTask("default:docker")
 			task1.Context = "default_docker"
-			// task1.ExportAs = "EXPORT_NAME"
 
 			task1.Commands = []string{tt.command}
 			task1.Name = "some test task"
@@ -139,12 +137,9 @@ func Test_DockerExec_Cmd(t *testing.T) {
 			task1.After = []string{"echo 'after task1'"}
 
 			if err := rnr.Run(task1); err != nil {
-				fmt.Println(testOut.String())
-				t.Fatal(err)
+				t.Fatalf("errord: %v\n\noutput: %v\n", err, testOut.String())
 			}
-			// if !strings.Contains(task1.Output(), "taskctl") {
-			// 	t.Errorf("\ngot: %s\nwanted: taskctl", task1.Output())
-			// }
+
 			if len(testErr.String()) > 0 {
 				t.Fatalf("got: %s, wanted nil", testErr.String())
 			}

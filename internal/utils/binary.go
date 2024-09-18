@@ -37,18 +37,6 @@ func (b *Binary) WithContainerArgs(args []string) *Binary {
 	return b
 }
 
-// func (b *Binary) BaseArgs() []string {
-// 	return b.baseArgs
-// }
-
-// func (b *Binary) ShellArgs() []string {
-// 	return b.shellArgs
-// }
-
-// func (b *Binary) ContainerArgs() []string {
-// 	return b.containerArgs
-// }
-
 func (b *Binary) buildContainerArgsWithEnvFile(envfilePath string) []string {
 	outArgs := append(b.baseArgs, envfilePath)
 	outArgs = append(outArgs, b.containerArgs...)
@@ -57,6 +45,9 @@ func (b *Binary) buildContainerArgsWithEnvFile(envfilePath string) []string {
 	return outArgs
 }
 
+// BuildArgsWithEnvFile returns all args with
+// correctly placed --env-file parameter for
+// context binary
 func (b *Binary) BuildArgsWithEnvFile(envfilePath string) []string {
 	if b.IsContainer {
 		return b.buildContainerArgsWithEnvFile(envfilePath)

@@ -14,7 +14,6 @@ func buildTask(def *TaskDefinition, lc *loaderContext) (*task.Task, error) {
 	t.Condition = def.Condition
 	t.Commands = def.Command
 	t.Variations = def.Variations
-	t.Dir = def.Dir
 	t.Timeout = def.Timeout
 	t.AllowFailure = def.AllowFailure
 	t.After = def.After
@@ -27,22 +26,13 @@ func buildTask(def *TaskDefinition, lc *loaderContext) (*task.Task, error) {
 	t.Env = variables.FromMap(def.Env).Merge(t.Env)
 	t.Variables = variables.FromMap(def.Variables).Merge(t.Variables)
 
+	t.Dir = def.Dir
+	if def.Dir == "" {
+		t.Dir = lc.Dir
+	}
+
 	t.Variables.Set("Context.Name", t.Context)
 	t.Variables.Set("Task.Name", t.Name)
-
-	// if def.Envfile != nil && def.Envfile.Path != "" {
-	// 	filename := def.Envfile.Path
-	// 	if !filepath.IsAbs(filename) && lc.Dir != "" {
-	// 		filename = filepath.Join(lc.Dir, filename)
-	// 	}
-
-	// 	envs, err := utils.ReadEnvFile(filename)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-
-	// 	t.Env = t.Env.Merge(variables.FromMap(envs))
-	// }
 
 	return t, nil
 }
