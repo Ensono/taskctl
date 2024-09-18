@@ -3,8 +3,8 @@ package config
 import (
 	"time"
 
+	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/task"
-	"github.com/Ensono/taskctl/pkg/utils"
 )
 
 //go:generate go run ../../tools/schemagenerator/main.go -dir ../../

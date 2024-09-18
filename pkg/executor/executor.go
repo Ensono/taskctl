@@ -13,8 +13,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/output"
-	"github.com/Ensono/taskctl/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"mvdan.cc/sh/v3/expand"
 	"mvdan.cc/sh/v3/interp"

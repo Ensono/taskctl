@@ -11,9 +11,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/runner"
 	"github.com/Ensono/taskctl/pkg/task"
-	"github.com/Ensono/taskctl/pkg/utils"
 	"github.com/Ensono/taskctl/pkg/variables"
 )
 

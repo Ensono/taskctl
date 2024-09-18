@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"dario.cat/mergo"
-	"github.com/Ensono/taskctl/pkg/utils"
+	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pelletier/go-toml"
 	"github.com/sirupsen/logrus"

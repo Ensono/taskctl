@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/task"
-	"github.com/Ensono/taskctl/pkg/utils"
 	"github.com/Ensono/taskctl/pkg/variables"
 )
 

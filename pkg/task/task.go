@@ -6,7 +6,7 @@ import (
 
 	"github.com/Ensono/taskctl/pkg/variables"
 
-	"github.com/Ensono/taskctl/pkg/utils"
+	"github.com/Ensono/taskctl/internal/utils"
 )
 
 type ArtifactType string

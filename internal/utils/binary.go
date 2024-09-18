@@ -37,17 +37,17 @@ func (b *Binary) WithContainerArgs(args []string) *Binary {
 	return b
 }
 
-func (b *Binary) BaseArgs() []string {
-	return b.baseArgs
-}
+// func (b *Binary) BaseArgs() []string {
+// 	return b.baseArgs
+// }
 
-func (b *Binary) ShellArgs() []string {
-	return b.shellArgs
-}
+// func (b *Binary) ShellArgs() []string {
+// 	return b.shellArgs
+// }
 
-func (b *Binary) ContainerArgs() []string {
-	return b.containerArgs
-}
+// func (b *Binary) ContainerArgs() []string {
+// 	return b.containerArgs
+// }
 
 func (b *Binary) buildContainerArgsWithEnvFile(envfilePath string) []string {
 	outArgs := append(b.baseArgs, envfilePath)
@@ -62,7 +62,7 @@ func (b *Binary) BuildArgsWithEnvFile(envfilePath string) []string {
 		return b.buildContainerArgsWithEnvFile(envfilePath)
 	}
 
-	// sanitize the bin params
+	// sanitize the bin params this is a legacy method
 	if slices.Contains([]string{"docker", "podman"}, strings.ToLower(b.Bin)) {
 		// does the args contain the --env-file string
 		// currently we will always either overwrite or just append the `--env-file flag`

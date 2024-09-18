@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/output"
-	"github.com/Ensono/taskctl/pkg/utils"
 	"github.com/Ensono/taskctl/pkg/variables"
 
 	taskpkg "github.com/Ensono/taskctl/pkg/task"
