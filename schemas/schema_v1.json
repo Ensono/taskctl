@@ -212,10 +212,6 @@
         "quote": {
           "type": "boolean"
         },
-        "delay": {
-          "type": "integer",
-          "description": "Delay can be removed"
-        },
         "modify": {
           "items": {
             "$ref": "#/$defs/ModifyEnv"
