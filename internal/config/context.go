@@ -7,6 +7,7 @@ import (
 
 	"github.com/Ensono/taskctl/pkg/runner"
 	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/sirupsen/logrus"
 
 	"github.com/Ensono/taskctl/internal/utils"
 )
@@ -91,7 +92,7 @@ func contextExecutable(def *ContextDefinition) *utils.Binary {
 			Bin:  "docker",
 			Args: []string{},
 		}
-		// BASE ARGHS are a special case
+		// BASE ARGS are a special case
 		executable.WithBaseArgs([]string{"run", "--rm", "--env-file"})
 
 		// CONTAINER ARGS these are best left to be tightly controlled
@@ -105,12 +106,17 @@ func contextExecutable(def *ContextDefinition) *utils.Binary {
 		// always append current workspace and image to run
 		containerArgs = append(containerArgs, "-w", "/workspace/.taskctl", def.Container.Name)
 		executable.WithContainerArgs(containerArgs)
+		// default shell and flag is set
+		// if shell is overwritten it should also contain the
 		shellArgs := []string{"sh", "-c"}
 		if def.Container.Shell != "" {
 			// SHELL ARGS
 			shellArgs = []string{def.Container.Shell}
 			if def.Container.ShellArgs != nil {
 				shellArgs = append(shellArgs, def.Container.ShellArgs...)
+			} else {
+				// user should know that this might not work
+				logrus.Warnf("your chosen shell: %s does not include any arguments, usually at least -c as the command gets parsed as string", def.Container.Shell)
 			}
 		}
 		executable.WithShellArgs(shellArgs)
