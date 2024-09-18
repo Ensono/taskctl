@@ -40,10 +40,10 @@ func (b *baseCockpit) start() *spinner.Spinner {
 	s.PreUpdate = func(s *spinner.Spinner) {
 		tasks := make([]string, 0)
 		b.mu.Lock()
+		defer b.mu.Unlock()
 		for _, v := range b.tasks {
 			tasks = append(tasks, v.Name)
 		}
-		defer b.mu.Unlock()
 		sort.Strings(tasks)
 		s.Suffix = " Running: " + strings.Join(tasks, ", ")
 	}
@@ -87,18 +87,14 @@ func (b *baseCockpit) remove(t *task.Task) {
 }
 
 func NewCockpitOutputWriter(t *task.Task, w io.Writer, close chan bool) *cockpitOutputDecorator {
-	if base == nil {
-		base = &baseCockpit{
+	return &cockpitOutputDecorator{
+		t: t,
+		b: &baseCockpit{
 			charSet: 14,
 			w:       NewSafeWriter(w),
 			tasks:   make([]*task.Task, 0),
 			closeCh: close,
-		}
-	}
-
-	return &cockpitOutputDecorator{
-		t: t,
-		b: base,
+		},
 	}
 }
 
