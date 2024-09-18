@@ -14,7 +14,6 @@ import (
 )
 
 var frame = 100 * time.Millisecond
-var base *baseCockpit
 
 type baseCockpit struct {
 	w       io.Writer

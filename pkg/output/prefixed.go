@@ -26,14 +26,17 @@ func NewPrefixedOutputWriter(t *task.Task, w io.Writer) *prefixedOutputDecorator
 	}
 }
 
-func chunkByteSlice(items []byte, chunkSize int) (chunks [][]byte) {
-	for chunkSize < len(items) {
-		items, chunks = items[chunkSize:], append(chunks, items[0:chunkSize:chunkSize])
-	}
-	return append(chunks, items)
-}
+// TODO: implement a chunked writer
+// for when the output is too large all of a sudden
+// func chunkByteSlice(items []byte, chunkSize int) (chunks [][]byte) {
+// 	for chunkSize < len(items) {
+// 		items, chunks = items[chunkSize:], append(chunks, items[0:chunkSize:chunkSize])
+// 	}
+// 	return append(chunks, items)
+// }
 
 func (d *prefixedOutputDecorator) Write(p []byte) (int, error) {
+	p = ansiRegexp.ReplaceAllLiteral(p, []byte{})
 	return d.w.Write([]byte(fmt.Sprintf("\x1b[18m%s\x1b[0m: %s\r\n", d.t.Name, p)))
 }
 
