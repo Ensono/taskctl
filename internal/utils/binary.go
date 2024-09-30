@@ -45,7 +45,6 @@ func (b *Binary) buildContainerArgsWithEnvFile(envfilePath string) []string {
 	outArgs := append(b.baseArgs, envfilePath)
 	outArgs = append(outArgs, b.containerArgs...)
 	outArgs = append(outArgs, b.shellArgs...)
-	// b.Args = outArgs
 	return outArgs
 }
 
