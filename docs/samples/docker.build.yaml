@@ -25,9 +25,4 @@ tasks:
     description: Pushes an image to registry
     context: docker:build
     command:
-      # /app/executor --context /workspace --dockerfile Dockerfile --destination dnitsch/kaniko-test:0.0.2 -v debug
       - executor --context . --dockerfile Dockerfile --destination dnitsch/app-kaniko-test:0.0.6 
-      #  --build-arg BUILDPLATFORM=${BUILDPLATFORM}
-    # variations:
-    #   - BUILDPLATFORM: linux/amd64
-    #   - BUILDPLATFORM: linux/arm64/v8

@@ -41,11 +41,11 @@ const newLine byte = 10
 func (d *prefixedOutputDecorator) Write(p []byte) (int, error) {
 	p = ansiRegexp.ReplaceAllLiteral(p, []byte{})
 	bytesWritten := 0
-	byteSlice := bytes.Split(p, []byte{10})
+	byteSlice := bytes.Split(p, []byte{newLine})
 	if len(byteSlice) == 1 {
 		return d.w.Write([]byte(fmt.Sprintf("\x1b[36m%s\x1b[0m: %s\n", d.t.Name, p)))
 	}
-	for _, seq := range bytes.Split(p, []byte{10}) {
+	for _, seq := range bytes.Split(p, []byte{newLine}) {
 		if len(seq) == 0 {
 			return bytesWritten, nil
 		}
