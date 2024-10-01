@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schemas/schema_v1.json
+
+contexts:
+  go:buildah:
+    container:
+      name: golang:1.23
+
+  docker:build:
+    container:
+      name: dnitsch/kaniko-test:0.0.3
+    env:
+      # /workspace/.taskctl is the default path where the current working directory gets mounted to
+      # ensure you have a step before that runs relevant credential generation
+      # Depending on your use case the auth credentials need to look in a certain way
+      # https://github.com/GoogleContainerTools/kaniko?tab=readme-ov-file#pushing-to-different-registries
+      # 
+      DOCKER_CONFIG: /workspace/.taskctl/.docker
+
+tasks:
+  registry:auth:
+    command:
+      - echo "run some stuff to generate an auth file"
+      # - 
+  build:push:image:
+    description: Pushes an image to registry
+    context: docker:build
+    command:
+      # /app/executor --context /workspace --dockerfile Dockerfile --destination dnitsch/kaniko-test:0.0.2 -v debug
+      - executor --context . --dockerfile Dockerfile --destination dnitsch/app-kaniko-test:0.0.6 
+      #  --build-arg BUILDPLATFORM=${BUILDPLATFORM}
+    # variations:
+    #   - BUILDPLATFORM: linux/amd64
+    #   - BUILDPLATFORM: linux/arm64/v8
