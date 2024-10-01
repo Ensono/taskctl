@@ -1,12 +1,13 @@
 # yaml-language-server: $schema=../../schemas/schema_v1.json
 
 contexts:
-  go:buildah:
+  echo:container:
     container:
-      name: golang:1.23
+      name: alpine:latest
 
   docker:build:
     container:
+      # some container with the executor from kaniko in it
       name: dnitsch/kaniko-test:0.0.3
     env:
       # /workspace/.taskctl is the default path where the current working directory gets mounted to
@@ -18,9 +19,10 @@ contexts:
 
 tasks:
   registry:auth:
+    context: echo:container
     command:
       - echo "run some stuff to generate an auth file"
-      # - 
+      - echo "{"auths":...}" > .docker/config.json
   build:push:image:
     description: Pushes an image to registry
     context: docker:build
