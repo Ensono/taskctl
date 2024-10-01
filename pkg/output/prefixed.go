@@ -36,7 +36,7 @@ func NewPrefixedOutputWriter(t *task.Task, w io.Writer) *prefixedOutputDecorator
 // 	return append(chunks, items)
 // }
 
-const newLine byte = 10
+const newLine byte = '\n'
 
 func (d *prefixedOutputDecorator) Write(p []byte) (int, error) {
 	p = ansiRegexp.ReplaceAllLiteral(p, []byte{})
