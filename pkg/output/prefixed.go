@@ -66,6 +66,9 @@ func (d *prefixedOutputDecorator) Write(p []byte) (int, error) {
 			continue
 		}
 		o, err := d.w.Write([]byte(fmt.Sprintf("\x1b[36m%s\x1b[0m: %s", d.t.Name, line)))
+		if err != nil {
+			return bytesWritten, err
+		}
 		bytesWritten += o
 	}
 	return bytesWritten, nil
