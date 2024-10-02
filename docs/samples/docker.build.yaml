@@ -45,14 +45,21 @@ tasks:
       - echo "run some stuff to generate an auth file"
       - echo "copying auth file to .docker/config.json"
   build:push:image:
-    description: Pushes an image to registry
+    description: | 
+      Pushes an image to registry
+      
+      Example: taskctl run build:push:image -c docs/samples/docker.build.yaml
     context: docker:build
     command:
       - executor --context . --dockerfile Dockerfile --destination dnitsch/app-kaniko-test:0.0.7
   
+
   podman:build:push:
     context: podman:container
-    description: builds multi arch images and pushes them to registry
+    description: |
+      builds multi arch images and pushes them to registry
+
+      Example: taskctl run podman:build:push -c docs/samples/docker.build.yaml
     command:
       - |
         podman build --platform=linux/amd64 -f Dockerfile -t dnitsch/app-kaniko-test:${BUILD_VERSION}-linux-amd64 .
