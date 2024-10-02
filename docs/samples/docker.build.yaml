@@ -18,6 +18,7 @@ contexts:
         - --security-opt label=disable
     env:
       DOCKER_CONFIG: /workspace/.taskctl/.docker
+  
   docker:build:
     container:
       # some container with the executor from kaniko in it
@@ -63,4 +64,4 @@ tasks:
         podman manifest rm dnitsch/app-kaniko-test:${BUILD_VERSION}
     reset_context: true
     env:
-      BUILD_VERSION: 0.0.13
+      BUILD_VERSION: 0.0.14
