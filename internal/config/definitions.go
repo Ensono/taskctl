@@ -129,7 +129,7 @@ type Image struct {
 	// e.g. dcoker run (TASKCTL_ARGS...) (CONTAINER_ARGS...) image (command)
 	// The internals will strip out any unwanted/forbidden args
 	//
-	// Args like the switch --privileged and the --volue|-v flag with the value of /var/run/docker.sock:/var/run/docker.sock
+	// Args like the switch --privileged and the --volume|-v flag with the value of /var/run/docker.sock:/var/run/docker.sock
 	// will be removed.
 	ContainerArgs []string `mapstructure:"container_args" yaml:"container_args,omitempty" json:"container_args,omitempty"`
 	// Shell will be used to run the command in a specific shell on the container
