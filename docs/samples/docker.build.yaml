@@ -17,14 +17,21 @@ contexts:
       # 
       DOCKER_CONFIG: /workspace/.taskctl/.docker
 
+pipelines:
+  tag:push:image:
+    - task: registry:auth
+    - task: build:push:image
+      depends_on:
+        - registry:auth
+
 tasks:
   registry:auth:
     context: echo:container
     command:
       - echo "run some stuff to generate an auth file"
-      - echo "{"auths":...}" > .docker/config.json
+      - echo "copying auth file to .docker/config.json"
   build:push:image:
     description: Pushes an image to registry
     context: docker:build
     command:
-      - executor --context . --dockerfile Dockerfile --destination dnitsch/app-kaniko-test:0.0.6 
+      - executor --context . --dockerfile Dockerfile --destination dnitsch/app-kaniko-test:0.0.7

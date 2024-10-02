@@ -1,14 +1,15 @@
 package output
 
 import (
+	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"regexp"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/Ensono/taskctl/pkg/task"
+	"github.com/sirupsen/logrus"
 )
 
 const ansi = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
@@ -41,18 +42,30 @@ const newLine byte = '\n'
 func (d *prefixedOutputDecorator) Write(p []byte) (int, error) {
 	p = ansiRegexp.ReplaceAllLiteral(p, []byte{})
 	bytesWritten := 0
-	byteSlice := bytes.Split(p, []byte{newLine})
-	if len(byteSlice) == 1 {
-		return d.w.Write([]byte(fmt.Sprintf("\x1b[36m%s\x1b[0m: %s\n", d.t.Name, p)))
-	}
-	for _, seq := range bytes.Split(p, []byte{newLine}) {
-		if len(seq) == 0 {
-			return bytesWritten, nil
-		}
-		o, err := d.w.Write([]byte(fmt.Sprintf("\x1b[36m%s\x1b[0m: %s\n", d.t.Name, seq)))
+	br := bufio.NewReader(bytes.NewReader(p))
+	// var err error
+	for {
+		line, err := br.ReadBytes(newLine)
 		if err != nil {
-			return bytesWritten, err
+			// bytesWritten += line
+			if errors.Is(err, io.EOF) {
+				// if the last line is empty  do not write it out
+				if line != nil && len(line) == 0 {
+					break
+				}
+				o, err := d.w.Write([]byte(fmt.Sprintf("\x1b[36m%s\x1b[0m: %s", d.t.Name, line)))
+				if err != nil {
+					return bytesWritten, err
+				}
+				bytesWritten += o
+				break
+			}
+			break
 		}
+		if len(line) == 0 {
+			continue
+		}
+		o, err := d.w.Write([]byte(fmt.Sprintf("\x1b[36m%s\x1b[0m: %s", d.t.Name, line)))
 		bytesWritten += o
 	}
 	return bytesWritten, nil
