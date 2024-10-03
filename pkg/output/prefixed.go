@@ -43,7 +43,6 @@ func (d *prefixedOutputDecorator) Write(p []byte) (int, error) {
 	p = ansiRegexp.ReplaceAllLiteral(p, []byte{})
 	bytesWritten := 0
 	br := bufio.NewReader(bytes.NewReader(p))
-	// var err error
 	for {
 		line, err := br.ReadBytes(newLine)
 		if err != nil && errors.Is(err, io.EOF) {

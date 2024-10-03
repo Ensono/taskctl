@@ -144,31 +144,31 @@ func checkForbiddenContainerArgs(cargs []string) []string {
 	}
 	sanitisedContainerArgs := []string{}
 
-	verbottenArgIdx := []int{}
+	verbotenArgIdx := []int{}
 
 	// need to iterate over the list of forbidden values in pairs
 	// since we want to search for a partial match. this loop is required
-	for _, verbottenPair := range forbiddenContainerArgsPairs {
+	for _, verbotenPair := range forbiddenContainerArgsPairs {
 		slices.ContainsFunc(cargs, func(s string) bool {
-			if strings.Contains(s, verbottenPair) {
+			if strings.Contains(s, verbotenPair) {
 				idx := slices.Index(cargs, s)
 				// when looking for pairs need to append both the flag and flag value
 				//
-				verbottenArgIdx = append(verbottenArgIdx, idx-1, idx)
+				verbotenArgIdx = append(verbotenArgIdx, idx-1, idx)
 			}
 			return false
 		})
 	}
 
-	for _, verbottenSwitch := range forbiddenContainerArgsSwitches {
-		if idx := slices.Index(cargs, verbottenSwitch); idx > -1 {
-			verbottenArgIdx = append(verbottenArgIdx, idx)
+	for _, verbotenSwitch := range forbiddenContainerArgsSwitches {
+		if idx := slices.Index(cargs, verbotenSwitch); idx > -1 {
+			verbotenArgIdx = append(verbotenArgIdx, idx)
 		}
 	}
 	// iterate over the original ContainerArgs
 	// and exclude any that are forbidden
 	for idx, arg := range cargs {
-		if !slices.Contains(verbottenArgIdx, idx) {
+		if !slices.Contains(verbotenArgIdx, idx) {
 			sanitisedContainerArgs = append(sanitisedContainerArgs, arg)
 		}
 	}
