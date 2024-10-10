@@ -1,3 +1,5 @@
+// Package scheduler ensures all tasks in a pipeline and child pipelines
+// are loaded and executed in the order they need to be, parallelizing where possible.
 package scheduler
 
 import (
@@ -7,18 +9,16 @@ import (
 	"time"
 
 	"github.com/Ensono/taskctl/internal/utils"
-
-	"github.com/sirupsen/logrus"
-
 	"github.com/Ensono/taskctl/pkg/runner"
+	"github.com/sirupsen/logrus"
 )
 
 // Scheduler executes ExecutionGraph
 type Scheduler struct {
 	taskRunner runner.Runner
 	pause      time.Duration
-
-	cancelled int32
+	// Cancelled  *atomic.Int32
+	cancelled *atomic.Int32
 }
 
 // NewScheduler create new Scheduler instance
@@ -26,9 +26,14 @@ func NewScheduler(r runner.Runner) *Scheduler {
 	s := &Scheduler{
 		pause:      50 * time.Millisecond,
 		taskRunner: r,
+		cancelled:  &atomic.Int32{},
 	}
 
 	return s
+}
+
+func (s *Scheduler) Cancelled() int32 {
+	return s.cancelled.Load()
 }
 
 // Schedule starts execution of the given ExecutionGraph
@@ -39,7 +44,7 @@ func (s *Scheduler) Schedule(g *ExecutionGraph) error {
 	wg := sync.WaitGroup{}
 
 	for !s.isDone(g) {
-		if atomic.LoadInt32(&s.cancelled) == 1 {
+		if s.Cancelled() == 1 {
 			break
 		}
 
@@ -102,7 +107,8 @@ func (s *Scheduler) Schedule(g *ExecutionGraph) error {
 
 // Cancel cancels executing tasks
 func (s *Scheduler) Cancel() {
-	atomic.StoreInt32(&s.cancelled, 1)
+	// atomic.StoreInt32(&s.cancelled, 1)
+	s.cancelled.Store(1)
 	s.taskRunner.Cancel()
 }
 
