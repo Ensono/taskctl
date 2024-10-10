@@ -49,7 +49,9 @@ jobs:
     runs-on: ubuntu-latest
     # container:
     #   image: golang:1.23-bullseye
-    needs: set-version-tag
+    needs: 
+      - set-version-tag
+      - lint
     env:
       TASKCTL_CONFIG_FILE: tasks.yaml
       SEMVER: ${{ needs.set-version-tag.outputs.semVer }}
