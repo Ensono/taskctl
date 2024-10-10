@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   set-version-tag:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       semVer: ${{ steps.gitversion.outputs.semVer }}
     steps:
@@ -36,7 +36,7 @@ jobs:
   # Runs in parallel
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: golangci-lint
@@ -46,7 +46,7 @@ jobs:
           install-mode: binary
   test:
     name: Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # container:
     #   image: golang:1.23-bullseye
     needs: 
