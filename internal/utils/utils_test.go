@@ -445,8 +445,6 @@ ANOTHER=region=123,foo=bar;colon=true|pipe=fhass`))},
 			[]string{"FOO", "BAZ", "MULTI", "ANOTHER"},
 			[]string{"bar", "", "somekey=someval", "region=123,foo=bar;colon=true|pipe=fhass"},
 		},
-		// TODO: ensure negative tests can be run
-		// would need to change the signature
 	}
 	for name, tt := range ttests {
 		t.Run(name, func(t *testing.T) {
