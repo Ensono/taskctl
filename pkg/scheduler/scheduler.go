@@ -17,8 +17,7 @@ import (
 type Scheduler struct {
 	taskRunner runner.Runner
 	pause      time.Duration
-	// Cancelled  *atomic.Int32
-	cancelled *atomic.Int32
+	cancelled  *atomic.Int32
 }
 
 // NewScheduler create new Scheduler instance
@@ -106,8 +105,8 @@ func (s *Scheduler) Schedule(g *ExecutionGraph) error {
 }
 
 // Cancel cancels executing tasks
+// atomically loads the cancelled code
 func (s *Scheduler) Cancel() {
-	// atomic.StoreInt32(&s.cancelled, 1)
 	s.cancelled.Store(1)
 	s.taskRunner.Cancel()
 }

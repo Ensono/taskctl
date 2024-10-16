@@ -252,7 +252,13 @@ func ReadEnvFile(filename string) (map[string]string, error) {
 	envscanner := bufio.NewScanner(f)
 	for envscanner.Scan() {
 		kv := strings.Split(envscanner.Text(), "=")
-		envs[kv[0]] = kv[1]
+		// ensure an unset variable gets passed through as zerolength string
+		if len(kv) == 1 {
+			envs[kv[0]] = ""
+		}
+		if len(kv) == 2 {
+			envs[kv[0]] = kv[1]
+		}
 	}
 
 	if err := envscanner.Err(); err != nil {
