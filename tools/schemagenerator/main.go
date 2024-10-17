@@ -19,6 +19,10 @@ func main() {
 	var dir string
 	flag.StringVar(&dir, "dir", ".", "Directory to use as base")
 	flag.Parse()
+	generateSchemaForTaskCtl(dir)
+}
+
+func generateSchemaForTaskCtl(dir string) {
 
 	r := new(jsonschema.Reflector)
 	if err := r.AddGoComments("github.com/Ensono/taskctl", "./"); err != nil {
@@ -38,4 +42,16 @@ func main() {
 	if err := os.WriteFile(filepath.Join(schemaDir, "schema_v1.json"), out, 0777); err != nil {
 		log.Fatalf("failed to write: %s", err)
 	}
+}
+
+var ciSchemaMapper = map[config.CITarget]string{
+	config.GitHubCITarget: "https://github.com/SchemaStore/schemastore/blob/master/src/schemas/json/github-workflow.json",
+	config.GitlabCITarget: " https://gitlab.com/gitlab-org/gitlab/-/raw/master/app/assets/javascripts/editor/schema/ci.json",
+	// TODO: add more here
+}
+
+func generateSchemaForCIImpl() {
+	log.Printf("generating for ")
+
+	// https://gitlab.com/gitlab-org/gitlab/-/raw/master/app/assets/javascripts/editor/schema/ci.json
 }
