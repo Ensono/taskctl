@@ -142,6 +142,18 @@ type Image struct {
 	ShellArgs []string `mapstructure:"shell_args" yaml:"shell_args,omitempty" json:"shell_args,omitempty"`
 }
 
+type CITarget string
+
+const (
+	GitlabCITarget CITarget = "gitlab"
+	GitHubCITarget CITarget = "github"
+)
+
+type CiGenerator struct {
+	Target CITarget
+	// TODO: add more options here
+}
+
 type PipelineDefinition struct {
 	// Name is the friendly name to give to pipeline
 	Name string `mapstructure:"name" yaml:"name" json:"name,omitempty"`

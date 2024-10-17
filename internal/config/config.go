@@ -51,6 +51,10 @@ type Config struct {
 		InitDir                   string
 		InitNoPrompt              bool
 	}
+	// Generate Options
+	Generate *struct {
+		Target string
+	}
 }
 
 func (cfg *Config) merge(src *Config) error {
