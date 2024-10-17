@@ -45,6 +45,8 @@ type ConfigDefinition struct {
 	// - commandline.
 	// Variables can be used inside templating using the text/template go package
 	Variables EnvVarMapType `mapstructure:"variables" yaml:"variables" json:"variables,omitempty"` // jsonschema:"additional_properties_type=string;integer"`
+	// Generator defines the options for the desired CI yaml generation
+	Generator CiGenerator `mapstructure:"generator" yaml:"generator" json:"generator,omitempty"`
 }
 
 type ContextDefinition struct {
@@ -150,7 +152,8 @@ const (
 )
 
 type CiGenerator struct {
-	Target CITarget
+	// Target is the CI implementation into which to generate the YAML
+	Target CITarget `mapstructure:"target" yaml:"target" json:"target,omitempty" jsonschema:"enum=gitlab,enum=github"`
 	// TODO: add more options here
 }
 

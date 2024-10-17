@@ -51,6 +51,20 @@
       ],
       "description": "Binary is a structure for storing binary file path and arguments that should be passed on binary's invocation"
     },
+    "CiGenerator": {
+      "properties": {
+        "target": {
+          "type": "string",
+          "enum": [
+            "gitlab",
+            "github"
+          ],
+          "description": "Target is the CI implementation into which to generate the YAML"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "ConfigDefinition": {
       "properties": {
         "import": {
@@ -111,6 +125,10 @@
         "variables": {
           "$ref": "#/$defs/EnvVarMapType",
           "description": "Variables are the top most variables and will be merged and overwritten with lower level\nspecifications.\ne.g. variable of Version=123\nwill be overwritten by a variables specified in this order, lowest takes the highest precedence\n- context\n- pipeline\n- task\n- commandline.\nVariables can be used inside templating using the text/template go package"
+        },
+        "generator": {
+          "$ref": "#/$defs/CiGenerator",
+          "description": "Generator defines the options for the desired CI yaml generation"
         }
       },
       "additionalProperties": false,

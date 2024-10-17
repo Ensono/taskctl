@@ -74,7 +74,7 @@ func (s *Scheduler) Schedule(g *ExecutionGraph) error {
 
 			wg.Add(1)
 			stage.UpdateStatus(StatusRunning)
-			go func(stage *Stage) {
+			go func(stage *Stage, wg *sync.WaitGroup) {
 				defer func() {
 					stage.End = time.Now()
 					wg.Done()
@@ -93,7 +93,7 @@ func (s *Scheduler) Schedule(g *ExecutionGraph) error {
 				}
 
 				stage.UpdateStatus(StatusDone)
-			}(stage)
+			}(stage, &wg)
 		}
 
 		time.Sleep(s.pause)

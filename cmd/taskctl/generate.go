@@ -47,7 +47,8 @@ func generateDefinition(conf *config.Config, argsStringer *argsToStringsMapper) 
 		return fmt.Errorf("specified arg is not a pipeline")
 	}
 
-	graph.Generate()
+	nodes := graph.Generate()
+	fmt.Println(nodes)
 
 	return nil
 }

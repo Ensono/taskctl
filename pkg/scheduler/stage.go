@@ -32,9 +32,8 @@ type Stage struct {
 	Status       *atomic.Int32
 	Env          variables.Container
 	Variables    variables.Container
-
-	Start time.Time
-	End   time.Time
+	Start        time.Time
+	End          time.Time
 }
 
 // StageOpts is the Node options
