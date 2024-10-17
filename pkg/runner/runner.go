@@ -90,7 +90,7 @@ func (r *TaskRunner) SetVariables(vars variables.Container) *TaskRunner {
 	return r
 }
 
-// Run run provided task.
+// Run runs provided task.
 // TaskRunner first compiles task into linked list of Jobs, then passes those jobs to Executor
 //
 // Env on the runner is global to all tasks
@@ -126,7 +126,7 @@ func (r *TaskRunner) Run(t *task.Task) error {
 		return err
 	}
 
-	defer func() {
+	defer func(t *task.Task) {
 		err := taskOutput.Finish()
 		if err != nil {
 			logrus.Error(err)
@@ -141,7 +141,7 @@ func (r *TaskRunner) Run(t *task.Task) error {
 		if !t.Errored && !t.Skipped {
 			t.ExitCode = 0
 		}
-	}()
+	}(t)
 
 	vars := r.variables.Merge(t.Variables)
 
