@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Ensono/taskctl/internal/config"
 	"github.com/Ensono/taskctl/pkg/scheduler"
 	"github.com/emicklei/dot"
 	"github.com/spf13/cobra"
@@ -14,16 +13,8 @@ type graphFlags struct {
 	leftToRight bool
 }
 
-type graphCmd struct {
-	channelOut, channelErr io.Writer
-}
-
 func newGraphCmd(rootCmd *TaskCtlCmd) {
 	f := &graphFlags{}
-	gc := &graphCmd{
-		channelOut: rootCmd.ChannelOut,
-		channelErr: rootCmd.ChannelErr,
-	}
 	graphCmd := &cobra.Command{
 		Use:     "graph",
 		Aliases: []string{"g"},
@@ -36,8 +27,11 @@ The output is in the DOT format, which can be used by GraphViz to generate chart
 			if err != nil {
 				return err
 			}
-			pipelineName := args[0]
-			return gc.graphCmdRun(pipelineName, conf)
+			p := conf.Pipelines[args[0]]
+			if p == nil {
+				return fmt.Errorf("no such pipeline %s", args[0])
+			}
+			return graphCmdRun(p, rootCmd.ChannelOut, f.leftToRight)
 		},
 	}
 
@@ -47,36 +41,28 @@ The output is in the DOT format, which can be used by GraphViz to generate chart
 	rootCmd.Cmd.AddCommand(graphCmd)
 }
 
-func (gc *graphCmd) graphCmdRun(name string, conf *config.Config) error {
-
-	p := conf.Pipelines[name]
-	if p == nil {
-		return fmt.Errorf("no such pipeline %s", name)
-	}
-
+func graphCmdRun(p *scheduler.ExecutionGraph, channelOut io.Writer, isLr bool) error {
 	g := dot.NewGraph(dot.Directed)
 	g.Attr("center", "true")
-	isLr := conf.Options.GraphOrientationLeftRight
 	if isLr {
 		g.Attr("rankdir", "LR")
 	}
-
 	draw(g, p)
-
-	fmt.Fprintln(gc.channelOut, g.String())
-
+	fmt.Fprintln(channelOut, g.String())
 	return nil
 }
 
 func draw(g *dot.Graph, p *scheduler.ExecutionGraph) {
-	for k, v := range p.Nodes() {
+	for _, v := range p.Nodes() { //p.BFSNodes(scheduler.RootNodeName) {
+		if v.Name == scheduler.RootNodeName {
+			
+		}
 		if v.Pipeline != nil {
-			cluster := g.Subgraph(k, dot.ClusterOption{})
+			cluster := g.Subgraph(v.Name, dot.ClusterOption{})
 			draw(cluster, v.Pipeline)
 		}
-
-		for _, from := range p.To(k) {
-			g.Edge(g.Node(from), g.Node(k))
+		for _, from := range p.To(v.Name) {
+			g.Edge(g.Node(from), g.Node(v.Name))
 		}
 	}
 }

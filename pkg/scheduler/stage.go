@@ -69,16 +69,17 @@ func (s *Stage) Duration() time.Duration {
 	return s.End.Sub(s.Start)
 }
 
-type StageByStartTime []Stage
+type StageTimeTaken []*Stage
 
-func (s StageByStartTime) Len() int {
+func (s StageTimeTaken) Len() int {
 	return len(s)
 }
 
-func (s StageByStartTime) Less(i, j int) bool {
-	return s[j].Start.Nanosecond() > s[i].Start.Nanosecond()
+func (s StageTimeTaken) Less(i, j int) bool {
+	//
+	return int(s[j].Duration()) > int(s[i].Duration())
 }
 
-func (s StageByStartTime) Swap(i, j int) {
+func (s StageTimeTaken) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }

@@ -4,7 +4,6 @@ package cmdutils
 import (
 	"fmt"
 	"io"
-	"sort"
 	"strings"
 
 	"github.com/Ensono/taskctl/internal/config"
@@ -47,9 +46,7 @@ func DisplayTaskSelection(conf *config.Config) (taskOrPipelineSelected string, e
 
 // printSummary is a TUI helper
 func PrintSummary(g *scheduler.ExecutionGraph, chanOut io.Writer) {
-	stages := g.NodesList()
-
-	sort.Sort(scheduler.StageByStartTime(stages))
+	stages := g.BFSNodesFlattened(scheduler.RootNodeName)
 
 	fmt.Fprintf(chanOut, BOLD_TERMINAL, "Summary: \n")
 

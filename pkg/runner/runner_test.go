@@ -158,7 +158,7 @@ func ExampleTaskRunner_Run() {
 	}
 	err = r.Run(t)
 	if err != nil {
-		fmt.Println(err, t.ExitCode, t.ErrorMessage())
+		fmt.Println(err, t.ExitCode(), t.ErrorMessage())
 	}
 	fmt.Println(ob.String())
 	// indentation is important with the matched output here

@@ -7,7 +7,7 @@ import (
 )
 
 func TestExecutionGraph_AddStage(t *testing.T) {
-	g, err := scheduler.NewExecutionGraph()
+	g, err := scheduler.NewExecutionGraph("test")
 	if err != nil {
 		t.Fatal(err)
 	}

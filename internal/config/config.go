@@ -104,9 +104,11 @@ func buildFromDefinition(def *ConfigDefinition, lc *loaderContext) (cfg *Config,
 		}
 	}
 
+	// Pipelines are a collection to tasks or pipelines
+	// specified in a DAG like way
 	// to allow pipeline-to-pipeline links
 	for k := range def.Pipelines {
-		cfg.Pipelines[k], err = scheduler.NewExecutionGraph()
+		cfg.Pipelines[k], err = scheduler.NewExecutionGraph(k)
 		if err != nil {
 			return nil, err
 		}

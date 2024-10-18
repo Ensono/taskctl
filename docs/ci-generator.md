@@ -10,17 +10,21 @@ Where a pipeline can a collection of tasks that are executed in parallel or in a
 
 ```mermaid
 flowchart TD
-    A(first task in pipeline x) --> B(task a)
+    A(Start pipeline x) --> B(task a)
     A --> C(task b)
     A --> D(task c)
     B --> E(task e)
     C --> E(task e)
     D --> F(task d)
     F --> E
-    E --> X(last task in pipeline x)
+    E --> X(Finish pipeline x)
 ```
 
-The example above shows `pipeline x` - starting by executing tasks a,b,c in parallel. `task d` waiting
+The example above shows `pipeline x` - starting by executing tasks a,b,c in parallel. `task d` waiting for `task c` to finish. 
+
+`task e` waits for `task a`, `task b` and `task d` to complete before running.
+
+
 
 ## Implementation
 

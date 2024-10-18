@@ -19,7 +19,7 @@ func TestPrintSummary(t *testing.T) {
 
 	t.Run("one stage run", func(t *testing.T) {
 		out := bytes.Buffer{}
-		graph, _ := scheduler.NewExecutionGraph()
+		graph, _ := scheduler.NewExecutionGraph("t1")
 		stage := scheduler.NewStage(func(s *scheduler.Stage) {
 			s.Name = "foo"
 		})

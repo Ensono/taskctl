@@ -108,9 +108,9 @@ func (e *DefaultExecutor) Execute(ctx context.Context, job *Job) ([]byte, error)
 	}
 
 	if err := e.interp.Run(ctx, cmd); err != nil {
-		return nil, err
+		return []byte{}, err
 	}
-	return nil, nil
+	return []byte{}, nil
 }
 
 // IsExitStatus checks if given `err` is an exit status

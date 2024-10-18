@@ -67,6 +67,8 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 			return nil, err
 		}
 	}
+	
+	// g.OrderTree
 
 	return g, nil
 }

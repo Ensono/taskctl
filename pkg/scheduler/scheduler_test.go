@@ -54,7 +54,7 @@ func TestExecutionGraph_Scheduler(t *testing.T) {
 
 	})
 
-	graph, err := scheduler.NewExecutionGraph(stage1, stage2, stage3, stage4)
+	graph, err := scheduler.NewExecutionGraph("t1", stage1, stage2, stage3, stage4)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func TestExecutionGraph_Scheduler_AllowFailure(t *testing.T) {
 		s.Env = variables.NewVariables()
 	})
 
-	graph, err := scheduler.NewExecutionGraph(stage1, stage2, stage3)
+	graph, err := scheduler.NewExecutionGraph("t1", stage1, stage2, stage3)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +136,7 @@ func TestSkippedStage(t *testing.T) {
 		s.Condition = "false"
 	})
 
-	graph, err := scheduler.NewExecutionGraph(stage1, stage2)
+	graph, err := scheduler.NewExecutionGraph("t1", stage1, stage2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,7 +161,7 @@ func TestScheduler_Cancel(t *testing.T) {
 
 	})
 
-	graph, err := scheduler.NewExecutionGraph(stage1)
+	graph, err := scheduler.NewExecutionGraph("t1", stage1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -198,7 +198,7 @@ func TestConditionErroredStage(t *testing.T) {
 		s.Condition = "/unknown-bin"
 	})
 
-	graph, err := scheduler.NewExecutionGraph(stage1, stage2)
+	graph, err := scheduler.NewExecutionGraph("t1", stage1, stage2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -222,7 +222,7 @@ func ExampleScheduler_Schedule() {
 	r, _ := runner.NewTaskRunner()
 	s := scheduler.NewScheduler(r)
 
-	graph, err := scheduler.NewExecutionGraph(
+	graph, err := scheduler.NewExecutionGraph("t1",
 		scheduler.NewStage(func(s *scheduler.Stage) {
 			s.Name = "format"
 			s.Task = format
