@@ -1,9 +1,9 @@
+// package Cmdutils provides testable helpers to commands only
 package cmdutils
 
 import (
 	"fmt"
 	"io"
-	"sort"
 	"strings"
 
 	"github.com/Ensono/taskctl/internal/config"
@@ -46,14 +46,7 @@ func DisplayTaskSelection(conf *config.Config) (taskOrPipelineSelected string, e
 
 // printSummary is a TUI helper
 func PrintSummary(g *scheduler.ExecutionGraph, chanOut io.Writer) {
-	var stages = make([]*scheduler.Stage, 0)
-	for _, stage := range g.Nodes() {
-		stages = append(stages, stage)
-	}
-
-	sort.Slice(stages, func(i, j int) bool {
-		return stages[j].Start.Nanosecond() > stages[i].Start.Nanosecond()
-	})
+	stages := g.BFSNodesFlattened(scheduler.RootNodeName)
 
 	fmt.Fprintf(chanOut, BOLD_TERMINAL, "Summary: \n")
 

@@ -45,6 +45,8 @@ type ConfigDefinition struct {
 	// - commandline.
 	// Variables can be used inside templating using the text/template go package
 	Variables EnvVarMapType `mapstructure:"variables" yaml:"variables" json:"variables,omitempty"` // jsonschema:"additional_properties_type=string;integer"`
+	// Generator defines the options for the desired CI yaml generation
+	Generator CiGenerator `mapstructure:"generator" yaml:"generator" json:"generator,omitempty"`
 }
 
 type ContextDefinition struct {
@@ -140,6 +142,19 @@ type Image struct {
 	//
 	// // e.g. dcoker run (TASKCTL_ARGS...) (CONTAINER_ARGS...) image (shell) (SHELL_ARGS...) (command)
 	ShellArgs []string `mapstructure:"shell_args" yaml:"shell_args,omitempty" json:"shell_args,omitempty"`
+}
+
+type CITarget string
+
+const (
+	GitlabCITarget CITarget = "gitlab"
+	GitHubCITarget CITarget = "github"
+)
+
+type CiGenerator struct {
+	// Target is the CI implementation into which to generate the YAML
+	Target CITarget `mapstructure:"target" yaml:"target" json:"target,omitempty" jsonschema:"enum=gitlab,enum=github"`
+	// TODO: add more options here
 }
 
 type PipelineDefinition struct {
