@@ -45,7 +45,7 @@ type ExecutionContext struct {
 
 	onceUp   sync.Once
 	onceDown sync.Once
-	mu       sync.Mutex
+	mu       *sync.Mutex
 }
 
 // ExecutionContextOption is a functional option to configure ExecutionContext
@@ -62,7 +62,11 @@ func NewExecutionContext(executable *utils.Binary, dir string, env variables.Con
 		down:       down,
 		before:     before,
 		after:      after,
-		Variables:  variables.NewVariables(),
+		// mu is a pointer to a mutex
+		// so that it's shared across all
+		// the instances that are using the given ExecutionContext
+		mu:        &sync.Mutex{},
+		Variables: variables.NewVariables(),
 	}
 
 	for _, o := range options {
@@ -138,6 +142,8 @@ var ErrMutuallyExclusiveVarSet = errors.New("mutually exclusive vars have been s
 //
 // Note: it will create the directory
 func (c *ExecutionContext) GenerateEnvfile(env variables.Container) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	// return an error if the include and exclude have both been specified
 	if len(c.Envfile.Exclude) > 0 && len(c.Envfile.Include) > 0 {
 		return fmt.Errorf("include and exclude lists are mutually exclusive, %w", ErrMutuallyExclusiveVarSet)

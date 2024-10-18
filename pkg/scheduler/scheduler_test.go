@@ -18,8 +18,8 @@ type TestTaskRunner struct {
 
 func (t2 TestTaskRunner) Run(t *task.Task) error {
 	if t.Commands[0] == "/usr/bin/false" {
-		t.ExitCode = 1
-		t.Errored = true
+		t.WithExitCode(1)
+		t.WithError(fmt.Errorf("error"))
 		return errors.New("task failed")
 	}
 

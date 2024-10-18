@@ -2,6 +2,7 @@ package task
 
 import (
 	"bytes"
+	"sync"
 	"time"
 
 	"github.com/Ensono/taskctl/pkg/variables"
@@ -52,19 +53,19 @@ type Task struct {
 	// ResetContext is useful if multiple variations are running in the same task
 	ResetContext bool
 	Condition    string
-	Skipped      bool
+	Artifacts    *Artifact
 
 	Name        string
 	Description string
-
-	Start time.Time
-	End   time.Time
-
-	Artifacts *Artifact
-
-	ExitCode int16
-	Errored  bool
-	Error    error
+	// internal fields updated by a mutex
+	// only used with the single instance of the task
+	mu       sync.Mutex // guards the below private fields
+	start    time.Time
+	end      time.Time
+	skipped  bool
+	exitCode int16
+	errored  bool
+	errorVal error
 	Log      struct {
 		Stderr *bytes.Buffer
 		Stdout *bytes.Buffer
@@ -77,7 +78,9 @@ func NewTask(name string) *Task {
 		Name:      name,
 		Env:       variables.NewVariables(),
 		Variables: variables.NewVariables(),
-		ExitCode:  -1,
+		exitCode:  -1,
+		errored:   false,
+		mu:        sync.Mutex{},
 		Log: struct {
 			Stderr *bytes.Buffer
 			Stdout *bytes.Buffer
@@ -86,6 +89,84 @@ func NewTask(name string) *Task {
 			Stdout: &bytes.Buffer{},
 		},
 	}
+}
+
+// Withers
+// start  time.Time
+func (t *Task) WithStart(start time.Time) *Task {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.start = start
+	return t
+}
+
+func (t *Task) Start() time.Time {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.start
+}
+
+// end      time.Time
+func (t *Task) WithEnd(end time.Time) *Task {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.end = end
+	return t
+}
+
+func (t *Task) End() time.Time {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.end
+}
+
+// skipped  bool
+func (t *Task) WithSkipped(val bool) *Task {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.skipped = val
+	return t
+}
+
+func (t *Task) Skipped() bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.skipped
+}
+
+// exitCode int16
+func (t *Task) WithExitCode(val int16) *Task {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.exitCode = val
+	return t
+}
+
+func (t *Task) ExitCode() int16 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.exitCode
+}
+
+// errored  bool
+func (t *Task) WithError(val error) *Task {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.errored = true
+	t.errorVal = val
+	return t
+}
+
+func (t *Task) Errored() bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.errored
+}
+
+func (t *Task) Error() error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.errorVal
 }
 
 // FromCommands creates task new Task instance with given commands
@@ -97,16 +178,16 @@ func FromCommands(name string, commands ...string) *Task {
 
 // Duration returns task's execution duration
 func (t *Task) Duration() time.Duration {
-	if t.End.IsZero() {
-		return time.Since(t.Start)
+	if t.End().IsZero() {
+		return time.Since(t.Start())
 	}
 
-	return t.End.Sub(t.Start)
+	return t.End().Sub(t.Start())
 }
 
 // ErrorMessage returns message of the error occurred during task execution
 func (t *Task) ErrorMessage() string {
-	if !t.Errored {
+	if !t.Errored() {
 		return ""
 	}
 

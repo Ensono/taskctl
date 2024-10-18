@@ -138,8 +138,8 @@ func (r *TaskRunner) Run(t *task.Task) error {
 			logrus.Error(err)
 		}
 
-		if !t.Errored && !t.Skipped {
-			t.ExitCode = 0
+		if !t.Errored() && !t.Skipped() {
+			t.WithExitCode(0)
 		}
 	}(t)
 
@@ -156,7 +156,7 @@ func (r *TaskRunner) Run(t *task.Task) error {
 
 	if !meets {
 		logrus.Infof("task %s was skipped", t.Name)
-		t.Skipped = true
+		t.WithSkipped(true)
 		return nil
 	}
 
@@ -361,7 +361,7 @@ func (r *TaskRunner) execute(ctx context.Context, t *task.Task, job *executor.Jo
 		return err
 	}
 
-	t.Start = time.Now()
+	t.WithStart(time.Now())
 
 	for nextJob := job; nextJob != nil; nextJob = nextJob.Next {
 		var err error
@@ -369,18 +369,17 @@ func (r *TaskRunner) execute(ctx context.Context, t *task.Task, job *executor.Jo
 		if err != nil {
 			logrus.Debug(err.Error())
 			if status, ok := executor.IsExitStatus(err); ok {
-				t.ExitCode = int16(status)
+				t.WithExitCode(int16(status))
 				if t.AllowFailure {
 					continue
 				}
 			}
-			t.Errored = true
-			t.Error = err
-			t.End = time.Now()
-			return t.Error
+			t.WithError(err)
+			t.WithEnd(time.Now())
+			return t.Error()
 		}
 	}
-	t.End = time.Now()
+	t.WithEnd(time.Now())
 
 	return nil
 }

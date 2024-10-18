@@ -1,5 +1,7 @@
 # yaml-language-server: $schema=../../../schemas/schema_v1.json
 
+output: prefixed
+
 generator:
   target: github
 
@@ -24,26 +26,52 @@ pipelines:
     - task: graph:task4
       depends_on:
         - graph:task2
-    - task: graph:task1 # => graph:pipeline1__graph:task1__executionOrder
+    - task: graph:task1
 
   graph:pipeline2:
-    - task: graph:task4
+    - task: task-p2:2
+    - task: task-p2:1
 
 tasks:
   graph:task1:
-    command: "echo 'hello, task 1!'"
+    command: |
+      for i in $(seq 1 5); do
+        echo "hello task 1 - iteration $i"
+        sleep 0
+      done
     context: podman
 
   graph:task2:
-    command: "echo 'hello, task 2!'"
+    command: |
+      echo "hello task 2"
+    context: podman
 
   graph:task3:
     command: "echo 'hello, task3!'"
-    # env:
-    #   FOO: bar
+    env:
+      FOO: bar
 
   graph:task4:
-    command: "echo 'hello, task4!'"
-    # env:
-    #   FOO: bar
+    command: | 
+      echo "hello, task4"
+    context: podman
+    env:
+      FOO: bar
 
+  task-p2:1:
+    command:
+      - |
+        echo "hello, p2 ${FOO}"
+    context: podman
+    env:
+      FOO: task1
+
+  task-p2:2:
+    command:
+      - |
+        for i in $(seq 1 5); do
+          echo "hello, p2 ${FOO} - iteration $i"
+          sleep 0
+        done
+    env:
+      FOO: task2

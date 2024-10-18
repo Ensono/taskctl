@@ -35,7 +35,7 @@ func TestContext(t *testing.T) {
 	task2.Context = "before_failed"
 
 	err = runner.Run(task1)
-	if err != nil || task1.ExitCode != 0 {
+	if err != nil || task1.ExitCode() != 0 {
 		t.Fatal(err)
 	}
 
@@ -44,7 +44,7 @@ func TestContext(t *testing.T) {
 		t.Error()
 	}
 
-	if c2.StartupError() == nil || task2.ExitCode != -1 {
+	if c2.StartupError() == nil || task2.ExitCode() != -1 {
 		t.Error()
 	}
 
