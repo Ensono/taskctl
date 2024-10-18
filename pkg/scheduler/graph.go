@@ -201,6 +201,11 @@ func (g *ExecutionGraph) LastError() error {
 	return g.error
 }
 
+// LastError returns latest error appeared during stages execution
+func (g *ExecutionGraph) Name() string {
+	return g.name
+}
+
 // Duration returns execution duration
 func (g *ExecutionGraph) Duration() time.Duration {
 	if g.end.IsZero() {
