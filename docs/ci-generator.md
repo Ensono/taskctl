@@ -29,3 +29,4 @@ The example above shows `pipeline x` - starting by executing tasks a,b,c in para
 ## Implementation
 
 Taskctl properties need to be mapped to the specific CI implementations
+

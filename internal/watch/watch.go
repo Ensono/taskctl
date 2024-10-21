@@ -188,7 +188,7 @@ func (w *Watcher) handle(event fsnotify.Event) {
 	w.r.Cancel()
 	logrus.Debugf("running task \"%s\" for watcher \"%s\"", w.task.Name, w.name)
 
-	t := *w.task
+	t := w.task
 	t.Env = t.Env.Merge(variables.FromMap(map[string]string{
 		"EventName": eventName,
 		"EventPath": event.Name,
@@ -199,7 +199,7 @@ func (w *Watcher) handle(event fsnotify.Event) {
 		"EVENT_PATH": event.Name,
 	}))
 
-	err := w.r.Run(&t)
+	err := w.r.Run(t)
 	if err != nil {
 		logrus.Error(err)
 	}

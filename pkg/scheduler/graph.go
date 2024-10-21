@@ -171,12 +171,12 @@ func (g *ExecutionGraph) cycleDfs(node string, visited map[string]bool, inStack 
 	return false
 }
 
-// Generate walks the graph for the purposes of creating
-// a generated file(s) for CI yaml definition purposes
-func (g *ExecutionGraph) Generate() string {
-	nodes := g.nodes
-	return fmt.Sprintf("%v", nodes)
-}
+// // Generate walks the graph for the purposes of creating
+// // a generated file(s) for CI yaml definition purposes
+// func (g *ExecutionGraph) Generate() string {
+// 	nodes := g.nodes
+// 	return fmt.Sprintf("%v", nodes)
+// }
 
 // Node returns stage by its name
 func (g *ExecutionGraph) Node(name string) (*Stage, error) {

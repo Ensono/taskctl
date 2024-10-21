@@ -55,7 +55,7 @@ func graphCmdRun(p *scheduler.ExecutionGraph, channelOut io.Writer, isLr bool, i
 	g.Node(pipelineStartKey)
 	draw(g, p, "", false)
 	if isMermaid {
-		fmt.Fprintf(channelOut, dot.MermaidFlowchart(g, dot.MermaidTopToBottom))
+		fmt.Fprintln(channelOut, dot.MermaidFlowchart(g, dot.MermaidTopToBottom))
 		return nil
 	}
 	fmt.Fprintln(channelOut, g.String())

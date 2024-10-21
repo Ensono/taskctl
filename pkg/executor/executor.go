@@ -7,7 +7,6 @@
 package executor
 
 import (
-	"bytes"
 	"context"
 	"io"
 	"os"
@@ -31,8 +30,6 @@ type DefaultExecutor struct {
 	dir    string
 	env    []string
 	interp *interp.Runner
-	outBuf *bytes.Buffer
-	errBuf *bytes.Buffer
 	// doReset resets the execution environment after each run
 	doReset bool
 }

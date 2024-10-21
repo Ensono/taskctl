@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/Ensono/taskctl/internal/cmdutils"
 	"github.com/Ensono/taskctl/internal/config"
+	"github.com/Ensono/taskctl/pkg/scheduler"
 	"github.com/spf13/cobra"
 )
 
@@ -47,8 +49,12 @@ func generateDefinition(conf *config.Config, argsStringer *argsToStringsMapper) 
 		return fmt.Errorf("specified arg is not a pipeline")
 	}
 
-	nodes := graph.Generate()
-	fmt.Println(nodes)
-
+	nodes := graph.BFSNodesFlattened(scheduler.RootNodeName)
+	for _, v := range nodes {
+		fmt.Fprintf(os.Stdout, "name: %s\nDependsOn: %v\n", v.Name, v.DependsOn)
+		if v.Pipeline != nil {
+			fmt.Fprintf(os.Stdout, "isPipeline: %v\nTasks: %v\n", true, v.Pipeline.Children(scheduler.RootNodeName))
+		}
+	}
 	return nil
 }

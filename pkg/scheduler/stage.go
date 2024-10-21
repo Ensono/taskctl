@@ -69,17 +69,17 @@ func (s *Stage) Duration() time.Duration {
 	return s.End.Sub(s.Start)
 }
 
-type StageTimeTaken []*Stage
+// Keep reference slice for later
+// type StageTimeTaken []*Stage
 
-func (s StageTimeTaken) Len() int {
-	return len(s)
-}
+// func (s StageTimeTaken) Len() int {
+// 	return len(s)
+// }
 
-func (s StageTimeTaken) Less(i, j int) bool {
-	//
-	return int(s[j].Duration()) > int(s[i].Duration())
-}
+// func (s StageTimeTaken) Less(i, j int) bool {
+// 	return int(s[j].Duration()) > int(s[i].Duration())
+// }
 
-func (s StageTimeTaken) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
+// func (s StageTimeTaken) Swap(i, j int) {
+// 	s[i], s[j] = s[j], s[i]
+// }

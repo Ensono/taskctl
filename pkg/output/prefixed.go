@@ -35,7 +35,7 @@ func (d *prefixedOutputDecorator) Write(p []byte) (int, error) {
 		}
 		// do not write empty lines
 		if len(line) == 0 {
-			p = p[advance:]
+			// p = p[advance:]
 			break
 		}
 		if _, err := d.w.Write([]byte(fmt.Sprintf("\x1b[36m%s\x1b[0m: %s\r\n", d.t.Name, line))); err != nil {

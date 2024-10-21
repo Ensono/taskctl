@@ -43,15 +43,3 @@ func generateSchemaForTaskCtl(dir string) {
 		log.Fatalf("failed to write: %s", err)
 	}
 }
-
-var ciSchemaMapper = map[config.CITarget]string{
-	config.GitHubCITarget: "https://github.com/SchemaStore/schemastore/blob/master/src/schemas/json/github-workflow.json",
-	config.GitlabCITarget: " https://gitlab.com/gitlab-org/gitlab/-/raw/master/app/assets/javascripts/editor/schema/ci.json",
-	// TODO: add more here
-}
-
-func generateSchemaForCIImpl() {
-	log.Printf("generating for ")
-
-	// https://gitlab.com/gitlab-org/gitlab/-/raw/master/app/assets/javascripts/editor/schema/ci.json
-}
