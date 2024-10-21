@@ -95,14 +95,19 @@ func (g *ExecutionGraph) addEdge(parent string, child string) error {
 }
 
 // Nodes returns ExecutionGraph stages - an n-ary tree itself
-// Node names are used
+// Stage (Node) may appear multiple times in a scheduling scenario,
+// this is desired behaviour to loop over the nodes as many times
+// as they appear in a DAG manner.
 func (g *ExecutionGraph) Nodes() map[string]*Stage {
 	return g.nodes
-	// stages := make(map[string]*Stage)
-	// for _, nodeName := range g.parent[rootNodeName] {
-	// 	stages[nodeName] = g.nodes[nodeName]
-	// }
-	// return stages
+}
+
+func (g *ExecutionGraph) Children(node string) map[string]*Stage {
+	stages := make(map[string]*Stage)
+	for _, nodeName := range g.children[node] {
+		stages[nodeName] = g.nodes[nodeName]
+	}
+	return stages
 }
 
 // BFSNodesFlattened returns a Breadth-First-Search flattened list of top level tasks/pipelines

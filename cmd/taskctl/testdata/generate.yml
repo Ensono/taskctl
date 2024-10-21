@@ -27,10 +27,17 @@ pipelines:
       depends_on:
         - graph:task2
     - task: graph:task1
+    - pipeline: graph:pipeline3
+      depends_on:
+        - graph:task4
 
   graph:pipeline2:
     - task: task-p2:2
     - task: task-p2:1
+
+  graph:pipeline3:
+    - task: graph:task2
+    - task: graph:task3
 
 tasks:
   graph:task1:

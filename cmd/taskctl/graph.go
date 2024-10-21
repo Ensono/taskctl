@@ -44,14 +44,16 @@ The output is in the DOT format, which can be used by GraphViz to generate chart
 	rootCmd.Cmd.AddCommand(graphCmd)
 }
 
+const pipelineStartKey string = "pipeline:start"
+
 func graphCmdRun(p *scheduler.ExecutionGraph, channelOut io.Writer, isLr bool, isMermaid bool) error {
 	g := dot.NewGraph(dot.Directed)
 	g.Attr("center", "true")
-	// g.Attr("label", p.Name())
 	if isLr {
 		g.Attr("rankdir", "LR")
 	}
-	draw(g, p)
+	g.Node(pipelineStartKey)
+	draw(g, p, "", false)
 	if isMermaid {
 		fmt.Fprintf(channelOut, dot.MermaidFlowchart(g, dot.MermaidTopToBottom))
 		return nil
@@ -60,20 +62,30 @@ func graphCmdRun(p *scheduler.ExecutionGraph, channelOut io.Writer, isLr bool, i
 	return nil
 }
 
-func draw(g *dot.Graph, p *scheduler.ExecutionGraph) {
-	for _, v := range p.Nodes() { //p.BFSNodes(scheduler.RootNodeName) {
-		// if v.Name == scheduler.RootNodeName {
-		// }
+// draw recursively walks the tree and adds nodes with a correct dependency
+// between the nodes (parents => children).
+//
+// Same nodes can be call
+func draw(g *dot.Graph, p *scheduler.ExecutionGraph, parent string, startAdded bool) {
+	for _, v := range p.BFSNodesFlattened(scheduler.RootNodeName) {
 		if v.Pipeline != nil {
-			cluster := g.Subgraph(v.Name, dot.ClusterOption{})
-			draw(cluster, v.Pipeline)
-			//
-			if subNode, found := g.FindNodeById(cluster.GetID()); found {
-				g.Edge(g.Node(v.Name), subNode)
-			}
+			draw(g, v.Pipeline, v.Pipeline.Name(), startAdded)
 		}
-		for _, from := range p.To(v.Name) {
-			g.Edge(g.Node(from), g.Node(v.Name))
+		dependants := p.From(v.Name)
+		if len(dependants) == 0 && parent != "" {
+			if parent, found := g.FindNodeById(parent); found {
+				g.Edge(parent, g.Node(v.Name))
+			}
+			continue
+		}
+		for _, child := range p.From(v.Name) {
+			if !startAdded {
+				if parent, found := g.FindNodeById(pipelineStartKey); found {
+					g.Edge(parent, g.Node(v.Name))
+					startAdded = true
+				}
+			}
+			g.Edge(g.Node(v.Name), g.Node(child))
 		}
 	}
 }
