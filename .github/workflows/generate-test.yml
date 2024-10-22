@@ -8,9 +8,6 @@ name: eks:stacks
     branches:
     - master
     - main
-env:
-  REGION: eu-west-1
-
 jobs:
   lint:
     name: lint
@@ -45,11 +42,11 @@ jobs:
         TF_DIR: foo/bar
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_DEFAULT_REGION: ${{ env.REGION }}
+      AWS_DEFAULT_REGION: ${REGION}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       ENV_NAME: nonprod
       SOME_TOKEN_FOR_APP1: GHA_SECRET://foo/bar/secret
-      TF_BACKEND_ARGS: region=${AWS_TF_STATE_REGION},access_key=${{secrets.AWS_ACCESS_KEY_ID}},secret_key=${{secrets.AWS_SECRET_ACCESS_KEY}},bucket=${{secrets.AWS_TF_STATE_BUCKET}},key=${{env.AWS_TF_PRE_INFRA_STATE_KEY}},dynamodb_table=${{secrets.AWS_TF_STATE_DYNAMOTABLE}},encrypt=true
+      TF_BACKEND_ARGS: region=${AWS_TF_STATE_REGION},access_key=${{secrets.AWS_ACCESS_KEY_ID}},secret_key=${{secrets.AWS_SECRET_ACCESS_KEY}},bucket=${{secrets.AWS_TF_STATE_BUCKET}},key=${AWS_TF_PRE_INFRA_STATE_KEY},dynamodb_table=${{secrets.AWS_TF_STATE_DYNAMOTABLE}},encrypt=true
       TF_FILE_LOCATION: somefile/foo.tf
       TF_VAR_container_registry_pull_push_user: AWSSECRETS://foo/bar/secret
       TF_VAR_dns_create_hostedzone: "0"

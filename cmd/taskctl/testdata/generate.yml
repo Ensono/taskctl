@@ -42,10 +42,10 @@ pipelines:
         # AWS Environmental Config
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: ${{ env.REGION }}
+        AWS_DEFAULT_REGION: ${REGION}
         # Terraform Backend Configuration
         TF_FILE_LOCATION: somefile/foo.tf
-        TF_BACKEND_ARGS: region=${AWS_TF_STATE_REGION},access_key=${{secrets.AWS_ACCESS_KEY_ID}},secret_key=${{secrets.AWS_SECRET_ACCESS_KEY}},bucket=${{secrets.AWS_TF_STATE_BUCKET}},key=${{env.AWS_TF_PRE_INFRA_STATE_KEY}},dynamodb_table=${{secrets.AWS_TF_STATE_DYNAMOTABLE}},encrypt=true
+        TF_BACKEND_ARGS: region=${AWS_TF_STATE_REGION},access_key=${{secrets.AWS_ACCESS_KEY_ID}},secret_key=${{secrets.AWS_SECRET_ACCESS_KEY}},bucket=${{secrets.AWS_TF_STATE_BUCKET}},key=${AWS_TF_PRE_INFRA_STATE_KEY},dynamodb_table=${{secrets.AWS_TF_STATE_DYNAMOTABLE}},encrypt=true
         # Terraform Resource Configuration
         TF_VAR_name_environment: "nonprod"
         TF_VAR_dns_create_hostedzone: false
