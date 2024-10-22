@@ -145,15 +145,28 @@ func flattenTasksInPipeline(job *schema.GithubJob, graph *scheduler.ExecutionGra
 // jobLooper accepts a list of top level jobs
 func jobLooper(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph) error {
 	nodes := pipeline.BFSNodesFlattened(scheduler.RootNodeName)
-	// jm := make(map[string]schema.GithubJob)
 	for _, node := range nodes {
-		// jobName := fmt.Sprintf("%v_%s", idx, utils.ConvertStringToMachineFriendly(node.Name))
 		jobName := utils.ConvertStringToMachineFriendly(node.Name)
 		job := &schema.GithubJob{
 			Name:   utils.ConvertStringToHumanFriendly(node.Name),
 			RunsOn: "ubuntu-24.04",
 			Env:    utils.ConvertToMapOfStrings(node.Env.Map()),
 		}
+		// toggle if checkout or not
+		job.AddStep(&schema.GithubStep{
+			Uses: "actions/checkout@v4",
+		})
+		// name: 'Install taskctl'
+		job.AddStep(&schema.GithubStep{
+			Name: "Install taskctl",
+			ID:   "install-taskctl",
+			Run: `rm -rf /tmp/taskctl-linux-amd64-1.7.5
+wget https://github.com/Ensono/taskctl/releases/download/1.7.5/taskctl-linux-amd64 -O /tmp/taskctl-linux-amd64-1.7.5
+cp /tmp/taskctl-linux-amd64-1.7.5 /usr/local/bin/taskctl
+chmod u+x /usr/local/bin/taskctl`,
+			Shell: "bash",
+		})
+
 		if node.Pipeline != nil {
 			flattenTasksInPipeline(job, node.Pipeline)
 		}

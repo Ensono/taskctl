@@ -97,7 +97,8 @@ pipelines:
       generator:
         github: 
           runs-on: ubuntu-24.04
-    - pipeline: InfraDev
+    - pipeline: infrapipeline
+      name: InfraDev
       generator:
         github: 
           if: github.ref != 'refs/heads/main'
@@ -123,7 +124,8 @@ pipelines:
         TF_VAR_container_registry_pull_push_user: AWSSECRETS://foo/bar/secret
       depends_on:
         - lint
-    - pipeline: InfraProd
+    - pipeline: infrapipeline
+      name: InfraProd
       generator:
         github: 
           if: github.ref == 'refs/heads/main'
@@ -137,27 +139,21 @@ pipelines:
   # CI pipelines
   lint:
     - task: lint:ci
+      depends_on:
+        - install-taskctl
   InfraDev:
-    - task: install-taskctl
     - pipeline: infrapipeline
       depends_on:
         - install-taskctl
   
   InfraProd:
-    # env: 
-    #  FOO: bar 
-    #  ENV: prod
-    # taskOrPipeline:  
-      - task: install-taskctl
-        # depends_on:
-        #   - InfraDev:infrapipeline
-      - pipeline: infrapipeline
-        # env: 
-        #   ENV: PROD
-        # envfile:
-        #   g
-        depends_on:
-          - install-taskctl
+    - pipeline: infrapipeline
+      # env: 
+      #   ENV: PROD
+      # envfile:
+      #   g
+      depends_on:
+        - install-taskctl
 
   # internal
   infrapipeline:
