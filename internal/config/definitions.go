@@ -46,7 +46,9 @@ type ConfigDefinition struct {
 	// Variables can be used inside templating using the text/template go package
 	Variables EnvVarMapType `mapstructure:"variables" yaml:"variables" json:"variables,omitempty"` // jsonschema:"additional_properties_type=string;integer"`
 	// Generator defines the options for the desired CI yaml generation
-	Generator CiGenerator `mapstructure:"generator" yaml:"generator" json:"generator,omitempty"`
+	// Currently these are just map[string]any so that the user can specify the desired behaviour
+	// NOTE: will provide no build time safety
+	Generator map[string]any `yaml:"generator,omitempty" json:"generator,omitempty"`
 }
 
 type ContextDefinition struct {
@@ -101,12 +103,6 @@ const (
 	GitHubCITarget CITarget = "github"
 )
 
-type CiGenerator struct {
-	// Target is the CI implementation into which to generate the YAML
-	Target CITarget `mapstructure:"target" yaml:"target" json:"target,omitempty" jsonschema:"enum=gitlab,enum=github"`
-	// TODO: add more options here
-}
-
 type PipelineDefinition struct {
 	// Name is the friendly name to give to pipeline
 	Name string `mapstructure:"name" yaml:"name" json:"name,omitempty"`
@@ -130,6 +126,8 @@ type PipelineDefinition struct {
 	Env EnvVarMapType `mapstructure:"env" yaml:"env,omitempty" json:"env,omitempty"`
 	// Variables is the Key: Value map of vars vars to inject into the tasks
 	Variables EnvVarMapType `mapstructure:"variables" yaml:"variables,omitempty" json:"variables,omitempty"`
+	// Generator PipelineLevel
+	Generator map[string]any `yaml:"generator,omitempty" json:"generator,omitempty"`
 }
 
 type TaskDefinition struct {
@@ -165,6 +163,8 @@ type TaskDefinition struct {
 	// ResetContext ensures each invocation of the variation is run with a Reset on the executor.
 	// Currently only applies to a default executor and when run in variations.
 	ResetContext bool `mapstructure:"reset_context" yaml:"reset_context,omitempty" json:"reset_context,omitempty" jsonschema:"default=false"`
+	//
+	Generator map[string]any `yaml:"generator,omitempty" json:"generator,omitempty"`
 }
 
 type WatcherDefinition struct {

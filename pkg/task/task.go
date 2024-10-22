@@ -5,9 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Ensono/taskctl/pkg/variables"
-
 	"github.com/Ensono/taskctl/internal/utils"
+	"github.com/Ensono/taskctl/pkg/variables"
 )
 
 type ArtifactType string
@@ -70,6 +69,8 @@ type Task struct {
 		Stderr *bytes.Buffer
 		Stdout *bytes.Buffer
 	}
+	// Generator Task Level
+	Generator map[string]any
 }
 
 // NewTask creates new Task instance

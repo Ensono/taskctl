@@ -14,7 +14,7 @@ type GithubWorkflow struct {
 	Jobs yaml.MapSlice        `json:"jobs" yaml:"jobs"`
 	// Jobs        yaml.Node         `json:"jobs" yaml:"jobs"`
 	Defaults    *GithubDefaults   `json:"defaults,omitempty" yaml:"defaults,omitempty"`
-	Env         map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
+	Env         map[string]any    `json:"env,omitempty" yaml:"env,omitempty"`
 	Permissions map[string]string `json:"permissions,omitempty" yaml:"permissions,omitempty"`
 }
 
@@ -70,7 +70,9 @@ type GithubJob struct {
 	RunsOn         string            `json:"runs-on,omitempty" yaml:"runs-on,omitempty"`
 	Container      *GithubContainer  `json:"container,omitempty" yaml:"container,omitempty"`
 	Steps          []*GithubStep     `json:"steps,omitempty" yaml:"steps,omitempty"`
+	If             string            `json:"if,omitempty" yaml:"if,omitempty"`
 	Env            map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
+	Environment    string            `json:"environment,omitempty" yaml:"environment,omitempty"`
 	TimeoutMinutes int               `json:"timeout-minutes,omitempty" yaml:"timeout_minutes,omitempty"`
 	Strategy       *GithubStrategy   `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 }

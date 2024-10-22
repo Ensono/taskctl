@@ -37,9 +37,7 @@ type Config struct {
 		InitNoPrompt              bool
 	}
 	// Generate Options
-	Generate *struct {
-		Target string
-	}
+	Generate map[string]any
 }
 
 // NewConfig creates new config instance
@@ -88,6 +86,7 @@ func buildFromDefinition(def *ConfigDefinition, lc *loaderContext) (cfg *Config,
 		if err != nil {
 			return nil, err
 		}
+		builtTask.Generator = v.Generator
 		cfg.Tasks[k] = builtTask
 	}
 
@@ -119,6 +118,7 @@ func buildFromDefinition(def *ConfigDefinition, lc *loaderContext) (cfg *Config,
 		if err != nil {
 			return nil, err
 		}
+		// cfg.Pipelines[k].Generator =
 	}
 
 	cfg.Import = def.Import
@@ -126,6 +126,7 @@ func buildFromDefinition(def *ConfigDefinition, lc *loaderContext) (cfg *Config,
 	cfg.Output = output.OutputEnum(def.Output)
 	cfg.Variables = cfg.Variables.Merge(variables.FromMap(def.Variables))
 	cfg.Summary = def.Summary
+	cfg.Generate = def.Generator
 
 	return cfg, nil
 }

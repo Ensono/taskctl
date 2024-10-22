@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/scheduler"
 	"github.com/Ensono/taskctl/pkg/task"
+
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 	yamlv2 "gopkg.in/yaml.v2"
@@ -58,55 +60,72 @@ func generateDefinition(conf *config.Config, argsStringer *argsToStringsMapper) 
 	ghaWorkflow := &schema.GithubWorkflow{
 		Name: utils.ConvertStringToHumanFriendly(pipeline.Name()),
 		// TODO: add additional metadata here e.g.
-		On: &schema.GithubTriggerEvents{
-			Push: schema.GithubPushEvent{
-				Branches: []string{"master", "main"},
-			},
-			PullRequest: schema.GithubPullRequestEvent{
-				Branches: []string{"master", "main"},
-			},
-		},
+		// On: &schema.GithubTriggerEvents{
+		// 	Push: schema.GithubPushEvent{
+		// 		Branches: []string{"master", "main"},
+		// 	},
+		// 	PullRequest: schema.GithubPullRequestEvent{
+		// 		Branches: []string{"master", "main"},
+		// 	},
+		// },
 		// init Jobs to add
 		Jobs: yamlv2.MapSlice{},
+	}
+
+	if gh, err := extractGeneratorMetadata[schema.GithubWorkflow](conf.Generate); err == nil {
+		if gh.On != nil {
+			ghaWorkflow.On = gh.On
+		}
+		if gh.Env != nil {
+			ghaWorkflow.Env = gh.Env
+		}
 	}
 
 	if err := jobLooper(ghaWorkflow, pipeline); err != nil {
 		return err
 	}
-	// b := &bytes.Buffer{}
-	// if err := schema.WriteOut(b, *ghaWorkflow); err != nil {
-	// 	return err
-	// }
-	b, err := yaml.Marshal(ghaWorkflow)
-	if err != nil {
-		return err
-	}
-	f, err := os.Create(".github/workflows/generate-test.yml")
-	if err != nil {
-		return err
-	}
-	if _, err := f.Write(b); err != nil {
+	b := &bytes.Buffer{}
+	enc := yaml.NewEncoder(b)
+	if err := enc.Encode(ghaWorkflow); err != nil {
 		return err
 	}
 
+	f, err := os.Create(fmt.Sprintf(".github/workflows/%s.yml", utils.ConvertStringToMachineFriendly(pipeline.Name())))
+	if err != nil {
+		return err
+	}
+	if _, err := f.Write(b.Bytes()); err != nil {
+		return err
+	}
 	return nil
 }
 
+func extractGeneratorMetadata[T any](generatorMeta map[string]any) (T, error) {
+	typ := new(T)
+	if gh, found := generatorMeta["github"]; found {
+		b, err := yaml.Marshal(gh)
+		if err != nil {
+			return *typ, err
+		}
+		if err := yaml.Unmarshal(b, typ); err != nil {
+			return *typ, err
+		}
+	}
+	return *typ, nil
+}
+
 func convertTaskToStep(task *task.Task) *schema.GithubStep {
+
 	step := &schema.GithubStep{
 		Name: utils.ConvertStringToHumanFriendly(task.Name),
 		ID:   utils.ConvertStringToMachineFriendly(task.Name),
-		Run:  "",
+		Run:  fmt.Sprintf("taskctl run %s", task.Name),
 		Env:  utils.ConvertToMapOfStrings(task.Env.Map()),
 	}
-	for _, before := range task.Before {
-		step.Run += fmt.Sprintf("%s\n", before)
-	}
-	for _, cmd := range task.Commands {
-		step.Run += fmt.Sprintf("%s\n", cmd)
-	}
-	for _, after := range task.After {
-		step.Run += fmt.Sprintf("%s\n", after)
+	if gh, err := extractGeneratorMetadata[schema.GithubStep](task.Generator); err == nil {
+		if gh.If != "" {
+			step.If = gh.If
+		}
 	}
 	return step
 }
@@ -132,9 +151,8 @@ func jobLooper(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph
 		jobName := utils.ConvertStringToMachineFriendly(node.Name)
 		job := &schema.GithubJob{
 			Name:   utils.ConvertStringToHumanFriendly(node.Name),
-			RunsOn: "ubuntu-latest",
-			// Steps: steps,
-			Env: utils.ConvertToMapOfStrings(node.Env.Map()),
+			RunsOn: "ubuntu-24.04",
+			Env:    utils.ConvertToMapOfStrings(node.Env.Map()),
 		}
 		if node.Pipeline != nil {
 			flattenTasksInPipeline(job, node.Pipeline)
@@ -148,6 +166,17 @@ func jobLooper(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph
 				job.Needs,
 				utils.ConvertStringToMachineFriendly(v),
 			)
+		}
+		if gh, err := extractGeneratorMetadata[schema.GithubJob](node.Generator); err == nil {
+			if gh.If != "" {
+				job.If = gh.If
+			}
+			if gh.Environment != "" {
+				job.Environment = gh.Environment
+			}
+			if gh.RunsOn != "" {
+				job.RunsOn = gh.RunsOn
+			}
 		}
 		ciyaml.Jobs = append(ciyaml.Jobs, yaml.MapItem{Key: jobName, Value: job})
 		// jm[jobName] = *job

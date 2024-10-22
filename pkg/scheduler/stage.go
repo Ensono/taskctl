@@ -4,9 +4,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/Ensono/taskctl/pkg/variables"
-
 	"github.com/Ensono/taskctl/pkg/task"
+	"github.com/Ensono/taskctl/pkg/variables"
 )
 
 // Stage statuses
@@ -34,6 +33,7 @@ type Stage struct {
 	Variables    variables.Container
 	Start        time.Time
 	End          time.Time
+	Generator    map[string]any
 }
 
 // StageOpts is the Node options

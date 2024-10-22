@@ -24,6 +24,7 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 			if stagePipeline == nil {
 				return nil, fmt.Errorf("stage build failed: no such pipeline %s", def.Task)
 			}
+			stagePipeline.Generator = def.Generator
 		}
 
 		stage := scheduler.NewStage(func(s *scheduler.Stage) {
@@ -36,6 +37,7 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 			s.AllowFailure = def.AllowFailure
 			s.Env = variables.FromMap(def.Env)
 			s.Variables = variables.FromMap(def.Variables)
+			s.Generator = def.Generator
 		})
 
 		if stage.Dir != "" {
