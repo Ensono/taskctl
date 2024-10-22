@@ -4,33 +4,18 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Ensono/taskctl/pkg/variables"
-
 	"dario.cat/mergo"
-	"github.com/sirupsen/logrus"
-
 	"github.com/Ensono/taskctl/internal/watch"
 	"github.com/Ensono/taskctl/pkg/output"
 	"github.com/Ensono/taskctl/pkg/runner"
 	"github.com/Ensono/taskctl/pkg/scheduler"
 	"github.com/Ensono/taskctl/pkg/task"
+	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/sirupsen/logrus"
 )
 
 // DefaultFileNames is default names for tasks' files
 var DefaultFileNames = []string{"taskctl.yaml", "tasks.yaml"}
-
-// NewConfig creates new config instance
-func NewConfig() *Config {
-	cfg := &Config{
-		Contexts:  make(map[string]*runner.ExecutionContext),
-		Pipelines: make(map[string]*scheduler.ExecutionGraph),
-		Tasks:     make(map[string]*task.Task),
-		Watchers:  make(map[string]*watch.Watcher),
-		Variables: defaultConfigVariables(),
-	}
-
-	return cfg
-}
 
 // Config is a taskctl internal config structure
 type Config struct {
@@ -55,6 +40,19 @@ type Config struct {
 	Generate *struct {
 		Target string
 	}
+}
+
+// NewConfig creates new config instance
+func NewConfig() *Config {
+	cfg := &Config{
+		Contexts:  make(map[string]*runner.ExecutionContext),
+		Pipelines: make(map[string]*scheduler.ExecutionGraph),
+		Tasks:     make(map[string]*task.Task),
+		Watchers:  make(map[string]*watch.Watcher),
+		Variables: defaultConfigVariables(),
+	}
+
+	return cfg
 }
 
 func (cfg *Config) merge(src *Config) error {

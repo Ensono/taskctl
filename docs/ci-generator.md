@@ -30,3 +30,11 @@ The example above shows `pipeline x` - starting by executing tasks a,b,c in para
 
 Taskctl properties need to be mapped to the specific CI implementations
 
+```mermaid
+flowchart TD
+    A[Taskctl Pipeline] --> |Github| B{Job}
+    B --> |Github| C{Steps}
+    C -->|Taskctl| D[Step1 - Github]
+    C -->|Taskctl| E[Step2 - Github]
+    C -->|Taskctl| F[Step3 - Github]
+```

@@ -4,6 +4,12 @@ output: prefixed
 
 generator:
   target: github
+  # meta: 
+  #   on:
+  #     push:
+  #       branches:
+  #         - main
+  # github
 
 contexts:
   podman:
@@ -11,14 +17,87 @@ contexts:
       name: alpine:latest
     env: 
       GLOBAL_VAR: this is it
+      TF_VAR_name_company: ${{ env.COMPANY }}
+      TF_VAR_name_project: ${{ env.PROJECT }}
+      TF_VAR_name_component: ${{ env.COMPONENT }}
+      TF_VAR_region: ${{ env.REGION }}
     envfile:
       exclude:
         - HOME
 
 pipelines:
+  # gha pipeline 
+  eks:stacks: 
+    - pipeline: lint
+    - pipeline: InfraDev
+      # generator:
+      #   github:
+      #     if: foo == foo
+      #     runs-on: ubuntu-latest
+      #     environment: nonprod
+      #   gitlab:
+      env:
+        SOME_TOKEN_FOR_APP1: GHA_SECRET://foo/bar/secret
+        ENV_NAME: nonprod
+        # AWS Environmental Config
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ env.REGION }}
+        # Terraform Backend Configuration
+        TF_FILE_LOCATION: somefile/foo.tf
+        TF_BACKEND_ARGS: region=${AWS_TF_STATE_REGION},access_key=${{secrets.AWS_ACCESS_KEY_ID}},secret_key=${{secrets.AWS_SECRET_ACCESS_KEY}},bucket=${{secrets.AWS_TF_STATE_BUCKET}},key=${{env.AWS_TF_PRE_INFRA_STATE_KEY}},dynamodb_table=${{secrets.AWS_TF_STATE_DYNAMOTABLE}},encrypt=true
+        # Terraform Resource Configuration
+        TF_VAR_name_environment: "nonprod"
+        TF_VAR_dns_create_hostedzone: false
+        TF_VAR_dns_hostedzone_name: nonprod
+        TF_VAR_dns_create_hostedzone_parent_link: false
+        TF_VAR_dns_parent_hostedzone_name: foo.com
+        TF_VAR_k8s_role_file_map: "[\"../../k8s/users/nonprod-admin-users.json\", \"../../k8s/users/nonprod-developer-users.json\"]"
+        TF_VAR_container_registry_pull_push_user: AWSSECRETS://foo/bar/secret
+      depends_on:
+        - lint
+    - pipeline: InfraProd
+      env:
+        ENV: prod
+      depends_on:
+        - lint
+
+  # CI pipelines
+  lint:
+    - task: lint:ci
+  InfraDev:
+    - task: install-taskctl
+    - pipeline: infrapipeline
+      depends_on:
+        - install-taskctl
+  
+  InfraProd:
+    # env: 
+    #  FOO: bar 
+    #  ENV: prod
+    # taskOrPipeline:  
+      - task: install-taskctl
+        # depends_on:
+        #   - InfraDev:infrapipeline
+      - pipeline: infrapipeline
+        # env: 
+        #   ENV: PROD
+        # envfile:
+        #   g
+        depends_on:
+          - install-taskctl
+
+  # internal
+  infrapipeline:
+    - task: infra:init
+    - task: infra:apply
+      depends_on:
+        - infra:init
+
   graph:pipeline1:
     - task: graph:task2
-      depends_on: [graph:task1]
+      depends_on: 
+        - graph:task1
     - task: graph:task3
       depends_on: [graph:task1]
     - pipeline: graph:pipeline2 # pipeline: graph:pipeline2 - fix cycle detection
@@ -27,6 +106,8 @@ pipelines:
       depends_on:
         - graph:task2
     - task: graph:task1
+      # depends_on:
+      #   - graph:task2
     - pipeline: graph:pipeline3
       depends_on:
         - graph:task4
@@ -37,9 +118,33 @@ pipelines:
 
   graph:pipeline3:
     - task: graph:task2
+      # depends_on:
+      #   - graph:task3
     - task: graph:task3
+      # depends_on:
+      #   - graph:task2
 
 tasks:
+  lint:ci:
+    command:
+      - echo "lint stuff"
+  install-taskctl: 
+    command:
+      - echo "installing taskctl"
+
+  infra:init:
+    command:
+      - echo "tf init"
+      - env | grep TF_
+    env:
+      TF_DIR: foo/bar
+  
+  infra:apply:
+    command:
+      - echo "tf apply" && env | grep TF_
+    env:
+      TF_DIR: foo/bar
+
   graph:task1:
     command: |
       for i in $(seq 1 5); do

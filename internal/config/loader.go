@@ -18,7 +18,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pelletier/go-toml"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
 
 // ErrConfigNotFound occurs when requested config file does not exists

@@ -1,5 +1,6 @@
 name: Release
 
+###_BEGIN_TASKCTL_SKIP_###
 on:
   workflow_run:
     workflows: ['Lint and Test']
@@ -8,6 +9,7 @@ on:
     branches: 
       - master 
       - main
+###_END_TASKCTL_SKIP_###
 
 permissions:
   contents: write

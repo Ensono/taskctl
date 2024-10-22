@@ -86,12 +86,10 @@ func (g *ExecutionGraph) addNode(name string, stage *Stage) {
 func (g *ExecutionGraph) addEdge(parent string, child string) error {
 	g.parent[child] = append(g.parent[child], parent)
 	g.children[parent] = append(g.children[parent], child)
-
-	if cycleFound := g.cycleDfs(parent, make(map[string]bool), make(map[string]bool)); cycleFound {
-		return ErrCycleDetected
-	}
-
-	return nil
+	return g.cycleDfs(parent, make(map[string]bool), make(map[string]bool))
+	// 	return ErrCycleDetected
+	// }
+	// return nil
 }
 
 // Nodes returns ExecutionGraph stages - an n-ary tree itself
@@ -147,9 +145,13 @@ func (g *ExecutionGraph) BFSNodesFlattened(nodeName string) []*Stage {
 	return bfsStages
 }
 
+func (g *ExecutionGraph) HasCycle() error {
+	return g.cycleDfs(RootNodeName, make(map[string]bool), make(map[string]bool))
+}
+
 // cycleDfs is DFS utility to traverse
 // the tree to detect any back-edges and hence to detect a cycle
-func (g *ExecutionGraph) cycleDfs(node string, visited map[string]bool, inStack map[string]bool) bool {
+func (g *ExecutionGraph) cycleDfs(node string, visited map[string]bool, inStack map[string]bool) error {
 	// Mark the node as visited and part of the current recursion stack
 	visited[node] = true
 	inStack[node] = true
@@ -158,17 +160,19 @@ func (g *ExecutionGraph) cycleDfs(node string, visited map[string]bool, inStack 
 	for _, child := range g.children[node] {
 		// If the child is not visited, recurse
 		if !visited[child] {
-			return g.cycleDfs(child, visited, inStack)
+			if err := g.cycleDfs(child, visited, inStack); err != nil {
+				return fmt.Errorf("pipeline: %s\n%s, is depending on %s, creating a cyclical dependency\n%w", g.name, node, child, ErrCycleDetected)
+			}
 		}
 		// if a child is already in the stack we return a cycle isdetect it
 		if inStack[child] {
-			return true
+			return fmt.Errorf("%s, is alread a dependency of %s, creating a cyclical dependency\n%w", node, child, ErrCycleDetected)
 		}
 	}
 
 	// Remove the node from the recursion stack after processing
 	inStack[node] = false
-	return false
+	return nil
 }
 
 // // Generate walks the graph for the purposes of creating

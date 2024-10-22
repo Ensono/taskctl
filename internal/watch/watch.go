@@ -4,15 +4,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
-	"github.com/Ensono/taskctl/pkg/variables"
-
-	"github.com/bmatcuk/doublestar"
-	"github.com/fsnotify/fsnotify"
-
 	"github.com/Ensono/taskctl/pkg/runner"
 	"github.com/Ensono/taskctl/pkg/task"
+	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/bmatcuk/doublestar"
+	"github.com/fsnotify/fsnotify"
+	"github.com/sirupsen/logrus"
 )
 
 const (

@@ -2,7 +2,7 @@
 // There doesn't seem to be a reliable way of generating types (go structs) from the CI schema
 //
 // tried quicktype and
-package z_generated
+package schema
 
 // GitLabCI represents the root structure of a GitLab CI pipeline file.
 type GitLabCI struct {

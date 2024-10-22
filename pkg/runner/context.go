@@ -28,6 +28,7 @@ var (
 // ExecutionContext allow you to set up execution environment, variables, binary which will run your task, up/down commands etc.
 type ExecutionContext struct {
 	Executable *utils.Binary
+	container  *utils.Container
 	Dir        string
 	Env        variables.Container
 	Envfile    *utils.Envfile
@@ -52,7 +53,9 @@ type ExecutionContext struct {
 type ExecutionContextOption func(c *ExecutionContext)
 
 // NewExecutionContext creates new ExecutionContext instance
-func NewExecutionContext(executable *utils.Binary, dir string, env variables.Container, envfile *utils.Envfile, up, down, before, after []string, options ...ExecutionContextOption) *ExecutionContext {
+func NewExecutionContext(executable *utils.Binary, dir string,
+	env variables.Container, envfile *utils.Envfile, up, down, before, after []string,
+	options ...ExecutionContextOption) *ExecutionContext {
 	c := &ExecutionContext{
 		Executable: executable,
 		Env:        env,
@@ -74,6 +77,17 @@ func NewExecutionContext(executable *utils.Binary, dir string, env variables.Con
 	}
 
 	return c
+}
+
+func WithContainerOpts(containerOpts *utils.Container) ExecutionContextOption {
+	return func(c *ExecutionContext) {
+		// TODO: make this smarter...
+		c.container = containerOpts
+	}
+}
+
+func (c *ExecutionContext) Container() *utils.Container {
+	return c.container
 }
 
 // StartUpError reports whether an error exists on startUp
