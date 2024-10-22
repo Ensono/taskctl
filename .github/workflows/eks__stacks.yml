@@ -129,6 +129,7 @@ env:
   PROD_FIREWALL_CREATE_TLS_ALERT_RULE: true
   PROD_FIREWALL_ENABLED: true
   PROD_VPC_NAT_GATEWAY_PER_AZ: true
+  TASKCTL_CONFIG_FILE: cmd/taskctl/testdata/generate.yml
   TF_INFRA_FILE_LOCATION: deploy/aws/infra
   TF_PRE_INFRA_FILE_LOCATION: deploy/aws/pre-infra
   TaskctlVersion: 1.7.2

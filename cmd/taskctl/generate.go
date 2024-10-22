@@ -59,16 +59,6 @@ func generateDefinition(conf *config.Config, argsStringer *argsToStringsMapper) 
 
 	ghaWorkflow := &schema.GithubWorkflow{
 		Name: utils.ConvertStringToHumanFriendly(pipeline.Name()),
-		// TODO: add additional metadata here e.g.
-		// On: &schema.GithubTriggerEvents{
-		// 	Push: schema.GithubPushEvent{
-		// 		Branches: []string{"master", "main"},
-		// 	},
-		// 	PullRequest: schema.GithubPullRequestEvent{
-		// 		Branches: []string{"master", "main"},
-		// 	},
-		// },
-		// init Jobs to add
 		Jobs: yamlv2.MapSlice{},
 	}
 

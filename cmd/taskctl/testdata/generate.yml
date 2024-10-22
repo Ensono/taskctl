@@ -17,6 +17,7 @@ generator:
           - main
           - master
     env:
+      TASKCTL_CONFIG_FILE: cmd/taskctl/testdata/generate.yml
       # The following SECRETS must be defined per environment (which must match environment key) in your GH Repository:
       #   AWS_ACCESS_KEY_ID
       #   AWS_ACCOUNT_ID
