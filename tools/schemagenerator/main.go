@@ -19,6 +19,10 @@ func main() {
 	var dir string
 	flag.StringVar(&dir, "dir", ".", "Directory to use as base")
 	flag.Parse()
+	generateSchemaForTaskCtl(dir)
+}
+
+func generateSchemaForTaskCtl(dir string) {
 
 	r := new(jsonschema.Reflector)
 	if err := r.AddGoComments("github.com/Ensono/taskctl", "./"); err != nil {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Ensono/taskctl/internal/config"
 	"github.com/Ensono/taskctl/pkg/scheduler"
 	"github.com/emicklei/dot"
 	"github.com/spf13/cobra"
@@ -12,18 +11,11 @@ import (
 
 type graphFlags struct {
 	leftToRight bool
-}
-
-type graphCmd struct {
-	channelOut, channelErr io.Writer
+	isMermaid   bool
 }
 
 func newGraphCmd(rootCmd *TaskCtlCmd) {
 	f := &graphFlags{}
-	gc := &graphCmd{
-		channelOut: rootCmd.ChannelOut,
-		channelErr: rootCmd.ChannelErr,
-	}
 	graphCmd := &cobra.Command{
 		Use:     "graph",
 		Aliases: []string{"g"},
@@ -36,47 +28,64 @@ The output is in the DOT format, which can be used by GraphViz to generate chart
 			if err != nil {
 				return err
 			}
-			pipelineName := args[0]
-			return gc.graphCmdRun(pipelineName, conf)
+			p := conf.Pipelines[args[0]]
+			if p == nil {
+				return fmt.Errorf("no such pipeline %s", args[0])
+			}
+			return graphCmdRun(p, rootCmd.ChannelOut, f.leftToRight, f.isMermaid)
 		},
 	}
 
-	graphCmd.PersistentFlags().BoolVarP(&f.leftToRight, "lr", "", false, "orients outputted graph left-to-right")
+	graphCmd.PersistentFlags().BoolVarP(&f.leftToRight, "lr", "", false, "orientates outputted graph left-to-right")
 	_ = rootCmd.viperConf.BindPFlag("lr", graphCmd.PersistentFlags().Lookup("lr"))
+	graphCmd.PersistentFlags().BoolVarP(&f.isMermaid, "is-mermaid", "", false, "output the graph in mermaid flowchart format")
+	_ = rootCmd.viperConf.BindPFlag("is-mermaid", graphCmd.PersistentFlags().Lookup("is-mermaid"))
 
 	rootCmd.Cmd.AddCommand(graphCmd)
 }
 
-func (gc *graphCmd) graphCmdRun(name string, conf *config.Config) error {
+const pipelineStartKey string = "pipeline:start"
 
-	p := conf.Pipelines[name]
-	if p == nil {
-		return fmt.Errorf("no such pipeline %s", name)
-	}
-
+func graphCmdRun(p *scheduler.ExecutionGraph, channelOut io.Writer, isLr bool, isMermaid bool) error {
 	g := dot.NewGraph(dot.Directed)
 	g.Attr("center", "true")
-	isLr := conf.Options.GraphOrientationLeftRight
 	if isLr {
 		g.Attr("rankdir", "LR")
 	}
-
-	draw(g, p)
-
-	fmt.Fprintln(gc.channelOut, g.String())
-
+	g.Node(pipelineStartKey)
+	draw(g, p, "", false)
+	if isMermaid {
+		fmt.Fprintln(channelOut, dot.MermaidFlowchart(g, dot.MermaidTopToBottom))
+		return nil
+	}
+	fmt.Fprintln(channelOut, g.String())
 	return nil
 }
 
-func draw(g *dot.Graph, p *scheduler.ExecutionGraph) {
-	for k, v := range p.Nodes() {
+// draw recursively walks the tree and adds nodes with a correct dependency
+// between the nodes (parents => children).
+//
+// Same nodes can be call
+func draw(g *dot.Graph, p *scheduler.ExecutionGraph, parent string, startAdded bool) {
+	for _, v := range p.BFSNodesFlattened(scheduler.RootNodeName) {
 		if v.Pipeline != nil {
-			cluster := g.Subgraph(k, dot.ClusterOption{})
-			draw(cluster, v.Pipeline)
+			draw(g, v.Pipeline, v.Pipeline.Name(), startAdded)
 		}
-
-		for _, from := range p.To(k) {
-			g.Edge(g.Node(from), g.Node(k))
+		dependants := p.From(v.Name)
+		if len(dependants) == 0 && parent != "" {
+			if parent, found := g.FindNodeById(parent); found {
+				g.Edge(parent, g.Node(v.Name))
+			}
+			continue
+		}
+		for _, child := range p.From(v.Name) {
+			if !startAdded {
+				if parent, found := g.FindNodeById(pipelineStartKey); found {
+					g.Edge(parent, g.Node(v.Name))
+					startAdded = true
+				}
+			}
+			g.Edge(g.Node(v.Name), g.Node(child))
 		}
 	}
 }

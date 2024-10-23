@@ -1,9 +1,9 @@
+// package Cmdutils provides testable helpers to commands only
 package cmdutils
 
 import (
 	"fmt"
 	"io"
-	"sort"
 	"strings"
 
 	"github.com/Ensono/taskctl/internal/config"
@@ -20,15 +20,16 @@ const (
 	BOLD_TERMINAL    string = "\x1b[1m%s"
 )
 
-func DisplayTaskSelection(conf *config.Config) (taskOrPipelineSelected string, err error) {
+func DisplayTaskSelection(conf *config.Config, showPipelineOnly bool) (taskOrPipelineSelected string, err error) {
 	optionMap := []huh.Option[string]{}
 
 	for pipeline := range conf.Pipelines {
 		optionMap = append(optionMap, huh.NewOption(fmt.Sprintf("%s - %s", pipeline, fmt.Sprintf(GREY_TERMINAL, "pipeline")), pipeline))
 	}
-
-	for _, task := range conf.Tasks {
-		optionMap = append(optionMap, huh.NewOption(fmt.Sprintf("%s - %s", task.Name, fmt.Sprintf(GREY_TERMINAL, task.Description)), task.Name)) // fmt.Sprintf("Task: %s", task.Name)
+	if !showPipelineOnly {
+		for _, task := range conf.Tasks {
+			optionMap = append(optionMap, huh.NewOption(fmt.Sprintf("%s - %s", task.Name, fmt.Sprintf(GREY_TERMINAL, task.Description)), task.Name)) // fmt.Sprintf("Task: %s", task.Name)
+		}
 	}
 
 	taskOrPipelineName := huh.NewForm(
@@ -46,14 +47,7 @@ func DisplayTaskSelection(conf *config.Config) (taskOrPipelineSelected string, e
 
 // printSummary is a TUI helper
 func PrintSummary(g *scheduler.ExecutionGraph, chanOut io.Writer) {
-	var stages = make([]*scheduler.Stage, 0)
-	for _, stage := range g.Nodes() {
-		stages = append(stages, stage)
-	}
-
-	sort.Slice(stages, func(i, j int) bool {
-		return stages[j].Start.Nanosecond() > stages[i].Start.Nanosecond()
-	})
+	stages := g.BFSNodesFlattened(scheduler.RootNodeName)
 
 	fmt.Fprintf(chanOut, BOLD_TERMINAL, "Summary: \n")
 

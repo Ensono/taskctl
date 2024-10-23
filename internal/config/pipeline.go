@@ -24,19 +24,21 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 			if stagePipeline == nil {
 				return nil, fmt.Errorf("stage build failed: no such pipeline %s", def.Task)
 			}
+			stagePipeline.Generator = def.Generator
 		}
 
-		stage := &scheduler.Stage{
-			Name:         def.Name,
-			Condition:    def.Condition,
-			Task:         stageTask,
-			Pipeline:     stagePipeline,
-			DependsOn:    def.DependsOn,
-			Dir:          def.Dir,
-			AllowFailure: def.AllowFailure,
-			Env:          variables.FromMap(def.Env),
-			Variables:    variables.FromMap(def.Variables),
-		}
+		stage := scheduler.NewStage(func(s *scheduler.Stage) {
+			s.Name = def.Name
+			s.Condition = def.Condition
+			s.Task = stageTask
+			s.Pipeline = stagePipeline
+			s.DependsOn = def.DependsOn
+			s.Dir = def.Dir
+			s.AllowFailure = def.AllowFailure
+			s.Env = variables.FromMap(def.Env)
+			s.Variables = variables.FromMap(def.Variables)
+			s.Generator = def.Generator
+		})
 
 		if stage.Dir != "" {
 			stage.Task.Dir = stage.Dir
@@ -66,6 +68,10 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if err := g.HasCycle(); err != nil {
+		return nil, err
 	}
 
 	return g, nil

@@ -1,6 +1,7 @@
 package task
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -23,7 +24,7 @@ func TestTask(t *testing.T) {
 
 func TestTask_ErrorMessage(t *testing.T) {
 	task := NewTask("abc")
-	task.Errored = true
+	task.WithError(fmt.Errorf("true"))
 	task.Log.Stderr.Write([]byte("abc\ndef"))
 
 	if task.ErrorMessage() != "def" {
@@ -35,7 +36,7 @@ func TestTask_ErrorMessage(t *testing.T) {
 		t.Error()
 	}
 
-	task.Errored = true
+	task.WithError(fmt.Errorf("true"))
 	task.Log.Stdout.Write([]byte("abc\ndef"))
 
 	if task.ErrorMessage() != "def" {

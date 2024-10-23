@@ -119,7 +119,9 @@ func (tc *TaskCompiler) CompileCommand(
 
 		commandArgs = executionCtx.Executable.BuildArgsWithEnvFile(filename)
 		// set the path to the generated envfile
+		executionCtx.mu.Lock()
 		executionCtx.Envfile.Path = filename
+		executionCtx.mu.Unlock()
 		// generate the envfile with supplied env only
 		err := executionCtx.GenerateEnvfile(env)
 		if err != nil {

@@ -74,7 +74,7 @@ func (s *Scheduler) Schedule(g *ExecutionGraph) error {
 
 			wg.Add(1)
 			stage.UpdateStatus(StatusRunning)
-			go func(stage *Stage) {
+			go func(stage *Stage, wg *sync.WaitGroup) {
 				defer func() {
 					stage.End = time.Now()
 					wg.Done()
@@ -93,7 +93,7 @@ func (s *Scheduler) Schedule(g *ExecutionGraph) error {
 				}
 
 				stage.UpdateStatus(StatusDone)
-			}(stage)
+			}(stage, &wg)
 		}
 
 		time.Sleep(s.pause)
@@ -152,30 +152,30 @@ func (s *Scheduler) runStage(stage *Stage) error {
 	return s.taskRunner.Run(stage.Task)
 }
 
-func checkStatus(p *ExecutionGraph, stage *Stage) (ready bool) {
-	ready = true
+// checkStatus checks the parents of the stage
+// when they are all completed or skipped
+// the task is marked as ready for execution
+func checkStatus(p *ExecutionGraph, stage *Stage) bool {
+	ready := false
 	for _, dep := range p.To(stage.Name) {
-		depStage, err := p.Node(dep)
+		parentStage, err := p.Node(dep)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		switch depStage.ReadStatus() {
+		switch parentStage.ReadStatus() {
 		case StatusDone, StatusSkipped:
+			// status remains as ready
+			ready = true
 			continue
 		case StatusError:
-			if !depStage.AllowFailure {
-				ready = false
+			if !parentStage.AllowFailure {
 				stage.UpdateStatus(StatusCanceled)
 			}
 		case StatusCanceled:
-			ready = false
 			stage.UpdateStatus(StatusCanceled)
-		default:
-			ready = false
 		}
 	}
-
 	return ready
 }
 

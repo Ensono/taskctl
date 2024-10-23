@@ -75,7 +75,7 @@ func TestTaskRunner(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !testCase.skipped && testCase.t.Start.IsZero() {
+		if !testCase.skipped && testCase.t.Start().IsZero() {
 			t.Error()
 		}
 
@@ -83,15 +83,15 @@ func TestTaskRunner(t *testing.T) {
 			t.Error()
 		}
 
-		if testCase.errored && !testCase.t.Errored {
+		if testCase.errored && !testCase.t.Errored() {
 			t.Error()
 		}
 
-		if !testCase.errored && testCase.t.Errored {
+		if !testCase.errored && testCase.t.Errored() {
 			t.Error()
 		}
 
-		if testCase.t.ExitCode != testCase.status {
+		if testCase.t.ExitCode() != testCase.status {
 			t.Error()
 		}
 	}
@@ -158,7 +158,7 @@ func ExampleTaskRunner_Run() {
 	}
 	err = r.Run(t)
 	if err != nil {
-		fmt.Println(err, t.ExitCode, t.ErrorMessage())
+		fmt.Println(err, t.ExitCode(), t.ErrorMessage())
 	}
 	fmt.Println(ob.String())
 	// indentation is important with the matched output here
