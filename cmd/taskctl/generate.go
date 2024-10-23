@@ -96,11 +96,11 @@ const (
 
 func addDefaultStepsToJob(job *schema.GithubJob) {
 	// toggle if checkout or not
-	job.AddStep(&schema.GithubStep{
+	_ = job.AddStep(&schema.GithubStep{
 		Uses: "actions/checkout@v4",
 	})
 	// name: 'Install taskctl'
-	job.AddStep(&schema.GithubStep{
+	_ = job.AddStep(&schema.GithubStep{
 		Name: "Install taskctl",
 		ID:   "install-taskctl",
 		Run: `rm -rf /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
@@ -148,7 +148,7 @@ func flattenTasksInPipeline(job *schema.GithubJob, graph *scheduler.ExecutionGra
 			flattenTasksInPipeline(job, node.Pipeline)
 		}
 		if node.Task != nil {
-			job.AddStep(convertTaskToStep(node.Task))
+			_ = job.AddStep(convertTaskToStep(node.Task))
 		}
 	}
 }
@@ -170,7 +170,7 @@ func jobLooper(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph
 			flattenTasksInPipeline(job, node.Pipeline)
 		}
 		if node.Task != nil {
-			job.AddStep(convertTaskToStep(node.Task))
+			_ = job.AddStep(convertTaskToStep(node.Task))
 		}
 
 		for _, v := range node.DependsOn {
