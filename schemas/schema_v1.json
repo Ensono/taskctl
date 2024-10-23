@@ -113,7 +113,7 @@
           "description": "Variables are the top most variables and will be merged and overwritten with lower level\nspecifications.\ne.g. variable of Version=123\nwill be overwritten by a variables specified in this order, lowest takes the highest precedence\n- context\n- pipeline\n- task\n- commandline.\nVariables can be used inside templating using the text/template go package"
         },
         "generator": {
-          "type": "object",
+          "$ref": "#/$defs/Generator",
           "description": "Generator defines the options for the desired CI yaml generation\nCurrently these are just map[string]any so that the user can specify the desired behaviour\nNOTE: will provide no build time safety"
         }
       },
@@ -278,6 +278,18 @@
       "additionalProperties": false,
       "type": "object",
       "description": "Envile is a structure for storing the information required to generate an envfile which can be consumed by the specified binary"
+    },
+    "Generator": {
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "targetOpts": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
     },
     "ModifyEnv": {
       "properties": {

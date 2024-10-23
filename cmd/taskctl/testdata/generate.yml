@@ -5,76 +5,78 @@ output: prefixed
 #   - https://raw.githubusercontent.com/Ensono/stacks-infrastructure-eks/11fcb55621bee0f24ebf2fdbacc7ced7be6ec5d8/build/taskctl/tasks.yaml
 
 generator:
-  github:
-    "on":
-      push:
-        branches:
-          - main
-          - master
-      pull_request:
-        branches:
-          - main
-          - master
-    env:
-      TASKCTL_CONFIG_FILE: cmd/taskctl/testdata/generate.yml
-      # The following SECRETS must be defined per environment (which must match environment key) in your GH Repository:
-      #   AWS_ACCESS_KEY_ID
-      #   AWS_ACCOUNT_ID
-      #   AWS_SECRET_ACCESS_KEY
-      #   AWS_TF_STATE_BUCKET
-      #   AWS_TF_STATE_DYNAMOTABLE
-      CLOUD_PROVIDER: "aws"
-      TaskctlVersion: '1.7.2'
-      TF_INFRA_FILE_LOCATION: deploy/aws/infra
-      TF_PRE_INFRA_FILE_LOCATION: deploy/aws/pre-infra
+  version: v1.8.0-alpha-aaaabbbb1234
+  targetOpts:
+    github:
+      "on":
+        push:
+          branches:
+            - main
+            - master
+        pull_request:
+          branches:
+            - main
+            - master
+      env:
+        TASKCTL_CONFIG_FILE: cmd/taskctl/testdata/generate.yml
+        # The following SECRETS must be defined per environment (which must match environment key) in your GH Repository:
+        #   AWS_ACCESS_KEY_ID
+        #   AWS_ACCOUNT_ID
+        #   AWS_SECRET_ACCESS_KEY
+        #   AWS_TF_STATE_BUCKET
+        #   AWS_TF_STATE_DYNAMOTABLE
+        CLOUD_PROVIDER: "aws"
+        TaskctlVersion: '1.7.2'
+        TF_INFRA_FILE_LOCATION: deploy/aws/infra
+        TF_PRE_INFRA_FILE_LOCATION: deploy/aws/pre-infra
 
-      VPC_CIDR: "10.0.0.0/16"
-      NON_PROD_VPC_NAT_GATEWAY_PER_AZ: false
-      PROD_VPC_NAT_GATEWAY_PER_AZ: true
+        VPC_CIDR: "10.0.0.0/16"
+        NON_PROD_VPC_NAT_GATEWAY_PER_AZ: false
+        PROD_VPC_NAT_GATEWAY_PER_AZ: true
 
-      # DNS
-      DNS_CREATE_HOSTEDZONE: true
-      DNS_CREATE_HOSTEDZONE_PARENT_LINK: true
+        # DNS
+        DNS_CREATE_HOSTEDZONE: true
+        DNS_CREATE_HOSTEDZONE_PARENT_LINK: true
 
-      CLUSTER_VERSION: "1.30"
-      NON_PROD_CLUSTER_SINGLE_AZ: true
-      PROD_CLUSTER_SINGLE_AZ: false
+        CLUSTER_VERSION: "1.30"
+        NON_PROD_CLUSTER_SINGLE_AZ: true
+        PROD_CLUSTER_SINGLE_AZ: false
 
-      NON_PROD_EKS_MINIMUM_NODES: "2"
-      ## Prod is in all AZs so that's 1*<AZ Count Machines>
-      PROD_EKS_MINIMUM_NODES: "1"
-      NON_PROD_EKS_DESIRED_NODES: "2"
-      PROD_EKS_DESIRED_NODES: "1"
-      EKS_MAXIMUM_NODES: "3"
-      EKS_NODE_SIZE: "t3.small"
+        NON_PROD_EKS_MINIMUM_NODES: "2"
+        ## Prod is in all AZs so that's 1*<AZ Count Machines>
+        PROD_EKS_MINIMUM_NODES: "1"
+        NON_PROD_EKS_DESIRED_NODES: "2"
+        PROD_EKS_DESIRED_NODES: "1"
+        EKS_MAXIMUM_NODES: "3"
+        EKS_NODE_SIZE: "t3.small"
 
-      CLUSTER_ENDPOINT_PRIVATE_ACCESS: false
-      CLUSTER_ENDPOINT_PUBLIC_ACCESS: true
-      CLUSTER_ENABLE_CONTAINER_INSIGHTS: true
+        CLUSTER_ENDPOINT_PRIVATE_ACCESS: false
+        CLUSTER_ENDPOINT_PUBLIC_ACCESS: true
+        CLUSTER_ENABLE_CONTAINER_INSIGHTS: true
 
-      CONTAINER_REGISTRY_PULL_PUSH_USER: true
+        CONTAINER_REGISTRY_PULL_PUSH_USER: true
 
-      NON_PROD_FIREWALL_ENABLED: false
-      PROD_FIREWALL_ENABLED: true
-      FIREWALL_ALLOWED_DOMAIN_TARGETS: "[]"
-      NON_PROD_FIREWALL_CREATE_TLS_ALERT_RULE: false
-      PROD_FIREWALL_CREATE_TLS_ALERT_RULE: true
+        NON_PROD_FIREWALL_ENABLED: false
+        PROD_FIREWALL_ENABLED: true
+        FIREWALL_ALLOWED_DOMAIN_TARGETS: "[]"
+        NON_PROD_FIREWALL_CREATE_TLS_ALERT_RULE: false
+        PROD_FIREWALL_CREATE_TLS_ALERT_RULE: true
 
-      # Ingress Nginx Helm
-      INGRESS_NGINX_ENABLED: true
-      INGRESS_NGINX_NAMESPACE: "ingress-nginx"
-      INGRESS_NGINX_SERVICE_ACCOUNT_NAME: "ingress-nginx"
-      INGRESS_NGINX_REPLICA_COUNT: 3
+        # Ingress Nginx Helm
+        INGRESS_NGINX_ENABLED: true
+        INGRESS_NGINX_NAMESPACE: "ingress-nginx"
+        INGRESS_NGINX_SERVICE_ACCOUNT_NAME: "ingress-nginx"
+        INGRESS_NGINX_REPLICA_COUNT: 3
 
-      # Cert Manager Helm
-      CERT_MANAGER_ENABLED: true
-      CERT_MANAGER_NAMESPACE: "cert-manager"
-      CERT_MANAGER_SERVICE_ACCOUNT_NAME: "cert-manager"
+        # Cert Manager Helm
+        CERT_MANAGER_ENABLED: true
+        CERT_MANAGER_NAMESPACE: "cert-manager"
+        CERT_MANAGER_SERVICE_ACCOUNT_NAME: "cert-manager"
 
-      # External DNS Helm
-      EXTERNAL_DNS_ENABLED: true
-      EXTERNAL_DNS_NAMESPACE: "external-dns"
-      EXTERNAL_DNS_SERVICE_ACCOUNT_NAME: "external-dns"
+        # External DNS Helm
+        EXTERNAL_DNS_ENABLED: true
+        EXTERNAL_DNS_NAMESPACE: "external-dns"
+        EXTERNAL_DNS_SERVICE_ACCOUNT_NAME: "external-dns"
 
 contexts:
   podman:

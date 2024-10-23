@@ -125,7 +125,7 @@ type PipelineDefinition struct {
 
 type Generator struct {
 	Version       string         `mapstructure:"version" yaml:"version,omitempty" json:"version,omitempty"`
-	TargetOptions map[string]any `yaml:"targetOpts,omitempty" json:"targetOpts,omitempty"`
+	TargetOptions map[string]any `mapstructure:"targetOpts" yaml:"targetOpts,omitempty" json:"targetOpts,omitempty"`
 }
 
 type TaskDefinition struct {
