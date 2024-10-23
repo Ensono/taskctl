@@ -39,7 +39,7 @@ func newRunCmd(rootCmd *TaskCtlCmd) {
 			}
 			// display selector if nothing is supplied
 			if len(args) == 0 {
-				selected, err := cmdutils.DisplayTaskSelection(conf)
+				selected, err := cmdutils.DisplayTaskSelection(conf, false)
 				if err != nil {
 					return err
 				}

@@ -48,7 +48,7 @@ type ConfigDefinition struct {
 	// Generator defines the options for the desired CI yaml generation
 	// Currently these are just map[string]any so that the user can specify the desired behaviour
 	// NOTE: will provide no build time safety
-	Generator map[string]any `yaml:"generator,omitempty" json:"generator,omitempty"`
+	Generator *Generator `yaml:"generator,omitempty" json:"generator,omitempty"`
 }
 
 type ContextDefinition struct {
@@ -96,13 +96,6 @@ type ContextDefinition struct {
 	Container *utils.Container `mapstructure:"container" yaml:"container,omitempty" json:"container,omitempty"`
 }
 
-type CITarget string
-
-const (
-	GitlabCITarget CITarget = "gitlab"
-	GitHubCITarget CITarget = "github"
-)
-
 type PipelineDefinition struct {
 	// Name is the friendly name to give to pipeline
 	Name string `mapstructure:"name" yaml:"name" json:"name,omitempty"`
@@ -128,6 +121,11 @@ type PipelineDefinition struct {
 	Variables EnvVarMapType `mapstructure:"variables" yaml:"variables,omitempty" json:"variables,omitempty"`
 	// Generator PipelineLevel
 	Generator map[string]any `yaml:"generator,omitempty" json:"generator,omitempty"`
+}
+
+type Generator struct {
+	Version       string         `mapstructure:"version" yaml:"version,omitempty" json:"version,omitempty"`
+	TargetOptions map[string]any `yaml:"targetOpts,omitempty" json:"targetOpts,omitempty"`
 }
 
 type TaskDefinition struct {

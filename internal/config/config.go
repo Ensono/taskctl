@@ -37,7 +37,7 @@ type Config struct {
 		InitNoPrompt              bool
 	}
 	// Generate Options
-	Generate map[string]any
+	Generate *Generator
 }
 
 // NewConfig creates new config instance
