@@ -5,7 +5,6 @@ output: prefixed
 #   - https://raw.githubusercontent.com/Ensono/stacks-infrastructure-eks/11fcb55621bee0f24ebf2fdbacc7ced7be6ec5d8/build/taskctl/tasks.yaml
 
 generator:
-  # target: github
   github:
     "on":
       push:
@@ -140,21 +139,17 @@ pipelines:
   # CI pipelines
   lint:
     - task: lint:ci
-      depends_on:
-        - install-taskctl
-  InfraDev:
-    - pipeline: infrapipeline
-      depends_on:
-        - install-taskctl
+  # InfraDev:
+  #   - pipeline: infrapipeline
   
-  InfraProd:
-    - pipeline: infrapipeline
-      # env: 
-      #   ENV: PROD
-      # envfile:
-      #   g
-      depends_on:
-        - install-taskctl
+  # InfraProd:
+  #   - pipeline: infrapipeline
+  #     # env: 
+  #     #   ENV: PROD
+  #     # envfile:
+  #     #   g
+  #     depends_on:
+  #       - install-taskctl
 
   # internal
   infrapipeline:
@@ -209,7 +204,15 @@ tasks:
     env:
       TF_DIR: foo/bar
       BOOL: true
-  
+
+  infra:plan:
+    command:
+      - echo "tf init"
+      - env | grep TF_
+    env:
+      TF_DIR: foo/bar
+      BOOL: true
+
   infra:apply:
     command:
       - echo "tf apply" && env | grep TF_

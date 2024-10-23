@@ -9,11 +9,10 @@ name: eks:stacks
     - main
     - master
 jobs:
-  lint:
-    name: lint
-    runs-on: ubuntu-24.04
+  generated-prereq:
+    name: generated-prereq
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
     - name: Install taskctl
       id: install-taskctl
       run: |-
@@ -22,6 +21,16 @@ jobs:
         cp /tmp/taskctl-linux-amd64-1.7.5 /usr/local/bin/taskctl
         chmod u+x /usr/local/bin/taskctl
       shell: bash
+  lint:
+    name: lint
+    needs:
+    - generated-prereq
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: lint:ci
+      id: lint__ci
+      run: taskctl run task lint:ci
   InfraDev:
     name: InfraDev
     needs:
@@ -29,23 +38,15 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
-    - name: Install taskctl
-      id: install-taskctl
-      run: |-
-        rm -rf /tmp/taskctl-linux-amd64-1.7.5
-        wget https://github.com/Ensono/taskctl/releases/download/1.7.5/taskctl-linux-amd64 -O /tmp/taskctl-linux-amd64-1.7.5
-        cp /tmp/taskctl-linux-amd64-1.7.5 /usr/local/bin/taskctl
-        chmod u+x /usr/local/bin/taskctl
-      shell: bash
     - name: infra:init
       id: infra__init
-      run: taskctl run infra:init
+      run: taskctl run task infra:init
       env:
         BOOL: "1"
         TF_DIR: foo/bar
     - name: infra:apply
       id: infra__apply
-      run: taskctl run infra:apply
+      run: taskctl run task infra:apply
       env:
         TF_DIR: foo/bar
     if: github.ref != 'refs/heads/main'
@@ -72,23 +73,15 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
-    - name: Install taskctl
-      id: install-taskctl
-      run: |-
-        rm -rf /tmp/taskctl-linux-amd64-1.7.5
-        wget https://github.com/Ensono/taskctl/releases/download/1.7.5/taskctl-linux-amd64 -O /tmp/taskctl-linux-amd64-1.7.5
-        cp /tmp/taskctl-linux-amd64-1.7.5 /usr/local/bin/taskctl
-        chmod u+x /usr/local/bin/taskctl
-      shell: bash
     - name: infra:init
       id: infra__init
-      run: taskctl run infra:init
+      run: taskctl run task infra:init
       env:
         BOOL: "1"
         TF_DIR: foo/bar
     - name: infra:apply
       id: infra__apply
-      run: taskctl run infra:apply
+      run: taskctl run task infra:apply
       env:
         TF_DIR: foo/bar
     if: github.ref == 'refs/heads/main'

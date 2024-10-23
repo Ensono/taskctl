@@ -61,6 +61,8 @@ func generateDefinition(conf *config.Config, argsStringer *argsToStringsMapper) 
 		Name: utils.ConvertStringToHumanFriendly(pipeline.Name()),
 		Jobs: yamlv2.MapSlice{},
 	}
+	// Add defaults
+	addDefaults(ghaWorkflow)
 
 	if gh, err := extractGeneratorMetadata[schema.GithubWorkflow](conf.Generate); err == nil {
 		if gh.On != nil {
@@ -90,6 +92,28 @@ func generateDefinition(conf *config.Config, argsStringer *argsToStringsMapper) 
 	return nil
 }
 
+const (
+	DefaultPrereqJobId string = "generated-prereq"
+)
+
+func addDefaults(ghw *schema.GithubWorkflow) {
+	job := &schema.GithubJob{
+		Name:   DefaultPrereqJobId,
+		RunsOn: "ubuntu-latest",
+	}
+	// name: 'Install taskctl'
+	job.AddStep(&schema.GithubStep{
+		Name: "Install taskctl",
+		ID:   "install-taskctl",
+		Run: `rm -rf /tmp/taskctl-linux-amd64-1.7.5
+wget https://github.com/Ensono/taskctl/releases/download/1.7.5/taskctl-linux-amd64 -O /tmp/taskctl-linux-amd64-1.7.5
+cp /tmp/taskctl-linux-amd64-1.7.5 /usr/local/bin/taskctl
+chmod u+x /usr/local/bin/taskctl`,
+		Shell: "bash",
+	})
+	ghw.Jobs = append(ghw.Jobs, yaml.MapItem{Key: DefaultPrereqJobId, Value: job})
+}
+
 func extractGeneratorMetadata[T any](generatorMeta map[string]any) (T, error) {
 	typ := new(T)
 	if gh, found := generatorMeta["github"]; found {
@@ -109,7 +133,7 @@ func convertTaskToStep(task *task.Task) *schema.GithubStep {
 	step := &schema.GithubStep{
 		Name: utils.ConvertStringToHumanFriendly(task.Name),
 		ID:   utils.ConvertStringToMachineFriendly(task.Name),
-		Run:  fmt.Sprintf("taskctl run %s", task.Name),
+		Run:  fmt.Sprintf("taskctl run task %s", task.Name),
 		Env:  utils.ConvertToMapOfStrings(task.Env.Map()),
 	}
 	if gh, err := extractGeneratorMetadata[schema.GithubStep](task.Generator); err == nil {
@@ -135,7 +159,7 @@ func flattenTasksInPipeline(job *schema.GithubJob, graph *scheduler.ExecutionGra
 // jobLooper accepts a list of top level jobs
 func jobLooper(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph) error {
 	nodes := pipeline.BFSNodesFlattened(scheduler.RootNodeName)
-	for _, node := range nodes {
+	for idx, node := range nodes {
 		jobName := utils.ConvertStringToMachineFriendly(node.Name)
 		job := &schema.GithubJob{
 			Name:   utils.ConvertStringToHumanFriendly(node.Name),
@@ -146,22 +170,20 @@ func jobLooper(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph
 		job.AddStep(&schema.GithubStep{
 			Uses: "actions/checkout@v4",
 		})
-		// name: 'Install taskctl'
-		job.AddStep(&schema.GithubStep{
-			Name: "Install taskctl",
-			ID:   "install-taskctl",
-			Run: `rm -rf /tmp/taskctl-linux-amd64-1.7.5
-wget https://github.com/Ensono/taskctl/releases/download/1.7.5/taskctl-linux-amd64 -O /tmp/taskctl-linux-amd64-1.7.5
-cp /tmp/taskctl-linux-amd64-1.7.5 /usr/local/bin/taskctl
-chmod u+x /usr/local/bin/taskctl`,
-			Shell: "bash",
-		})
 
 		if node.Pipeline != nil {
 			flattenTasksInPipeline(job, node.Pipeline)
 		}
 		if node.Task != nil {
 			job.AddStep(convertTaskToStep(node.Task))
+		}
+
+		// first job should have an explicit dependency on the generated pre-reqs
+		if idx == 0 {
+			job.Needs = append(
+				job.Needs,
+				DefaultPrereqJobId,
+			)
 		}
 
 		for _, v := range node.DependsOn {
@@ -184,6 +206,7 @@ chmod u+x /usr/local/bin/taskctl`,
 		ciyaml.Jobs = append(ciyaml.Jobs, yaml.MapItem{Key: jobName, Value: job})
 		// jm[jobName] = *job
 	}
+	// TODO: enable yamlv3 using yaml.Node :|
 	// yn, err := schema.ToYAMLNode(jm)
 	// if err != nil {
 	// 	return err
