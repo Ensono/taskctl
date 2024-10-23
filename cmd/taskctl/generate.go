@@ -105,9 +105,9 @@ func addDefaults(ghw *schema.GithubWorkflow) {
 	job.AddStep(&schema.GithubStep{
 		Name: "Install taskctl",
 		ID:   "install-taskctl",
-		Run: `rm -rf /tmp/taskctl-linux-amd64-1.7.5
-wget https://github.com/Ensono/taskctl/releases/download/1.7.5/taskctl-linux-amd64 -O /tmp/taskctl-linux-amd64-1.7.5
-cp /tmp/taskctl-linux-amd64-1.7.5 /usr/local/bin/taskctl
+		Run: `rm -rf /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+wget https://github.com/Ensono/taskctl/releases/download/v1.8.0-alpha-aaaabbbb1234/taskctl-linux-amd64 -O /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+cp /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234 /usr/local/bin/taskctl
 chmod u+x /usr/local/bin/taskctl`,
 		Shell: "bash",
 	})
