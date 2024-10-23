@@ -61,9 +61,6 @@ func generateDefinition(conf *config.Config, argsStringer *argsToStringsMapper) 
 		Name: utils.ConvertStringToHumanFriendly(pipeline.Name()),
 		Jobs: yamlv2.MapSlice{},
 	}
-	// Add defaults
-	addDefaults(ghaWorkflow)
-
 	if gh, err := extractGeneratorMetadata[schema.GithubWorkflow](conf.Generate); err == nil {
 		if gh.On != nil {
 			ghaWorkflow.On = gh.On
@@ -78,6 +75,7 @@ func generateDefinition(conf *config.Config, argsStringer *argsToStringsMapper) 
 	}
 	b := &bytes.Buffer{}
 	enc := yaml.NewEncoder(b)
+	defer enc.Close()
 	if err := enc.Encode(ghaWorkflow); err != nil {
 		return err
 	}
@@ -96,11 +94,11 @@ const (
 	DefaultPrereqJobId string = "generated-prereq"
 )
 
-func addDefaults(ghw *schema.GithubWorkflow) {
-	job := &schema.GithubJob{
-		Name:   DefaultPrereqJobId,
-		RunsOn: "ubuntu-latest",
-	}
+func addDefaultStepsToJob(job *schema.GithubJob) {
+	// toggle if checkout or not
+	job.AddStep(&schema.GithubStep{
+		Uses: "actions/checkout@v4",
+	})
 	// name: 'Install taskctl'
 	job.AddStep(&schema.GithubStep{
 		Name: "Install taskctl",
@@ -111,7 +109,6 @@ cp /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234 /usr/local/bin/taskctl
 chmod u+x /usr/local/bin/taskctl`,
 		Shell: "bash",
 	})
-	ghw.Jobs = append(ghw.Jobs, yaml.MapItem{Key: DefaultPrereqJobId, Value: job})
 }
 
 func extractGeneratorMetadata[T any](generatorMeta map[string]any) (T, error) {
@@ -159,31 +156,21 @@ func flattenTasksInPipeline(job *schema.GithubJob, graph *scheduler.ExecutionGra
 // jobLooper accepts a list of top level jobs
 func jobLooper(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph) error {
 	nodes := pipeline.BFSNodesFlattened(scheduler.RootNodeName)
-	for idx, node := range nodes {
+	for _, node := range nodes {
 		jobName := utils.ConvertStringToMachineFriendly(node.Name)
 		job := &schema.GithubJob{
 			Name:   utils.ConvertStringToHumanFriendly(node.Name),
 			RunsOn: "ubuntu-24.04",
 			Env:    utils.ConvertToMapOfStrings(node.Env.Map()),
 		}
-		// toggle if checkout or not
-		job.AddStep(&schema.GithubStep{
-			Uses: "actions/checkout@v4",
-		})
+		// Add defaults
+		addDefaultStepsToJob(job)
 
 		if node.Pipeline != nil {
 			flattenTasksInPipeline(job, node.Pipeline)
 		}
 		if node.Task != nil {
 			job.AddStep(convertTaskToStep(node.Task))
-		}
-
-		// first job should have an explicit dependency on the generated pre-reqs
-		if idx == 0 {
-			job.Needs = append(
-				job.Needs,
-				DefaultPrereqJobId,
-			)
 		}
 
 		for _, v := range node.DependsOn {

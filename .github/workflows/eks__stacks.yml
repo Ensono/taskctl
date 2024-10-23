@@ -9,25 +9,19 @@ name: eks:stacks
     - main
     - master
 jobs:
-  generated-prereq:
-    name: generated-prereq
-    runs-on: ubuntu-latest
-    steps:
-    - name: Install taskctl
-      id: install-taskctl
-      run: |-
-        rm -rf /tmp/taskctl-linux-amd64-1.7.5
-        wget https://github.com/Ensono/taskctl/releases/download/1.7.5/taskctl-linux-amd64 -O /tmp/taskctl-linux-amd64-1.7.5
-        cp /tmp/taskctl-linux-amd64-1.7.5 /usr/local/bin/taskctl
-        chmod u+x /usr/local/bin/taskctl
-      shell: bash
   lint:
     name: lint
-    needs:
-    - generated-prereq
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
+    - name: Install taskctl
+      id: install-taskctl
+      run: |-
+        rm -rf /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+        wget https://github.com/Ensono/taskctl/releases/download/v1.8.0-alpha-aaaabbbb1234/taskctl-linux-amd64 -O /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+        cp /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234 /usr/local/bin/taskctl
+        chmod u+x /usr/local/bin/taskctl
+      shell: bash
     - name: lint:ci
       id: lint__ci
       run: taskctl run task lint:ci
@@ -38,6 +32,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
+    - name: Install taskctl
+      id: install-taskctl
+      run: |-
+        rm -rf /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+        wget https://github.com/Ensono/taskctl/releases/download/v1.8.0-alpha-aaaabbbb1234/taskctl-linux-amd64 -O /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+        cp /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234 /usr/local/bin/taskctl
+        chmod u+x /usr/local/bin/taskctl
+      shell: bash
     - name: infra:init
       id: infra__init
       run: taskctl run task infra:init
@@ -73,6 +75,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
+    - name: Install taskctl
+      id: install-taskctl
+      run: |-
+        rm -rf /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+        wget https://github.com/Ensono/taskctl/releases/download/v1.8.0-alpha-aaaabbbb1234/taskctl-linux-amd64 -O /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+        cp /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234 /usr/local/bin/taskctl
+        chmod u+x /usr/local/bin/taskctl
+      shell: bash
     - name: infra:init
       id: infra__init
       run: taskctl run task infra:init
