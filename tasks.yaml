@@ -67,6 +67,7 @@ tasks:
       - cat .coverage/test.out
 
   build:
+    description: Builds the binary
     command:
       - |
         ldflags="-s -w -X \"github.com/{{.RepoOwner}}/{{.BinName}}/cmd/taskctl.Version={{.Version}}\" -X \"github.com/{{.RepoOwner}}/{{.BinName}}/cmd/taskctl.Revision={{.Revision}}\" -extldflags -static"

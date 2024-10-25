@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"slices"
 
 	"github.com/Ensono/taskctl/pkg/scheduler"
 	"github.com/emicklei/dot"
@@ -12,6 +13,7 @@ import (
 type graphFlags struct {
 	leftToRight bool
 	isMermaid   bool
+	embedLegend bool
 }
 
 func newGraphCmd(rootCmd *TaskCtlCmd) {
@@ -32,60 +34,131 @@ The output is in the DOT format, which can be used by GraphViz to generate chart
 			if p == nil {
 				return fmt.Errorf("no such pipeline %s", args[0])
 			}
-			return graphCmdRun(p, rootCmd.ChannelOut, f.leftToRight, f.isMermaid)
+			return graphCmdRun(p, rootCmd.ChannelOut, f)
 		},
 	}
 
-	graphCmd.PersistentFlags().BoolVarP(&f.leftToRight, "lr", "", false, "orientates outputted graph left-to-right")
-	_ = rootCmd.viperConf.BindPFlag("lr", graphCmd.PersistentFlags().Lookup("lr"))
-	graphCmd.PersistentFlags().BoolVarP(&f.isMermaid, "is-mermaid", "", false, "output the graph in mermaid flowchart format")
-	_ = rootCmd.viperConf.BindPFlag("is-mermaid", graphCmd.PersistentFlags().Lookup("is-mermaid"))
+	graphCmd.Flags().BoolVarP(&f.leftToRight, "lr", "", false, "orientates outputted graph left-to-right")
+	_ = rootCmd.viperConf.BindPFlag("lr", graphCmd.Flags().Lookup("lr"))
+	graphCmd.Flags().BoolVarP(&f.isMermaid, "is-mermaid", "", false, "output the graph in mermaid flowchart format")
+	graphCmd.Flags().BoolVarP(&f.embedLegend, "embed-legend", "", false, "embed a legend in the generated dotviz graph")
 
 	rootCmd.Cmd.AddCommand(graphCmd)
 }
 
 const pipelineStartKey string = "pipeline:start"
 
-func graphCmdRun(p *scheduler.ExecutionGraph, channelOut io.Writer, isLr bool, isMermaid bool) error {
+func graphCmdRun(p *scheduler.ExecutionGraph, channelOut io.Writer, f *graphFlags) error {
+	tln := []string{}
+	for _, v := range p.BFSNodesFlattened(scheduler.RootNodeName) {
+		tln = append(tln, v.Name)
+	}
+
 	g := dot.NewGraph(dot.Directed)
 	g.Attr("center", "true")
-	if isLr {
+	if f.leftToRight {
 		g.Attr("rankdir", "LR")
 	}
-	g.Node(pipelineStartKey)
-	draw(g, p, "", false)
-	if isMermaid {
+	draw(g, p, tln, pipelineStartKey)
+	if f.isMermaid {
 		fmt.Fprintln(channelOut, dot.MermaidFlowchart(g, dot.MermaidTopToBottom))
 		return nil
+	}
+	if f.embedLegend {
+		addLegend(g)
 	}
 	fmt.Fprintln(channelOut, g.String())
 	return nil
 }
 
+func clusterName(v string) string {
+	return fmt.Sprintf("cluster_%s", v)
+}
+
+func pipelineName(v string) string {
+	return fmt.Sprintf("%s_pipeline", v)
+}
+
+func anchorName(v string) string {
+	return fmt.Sprintf("%s_anchor", v)
+}
+
 // draw recursively walks the tree and adds nodes with a correct dependency
 // between the nodes (parents => children).
 //
-// Same nodes can be call
-func draw(g *dot.Graph, p *scheduler.ExecutionGraph, parent string, startAdded bool) {
+// Same nodes can be called multiple times, this relationship of nested graphs (pipelines)
+// is denoted via different relationship arrows/colours.
+func draw(g *dot.Graph, p *scheduler.ExecutionGraph, topLevelStages []string, parent string) {
+	// for k, v := range p.Nodes() {
 	for _, v := range p.BFSNodesFlattened(scheduler.RootNodeName) {
 		if v.Pipeline != nil {
-			draw(g, v.Pipeline, v.Pipeline.Name(), startAdded)
-		}
-		dependants := p.From(v.Name)
-		if len(dependants) == 0 && parent != "" {
-			if parent, found := g.FindNodeById(parent); found {
-				g.Edge(parent, g.Node(v.Name))
-			}
-			continue
-		}
-		for _, child := range p.From(v.Name) {
-			if !startAdded {
-				if parent, found := g.FindNodeById(pipelineStartKey); found {
-					g.Edge(parent, g.Node(v.Name))
-					startAdded = true
+			// check if subgraph has been added and all it's children
+			if sub, found := g.Root().FindSubgraph(v.Pipeline.Name()); found {
+				anchorNode := getNode(sub, anchorName(v.Pipeline.Name()))
+				parentNode := getNode(g, v.Name)
+				if anchorNode != nil && parentNode != nil {
+					g.Edge(*parentNode, *anchorNode).Attr("color", "brown")
+				}
+			} else {
+				// hoist the subgraph to the top
+				cluster := g.Root().Subgraph(v.Pipeline.Name(), dot.ClusterOption{})
+				anchorNode := cluster.Node(anchorName(v.Pipeline.Name())).Attr("shape", "point").Attr("style", "invis")
+				// loop through subgraph - by adding edges to it
+				draw(cluster, v.Pipeline, topLevelStages, v.Pipeline.Name())
+				// add edge fom parent graph to subgraph cluster
+				if pipelineNode := getNode(g, v.Name); pipelineNode != nil {
+					g.Edge(*pipelineNode, anchorNode).Attr("color", "brown")
 				}
 			}
-			g.Edge(g.Node(v.Name), g.Node(child))
+		}
+
+		if v.Task != nil && len(v.DependsOn) == 0 && len(p.Children(v.Name)) == 0 {
+			// since we are flattening all subgprahs we need to create the edge from the root
+			// a relationship will be drawn from the top level  stage/job to subgraph
+			// so we remove the edge relationship line
+			g.Root().Edge(g.Root().Node(parent), g.Node(v.Name)).Attrs("style", "invis")
+		}
+
+		for _, child := range p.Children(v.Name) {
+			edge := g.Edge(g.Node(v.Name), g.Node(child.Name))
+			if slices.Contains(topLevelStages, v.Name) {
+				edge.Attr("color", "blue")
+			} else {
+				edge.Attr("color", "green")
+			}
 		}
 	}
+}
+
+// getNode helper looks a node by Id and falling back on to label if not found
+func getNode(g *dot.Graph, id string) *dot.Node {
+	node, found := g.FindNodeById(id)
+	if found {
+		return &node
+	}
+	ln, lfound := g.FindNodeWithLabel(id)
+	if lfound {
+		return &ln
+	}
+	return nil
+}
+
+func addLegend(g *dot.Graph) {
+	legend := g.Subgraph("__legend__", dot.ClusterOption{}).Label("Legend")
+
+	legend.Attr("style", "filled")
+	legend.Attr("color", "lightgrey")
+
+	samplePipeline := legend.Subgraph("__legend____pipeline__", dot.ClusterOption{}).Label("Job 2")
+	samplePipeline.Attr("style", "dashed")
+	samplePipeline.Attr("color", "black")
+	samplePipeline.Edge(samplePipeline.Node("job task 1"), samplePipeline.Node("job task2")).Attr("color", "green")
+
+	anchorNode := samplePipeline.Node("__legend__pipeline_anchor").Attr("style", "invis")
+
+	legend.Edge(legend.Node("Job 1"), legend.Node("Job 2")).Attr("color", "blue")
+	legend.Edge(legend.Node("Job 2"), anchorNode).Attr("color", "brown")
+	legend.Edge(legend.Node("Job 2"), legend.Node("Job 3")).Attr("color", "blue")
+	legend.Edge(legend.Node("Job 2"), legend.Node("Task 1")).Attr("color", "blue")
+	legend.Edge(legend.Node("Job 3"), legend.Node("Task 2")).Attr("color", "blue")
 }

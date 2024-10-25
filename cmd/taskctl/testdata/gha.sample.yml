@@ -1,0 +1,162 @@
+# yaml-language-server: $schema=../../../schemas/schema_v1.json
+
+output: prefixed
+# import:
+#   - https://raw.githubusercontent.com/Ensono/stacks-infrastructure-eks/11fcb55621bee0f24ebf2fdbacc7ced7be6ec5d8/build/taskctl/tasks.yaml
+
+generator:
+  version: v1.8.0-alpha-aaaabbbb1234
+  targetOpts:
+    github:
+      "on":
+        push:
+          branches:
+            - main
+            - master
+        pull_request:
+          branches:
+            - main
+            - master
+      env:
+        TASKCTL_CONFIG_FILE: cmd/taskctl/testdata/gha.samle.yml
+
+contexts:
+  podman:
+    container:
+      name: alpine:latest
+    env: 
+      GLOBAL_VAR: this is it
+      TF_VAR_name_company: ${{ env.COMPANY }}
+      TF_VAR_name_project: ${{ env.PROJECT }}
+      TF_VAR_name_component: ${{ env.COMPONENT }}
+      TF_VAR_region: ${{ env.REGION }}
+    envfile:
+      exclude:
+        - HOME
+
+pipelines:
+  # 
+  # CI pipelines
+  lint:
+    - task: lint:ci
+
+  helm:
+    - task: helm:test
+    - task: helm:deploy
+      depends_on:
+        - helm:test
+    - task: helm:docs
+      depends_on:
+        - helm:deploy
+    - task: helm:notification
+      depends_on:
+        - helm:deploy
+
+  # internal
+  infrapipeline:
+    - task: infra:init
+    - task: infra:plan
+      depends_on:
+        - infra:init
+    - task: infra:apply
+      depends_on:
+        - infra:plan
+    - task: post:apply
+      depends_on:
+        - infra:apply
+      condition: |
+        if [[ "$ENV_NAME" == "prod" ]]; then echo 1; fi
+    - pipeline: helm
+      depends_on:
+        - post:apply
+
+  # gha pipeline 
+  gha:infra:sample: 
+    - pipeline: lint
+      generator:
+        github: 
+          runs-on: ubuntu-24.04
+    - name: InfraDev
+      pipeline: infrapipeline
+      generator:
+        github: 
+          if: github.ref != 'refs/heads/main'
+          environment: nonprod
+          runs-on: ubuntu-24.04
+      env:
+        SOME_TOKEN_FOR_APP1: GHA_SECRET://foo/bar/secret
+        ENV_NAME: nonprod
+      depends_on:
+        - lint
+    - task: post:task
+      name: post dev
+      depends_on:
+        - InfraDev
+    - pipeline: infrapipeline
+      name: InfraProd
+      generator:
+        github: 
+          if: github.ref == 'refs/heads/main'
+          environment: prod
+          runs-on: ubuntu-24.04
+      env:
+        ENV_NAME: prod
+      depends_on:
+        - lint
+    - task: post:task
+      name: post prod
+      depends_on:
+        - InfraProd
+
+tasks:
+  lint:ci:
+    command:
+      - echo "lint stuff"
+  post:apply: 
+    command:
+      - echo "post apply run"
+
+  install-taskctl: 
+    command:
+      - echo "installing taskctl"
+
+  infra:init:
+    command:
+      - echo "tf init"
+      - echo "ENV_NAME = $ENV_NAME"
+    env:
+      TF_DIR: foo/bar
+      BOOL: true
+
+  infra:plan:
+    command:
+      - echo "tf plan"
+      - echo "ENV_NAME = $ENV_NAME"
+    env:
+      TF_DIR: foo/bar
+      BOOL: true
+
+  infra:apply:
+    command:
+      - echo "tf apply"
+      - echo "ENV_NAME = $ENV_NAME"
+    env:
+      TF_DIR: foo/bar
+
+  helm:test:
+    command:
+      - echo "helm test in env $ENV_NAME"
+  helm:deploy:
+    command:
+      - echo "helm deploy in env $ENV_NAME"
+  helm:notification:
+    command:
+      - echo "helm notification in env $ENV_NAME"
+
+  helm:docs:
+    command:
+      - echo "helm docs in env $ENV_NAME"
+
+  post:task:
+    command:
+      - echo "helm post:task in env $ENV_NAME"

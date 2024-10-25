@@ -146,6 +146,16 @@ func (g *ExecutionGraph) BFSNodesFlattened(nodeName string) []*Stage {
 	return bfsStages
 }
 
+// BFSNodesFlattenedPostOrder returns the nodes in a reverse order
+// this is useful for adding nodes to graphviz like graph - ensuring parents were created and can always be looked up
+func (g *ExecutionGraph) BFSNodesFlattenedPostOrder(nodeName string) []*Stage {
+	bfs := g.BFSNodesFlattened(nodeName)
+	for i, j := 0, len(bfs)-1; i < j; i, j = i+1, j-1 {
+		bfs[i], bfs[j] = bfs[j], bfs[i]
+	}
+	return bfs
+}
+
 func (g *ExecutionGraph) HasCycle() error {
 	return g.cycleDfs(RootNodeName, make(map[string]bool), make(map[string]bool))
 }

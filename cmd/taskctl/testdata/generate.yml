@@ -19,64 +19,6 @@ generator:
             - master
       env:
         TASKCTL_CONFIG_FILE: cmd/taskctl/testdata/generate.yml
-        # The following SECRETS must be defined per environment (which must match environment key) in your GH Repository:
-        #   AWS_ACCESS_KEY_ID
-        #   AWS_ACCOUNT_ID
-        #   AWS_SECRET_ACCESS_KEY
-        #   AWS_TF_STATE_BUCKET
-        #   AWS_TF_STATE_DYNAMOTABLE
-        CLOUD_PROVIDER: "aws"
-        TaskctlVersion: '1.7.2'
-        TF_INFRA_FILE_LOCATION: deploy/aws/infra
-        TF_PRE_INFRA_FILE_LOCATION: deploy/aws/pre-infra
-
-        VPC_CIDR: "10.0.0.0/16"
-        NON_PROD_VPC_NAT_GATEWAY_PER_AZ: false
-        PROD_VPC_NAT_GATEWAY_PER_AZ: true
-
-        # DNS
-        DNS_CREATE_HOSTEDZONE: true
-        DNS_CREATE_HOSTEDZONE_PARENT_LINK: true
-
-        CLUSTER_VERSION: "1.30"
-        NON_PROD_CLUSTER_SINGLE_AZ: true
-        PROD_CLUSTER_SINGLE_AZ: false
-
-        NON_PROD_EKS_MINIMUM_NODES: "2"
-        ## Prod is in all AZs so that's 1*<AZ Count Machines>
-        PROD_EKS_MINIMUM_NODES: "1"
-        NON_PROD_EKS_DESIRED_NODES: "2"
-        PROD_EKS_DESIRED_NODES: "1"
-        EKS_MAXIMUM_NODES: "3"
-        EKS_NODE_SIZE: "t3.small"
-
-        CLUSTER_ENDPOINT_PRIVATE_ACCESS: false
-        CLUSTER_ENDPOINT_PUBLIC_ACCESS: true
-        CLUSTER_ENABLE_CONTAINER_INSIGHTS: true
-
-        CONTAINER_REGISTRY_PULL_PUSH_USER: true
-
-        NON_PROD_FIREWALL_ENABLED: false
-        PROD_FIREWALL_ENABLED: true
-        FIREWALL_ALLOWED_DOMAIN_TARGETS: "[]"
-        NON_PROD_FIREWALL_CREATE_TLS_ALERT_RULE: false
-        PROD_FIREWALL_CREATE_TLS_ALERT_RULE: true
-
-        # Ingress Nginx Helm
-        INGRESS_NGINX_ENABLED: true
-        INGRESS_NGINX_NAMESPACE: "ingress-nginx"
-        INGRESS_NGINX_SERVICE_ACCOUNT_NAME: "ingress-nginx"
-        INGRESS_NGINX_REPLICA_COUNT: 3
-
-        # Cert Manager Helm
-        CERT_MANAGER_ENABLED: true
-        CERT_MANAGER_NAMESPACE: "cert-manager"
-        CERT_MANAGER_SERVICE_ACCOUNT_NAME: "cert-manager"
-
-        # External DNS Helm
-        EXTERNAL_DNS_ENABLED: true
-        EXTERNAL_DNS_NAMESPACE: "external-dns"
-        EXTERNAL_DNS_SERVICE_ACCOUNT_NAME: "external-dns"
 
 contexts:
   podman:
@@ -93,73 +35,6 @@ contexts:
         - HOME
 
 pipelines:
-  # gha pipeline 
-  eks:stacks: 
-    - pipeline: lint
-      generator:
-        github: 
-          runs-on: ubuntu-24.04
-    - pipeline: infrapipeline
-      name: InfraDev
-      generator:
-        github: 
-          if: github.ref != 'refs/heads/main'
-          environment: nonprod
-          runs-on: ubuntu-24.04
-      env:
-        SOME_TOKEN_FOR_APP1: GHA_SECRET://foo/bar/secret
-        ENV_NAME: nonprod
-        # AWS Environmental Config
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: ${REGION}
-        # Terraform Backend Configuration
-        TF_FILE_LOCATION: somefile/foo.tf
-        TF_BACKEND_ARGS: region=${AWS_TF_STATE_REGION},access_key=${{secrets.AWS_ACCESS_KEY_ID}},secret_key=${{secrets.AWS_SECRET_ACCESS_KEY}},bucket=${{secrets.AWS_TF_STATE_BUCKET}},key=${AWS_TF_PRE_INFRA_STATE_KEY},dynamodb_table=${{secrets.AWS_TF_STATE_DYNAMOTABLE}},encrypt=true
-        # Terraform Resource Configuration
-        TF_VAR_name_environment: "nonprod"
-        TF_VAR_dns_create_hostedzone: false
-        TF_VAR_dns_hostedzone_name: nonprod
-        TF_VAR_dns_create_hostedzone_parent_link: false
-        TF_VAR_dns_parent_hostedzone_name: foo.com
-        TF_VAR_k8s_role_file_map: "[\"../../k8s/users/nonprod-admin-users.json\", \"../../k8s/users/nonprod-developer-users.json\"]"
-        TF_VAR_container_registry_pull_push_user: AWSSECRETS://foo/bar/secret
-      depends_on:
-        - lint
-    - pipeline: infrapipeline
-      name: InfraProd
-      generator:
-        github: 
-          if: github.ref == 'refs/heads/main'
-          environment: prod
-          runs-on: ubuntu-24.04
-      env:
-        ENV: prod
-      depends_on:
-        - lint
-
-  # CI pipelines
-  lint:
-    - task: lint:ci
-  # InfraDev:
-  #   - pipeline: infrapipeline
-  
-  # InfraProd:
-  #   - pipeline: infrapipeline
-  #     # env: 
-  #     #   ENV: PROD
-  #     # envfile:
-  #     #   g
-  #     depends_on:
-  #       - install-taskctl
-
-  # internal
-  infrapipeline:
-    - task: infra:init
-    - task: infra:apply
-      depends_on:
-        - infra:init
-
   graph:pipeline1:
     - task: graph:task2
       depends_on: 
@@ -191,36 +66,6 @@ pipelines:
       #   - graph:task2
 
 tasks:
-  lint:ci:
-    command:
-      - echo "lint stuff"
-
-  install-taskctl: 
-    command:
-      - echo "installing taskctl"
-
-  infra:init:
-    command:
-      - echo "tf init"
-      - env | grep TF_
-    env:
-      TF_DIR: foo/bar
-      BOOL: true
-
-  infra:plan:
-    command:
-      - echo "tf init"
-      - env | grep TF_
-    env:
-      TF_DIR: foo/bar
-      BOOL: true
-
-  infra:apply:
-    command:
-      - echo "tf apply" && env | grep TF_
-    env:
-      TF_DIR: foo/bar
-
   graph:task1:
     command: |
       for i in $(seq 1 5); do
