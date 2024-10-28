@@ -1,11 +1,9 @@
 package task
 
 import (
-	"bytes"
 	"sync"
 	"time"
 
-	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/variables"
 )
 
@@ -65,10 +63,10 @@ type Task struct {
 	exitCode int16
 	errored  bool
 	errorVal error
-	Log      struct {
-		Stderr *bytes.Buffer
-		Stdout *bytes.Buffer
-	}
+	// Log      struct {
+	// 	Stderr *bytes.Buffer
+	// 	Stdout *bytes.Buffer
+	// }
 	// Generator Task Level
 	Generator map[string]any
 }
@@ -82,14 +80,34 @@ func NewTask(name string) *Task {
 		exitCode:  -1,
 		errored:   false,
 		mu:        sync.Mutex{},
-		Log: struct {
-			Stderr *bytes.Buffer
-			Stdout *bytes.Buffer
-		}{
-			Stderr: &bytes.Buffer{},
-			Stdout: &bytes.Buffer{},
-		},
+		// Log: struct {
+		// 	Stderr *bytes.Buffer
+		// 	Stdout *bytes.Buffer
+		// }{
+		// 	Stderr: &bytes.Buffer{},
+		// 	Stdout: &bytes.Buffer{},
+		// },
 	}
+}
+
+func (t *Task) FromTask(task *Task) {
+	t.Commands = task.Commands
+	t.Context = task.Context
+	t.Variations = task.Variations
+	t.Dir = task.Dir
+	t.Timeout = task.Timeout
+	t.AllowFailure = task.AllowFailure
+	t.After = task.After
+	t.Before = task.Before
+	t.Interactive = task.Interactive
+	t.ResetContext = task.ResetContext
+	t.Condition = task.Condition
+	t.Artifacts = task.Artifacts
+	t.Description = task.Description
+	// merge vars
+	t.Env = t.Env.Merge(task.Env)
+	t.Variables = t.Variables.Merge(task.Variables)
+
 }
 
 // Withers
@@ -191,18 +209,18 @@ func (t *Task) ErrorMessage() string {
 	if !t.Errored() {
 		return ""
 	}
+	return t.Error().Error()
 
-	if t.Log.Stderr.Len() > 0 {
-		return utils.LastLine(t.Log.Stderr)
-	}
+	// if t.Log.Stderr.Len() > 0 {
+	// 	return utils.LastLine(t.Log.Stderr)
+	// }
 
-	return utils.LastLine(t.Log.Stdout)
+	// return utils.LastLine(t.Error())
 }
 
 // WithEnv sets environment variable
 func (t *Task) WithEnv(key, value string) *Task {
 	t.Env = t.Env.With(key, value)
-
 	return t
 }
 
@@ -219,5 +237,6 @@ func (t *Task) GetVariations() []map[string]string {
 
 // Output returns task's stdout as a string
 func (t *Task) Output() string {
-	return t.Log.Stdout.String()
+	// return t.Log.Stdout.String()
+	return ""
 }

@@ -64,8 +64,8 @@ pipelines:
     - task: post:apply
       depends_on:
         - infra:apply
-      condition: |
-        if [[ "$ENV_NAME" == "prod" ]]; then echo 1; fi
+      # condition: |
+      #   if [[ "$ENV_NAME" == "prod" ]]; then echo 1; fi
     - pipeline: helm
       depends_on:
         - post:apply
@@ -122,33 +122,50 @@ tasks:
 
   infra:init:
     command:
-      - echo "tf init"
-      - echo "ENV_NAME = $ENV_NAME"
+      - | 
+        for i in $(seq 1 2); do
+          echo "tf init ${ENV_NAME} - iteration $i"
+          sleep 1
+        done
     env:
       TF_DIR: foo/bar
       BOOL: true
 
   infra:plan:
     command:
-      - echo "tf plan"
-      - echo "ENV_NAME = $ENV_NAME"
+      - | 
+        for i in $(seq 1 3); do
+          echo "tf plan ${ENV_NAME} - iteration $i"
+          sleep 1
+        done
     env:
       TF_DIR: foo/bar
       BOOL: true
 
   infra:apply:
     command:
-      - echo "tf apply"
-      - echo "ENV_NAME = $ENV_NAME"
+      - | 
+        for i in $(seq 1 5); do
+          echo "tf apply ${ENV_NAME} - iteration $i"
+          sleep 1
+        done
     env:
       TF_DIR: foo/bar
 
   helm:test:
     command:
-      - echo "helm test in env $ENV_NAME"
+      - | 
+        for i in $(seq 1 2); do
+          echo "helm test ${ENV_NAME} - iteration $i"
+          sleep 1
+        done
   helm:deploy:
     command:
-      - echo "helm deploy in env $ENV_NAME"
+      - | 
+        for i in $(seq 1 5); do
+          echo "helm deploy ${ENV_NAME} - iteration $i"
+          sleep 1
+        done
   helm:notification:
     command:
       - echo "helm notification in env $ENV_NAME"

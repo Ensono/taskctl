@@ -27,18 +27,19 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 			stagePipeline.Generator = def.Generator
 		}
 
-		stage := scheduler.NewStage(func(s *scheduler.Stage) {
-			s.Name = def.Name
+		stage := scheduler.NewStage(def.Name, func(s *scheduler.Stage) {
 			s.Condition = def.Condition
 			s.Task = stageTask
 			s.Pipeline = stagePipeline
 			s.DependsOn = def.DependsOn
 			s.Dir = def.Dir
 			s.AllowFailure = def.AllowFailure
-			s.Env = variables.FromMap(def.Env)
-			s.Variables = variables.FromMap(def.Variables)
 			s.Generator = def.Generator
 		})
+		stage.WithEnv(variables.FromMap(def.Env))
+		vars := variables.FromMap(def.Variables)
+		vars.Set(".Stage.Name", def.Name)
+		stage.WithVariables(vars)
 
 		if stage.Dir != "" {
 			stage.Task.Dir = stage.Dir
@@ -58,7 +59,7 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 			}
 		}
 
-		stage.Variables.Set(".Stage.Name", stage.Name)
+		// stage.Variables.Set(".Stage.Name", stage.Name)
 
 		if _, err := g.Node(stage.Name); err == nil {
 			return nil, fmt.Errorf("stage with same name %s already exists", stage.Name)

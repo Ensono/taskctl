@@ -3,7 +3,10 @@ package scheduler
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"time"
+
+	"github.com/Ensono/taskctl/internal/utils"
 )
 
 // ErrCycleDetected occurs when added edge causes cycle to appear
@@ -17,7 +20,7 @@ const (
 type ExecutionGraph struct {
 	error
 	Generator map[string]any
-	Env       map[string][]string
+	Env       map[string]string
 	name      string
 	nodes     map[string]*Stage
 	// parent holds the children reference of the node
@@ -25,6 +28,7 @@ type ExecutionGraph struct {
 	// children points back children the parent reference
 	children   map[string][]string
 	start, end time.Time
+	mu         sync.Mutex
 }
 
 // NewExecutionGraph creates new ExecutionGraph instance.
@@ -32,7 +36,7 @@ type ExecutionGraph struct {
 func NewExecutionGraph(name string, stages ...*Stage) (*ExecutionGraph, error) {
 	// create a rooted node to hang the graph of
 	// this will allow for easy find of the initial node(s)
-	rootNode := NewStage(func(s *Stage) {
+	rootNode := NewStage(name, func(s *Stage) {
 		s.Name = RootNodeName
 	})
 	rootNode.UpdateStatus(StatusDone)
@@ -160,6 +164,84 @@ func (g *ExecutionGraph) HasCycle() error {
 	return g.cycleDfs(RootNodeName, make(map[string]bool), make(map[string]bool))
 }
 
+// DenormalizePipelineRefs performs a DFS traversal on the ExecutionGraph from the root node
+//
+// In order to be able to call the same pipeline from another pipeline, we want to create a new
+// pointer to it, this will avoid race conditions in times/outputs/env vars/etc...
+// We can also set separate environment variables
+func (g *ExecutionGraph) DenormalizePipelineRefs(ancestralParentNames []string, ng *ExecutionGraph) {
+	// Check if the start node exists in the graph
+	if _, exists := g.nodes[RootNodeName]; !exists {
+		fmt.Printf("Start node %s not found in graph\n", RootNodeName)
+		return
+	}
+
+	// Initialize a stack and a visited map
+	stack := []string{RootNodeName}
+	visited := make(map[string]bool)
+
+	// Perform DFS using the stack
+	for len(stack) > 0 {
+		// stgParent := parentName + "->" + currentName
+		// if currentName == RootNodeName {
+		// 	stgParent = parentName
+		// }
+		// Pop the last node from the stack
+		currentNode := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+
+		// deal with RootNode here and move the stack accordingly
+		if currentNode == RootNodeName {
+			// need to add route first task onto the root node
+
+			// Push all children of the current node onto the stack
+			for _, child := range g.children[currentNode] {
+				if !visited[child] {
+					stack = append(stack, child)
+				}
+			}
+			continue
+		}
+
+		// Skip if already visited
+		if visited[currentNode] {
+			continue
+		}
+
+		// Mark the current node as visited
+		visited[currentNode] = true
+
+		// Retrieve the current stage
+		stage := g.nodes[currentNode]
+
+		// Process the current node
+		uniqueName := utils.CascadeName(ancestralParentNames, currentNode)
+		stg := NewStage(uniqueName)
+		// Task or stage needs adding
+		fmt.Printf("Processing node: %s\n", uniqueName)
+		stg.FromStage(g.nodes[currentNode], g, ancestralParentNames)
+		ng.AddStage(stg)
+
+		// If the stage has a subgraph, recursively perform DFS on it
+		if stage.Pipeline != nil {
+			fmt.Printf("Entering subgraph of node: %s\n", currentNode)
+			nestedAncestors := append(ancestralParentNames, stage.Name)
+			if stage.Name != stage.Pipeline.Name() {
+				nestedAncestors = append(ancestralParentNames, stage.Name, stage.Pipeline.Name())
+			}
+			stage.Pipeline.DenormalizePipelineRefs(nestedAncestors, ng) // Use an arbitrary root for subgraphs
+			fmt.Printf("Exiting subgraph of node: %s\n", currentNode)
+		}
+
+		// Push all children of the current node onto the stack
+		for _, child := range g.children[currentNode] {
+			if !visited[child] {
+				stack = append(stack, child)
+			}
+		}
+	}
+}
+
 // cycleDfs is DFS utility to traverse
 // the tree to detect any back-edges and hence to detect a cycle
 func (g *ExecutionGraph) cycleDfs(node string, visited map[string]bool, inStack map[string]bool) error {
@@ -167,7 +249,7 @@ func (g *ExecutionGraph) cycleDfs(node string, visited map[string]bool, inStack 
 	visited[node] = true
 	inStack[node] = true
 
-	// Explore all the neighbors (children) of the current node
+	// Explore all the children of the current node
 	for _, child := range g.children[node] {
 		// If the child is not visited, recurse
 		if !visited[child] {
@@ -186,20 +268,12 @@ func (g *ExecutionGraph) cycleDfs(node string, visited map[string]bool, inStack 
 	return nil
 }
 
-// // Generate walks the graph for the purposes of creating
-// // a generated file(s) for CI yaml definition purposes
-// func (g *ExecutionGraph) Generate() string {
-// 	nodes := g.nodes
-// 	return fmt.Sprintf("%v", nodes)
-// }
-
 // Node returns stage by its name
 func (g *ExecutionGraph) Node(name string) (*Stage, error) {
 	t, ok := g.nodes[name]
 	if !ok {
 		return nil, fmt.Errorf("unknown task %s", name)
 	}
-
 	return t, nil
 }
 

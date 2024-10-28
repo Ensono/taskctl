@@ -67,7 +67,7 @@ func PrintSummary(g *scheduler.ExecutionGraph, chanOut io.Writer) {
 		case scheduler.StatusCanceled:
 			fmt.Fprintf(chanOut, GREY_TERMINAL, fmt.Sprintf("- Stage %s was cancelled\n", stage.Name))
 		default:
-			fmt.Fprintf(chanOut, RED_TERMINAL, fmt.Sprintf("- Unexpected status %d for stage %s\n", stage.Status, stage.Name))
+			fmt.Fprintf(chanOut, RED_TERMINAL, fmt.Sprintf("- Unexpected status %d for stage %s\n", stage.ReadStatus(), stage.Name))
 		}
 	}
 

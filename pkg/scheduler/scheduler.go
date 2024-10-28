@@ -37,8 +37,14 @@ func (s *Scheduler) Cancelled() int32 {
 
 // Schedule starts execution of the given ExecutionGraph
 func (s *Scheduler) Schedule(g *ExecutionGraph) error {
+	g.mu.Lock()
 	g.start = time.Now()
-	defer func() { g.end = time.Now() }()
+	g.mu.Unlock()
+	defer func() {
+		g.mu.Lock()
+		g.end = time.Now()
+		g.mu.Unlock()
+	}()
 
 	wg := sync.WaitGroup{}
 
@@ -76,11 +82,11 @@ func (s *Scheduler) Schedule(g *ExecutionGraph) error {
 			stage.UpdateStatus(StatusRunning)
 			go func(stage *Stage, wg *sync.WaitGroup) {
 				defer func() {
-					stage.End = time.Now()
+					stage.WithEnd(time.Now())
 					wg.Done()
 				}()
 
-				stage.Start = time.Now()
+				stage.WithStart(time.Now())
 
 				err := s.runStage(stage)
 				if err != nil {
@@ -133,21 +139,23 @@ func (s *Scheduler) runStage(stage *Stage) error {
 	}
 
 	t := stage.Task
-	if stage.Env != nil {
-		if t.Env == nil {
-			t.Env = stage.Env
-		} else {
-			t.Env = t.Env.Merge(stage.Env)
-		}
-	}
+	t.Env.Merge(stage.Env())
+	// if stage.Env != nil {
+	// 	if t.Env == nil {
+	// 		t.Env = stage.Env
+	// 	} else {
+	// 		t.Env = t.Env.Merge(stage.Env())
+	// 	}
+	// }
 
-	if stage.Variables != nil {
-		if t.Variables == nil {
-			t.Variables = stage.Variables
-		} else {
-			t.Variables = t.Env.Merge(stage.Variables)
-		}
-	}
+	// if stage.Variables != nil {
+	// 	if t.Variables == nil {
+	// 		t.Variables = stage.Variables
+	// 	} else {
+	// 		t.Variables = t.Env.Merge(stage.Variables())
+	// 	}
+	// }
+	t.Env.Merge(stage.Variables())
 
 	return s.taskRunner.Run(stage.Task)
 }

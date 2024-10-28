@@ -119,7 +119,7 @@ func jobLooper(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph
 		job := &schema.GithubJob{
 			Name:   utils.ConvertStringToHumanFriendly(node.Name),
 			RunsOn: "ubuntu-24.04",
-			Env:    utils.ConvertToMapOfStrings(node.Env.Map()),
+			Env:    utils.ConvertToMapOfStrings(node.Env().Map()),
 		}
 		// Add defaults
 		addDefaultStepsToJob(job)

@@ -12,15 +12,13 @@ func TestExecutionGraph_AddStage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = g.AddStage(scheduler.NewStage(func(s *scheduler.Stage) {
-		s.Name = "stage1"
+	err = g.AddStage(scheduler.NewStage("stage1", func(s *scheduler.Stage) {
 		s.DependsOn = []string{"stage2"}
 	}))
 	if err != nil {
 		t.Fatal()
 	}
-	err = g.AddStage(scheduler.NewStage(func(s *scheduler.Stage) {
-		s.Name = "stage2"
+	err = g.AddStage(scheduler.NewStage("stage2", func(s *scheduler.Stage) {
 		s.DependsOn = []string{"stage1"}
 	}))
 	if err == nil {

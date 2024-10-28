@@ -279,3 +279,11 @@ func ConvertStringToHumanFriendly(str string) string {
 	// and only _ should be left to go back to :
 	return strings.NewReplacer("___", ` `, "__", ":").Replace(str)
 }
+
+func CascadeName(parents []string, current string) string {
+
+	// for _, v := range parents {
+
+	// }
+	return fmt.Sprintf("%s->%s", strings.Join(parents, "->"), current)
+}

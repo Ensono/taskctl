@@ -13,15 +13,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type runFlags struct {
+	showGraphOnly bool
+}
+
 type runCmd struct {
-	cmd                    *cobra.Command
 	channelOut, channelErr io.Writer
+	flags                  *runFlags
 }
 
 func newRunCmd(rootCmd *TaskCtlCmd) {
+	f := &runFlags{}
 	runner := &runCmd{
 		channelOut: rootCmd.ChannelOut,
 		channelErr: rootCmd.ChannelErr,
+		flags:      f,
 	}
 
 	rc := &cobra.Command{
@@ -93,9 +99,8 @@ func newRunCmd(rootCmd *TaskCtlCmd) {
 		},
 	})
 
-	runner.cmd = rc
-
-	rootCmd.Cmd.AddCommand(runner.cmd)
+	rc.Flags().BoolVarP(&f.showGraphOnly, "graph-only", "", false, "Show only the denormalized graph")
+	rootCmd.Cmd.AddCommand(rc)
 }
 
 func (r *runCmd) runTarget(taskRunner *runner.TaskRunner, conf *config.Config, argsStringer *argsToStringsMapper) (err error) {
@@ -123,7 +128,16 @@ func (r *runCmd) runPipeline(g *scheduler.ExecutionGraph, taskRunner *runner.Tas
 		sd.Cancel()
 	}()
 
-	err := sd.Schedule(g)
+	// rebuild the tree with deduped nested graphs
+	// when running embedded pipelines in pipelines referencing
+	// creating a new graph ensures no race occurs as
+	// go routine stages all point to a different address space
+	ng, _ := scheduler.NewExecutionGraph(g.Name())
+	g.DenormalizePipelineRefs([]string{g.Name()}, ng)
+	if r.flags.showGraphOnly {
+		return graphCmdRun(ng, r.channelOut, &graphFlags{})
+	}
+	err := sd.Schedule(ng)
 	if err != nil {
 		return err
 	}
@@ -137,6 +151,32 @@ func (r *runCmd) runPipeline(g *scheduler.ExecutionGraph, taskRunner *runner.Tas
 
 	return nil
 }
+
+// func rebuildTree(g *scheduler.ExecutionGraph, ng *scheduler.ExecutionGraph) error {
+// 	for _, node := range g.BFSNodesFlattened(scheduler.RootNodeName) {
+// 		if node.Pipeline != nil {
+// 			rebuildTree(node.Pipeline, ng)
+// 		}
+// 		if node.Task != nil && len(g.From(node.Name)) == 0 {
+// 			stage := scheduler.NewStage(utils.CascadeName(g.Name(), node.Task.Name))
+// 			stage.FromStage(node, g)
+// 			if err := ng.AddStage(stage); err != nil {
+// 				return err
+// 			}
+// 		}
+// 		for _, child := range g.From(node.Name) {
+// 			if child == scheduler.RootNodeName {
+// 				continue
+// 			}
+// 			stage := scheduler.NewStage(utils.CascadeName(g.Name(), child))
+// 			stage.FromStage(node, g)
+// 			if err := ng.AddStage(stage); err != nil {
+// 				return err
+// 			}
+// 		}
+// 	}
+// 	return nil
+// }
 
 func (r *runCmd) runTask(t *task.Task, taskRunner *runner.TaskRunner) error {
 	err := taskRunner.Run(t)

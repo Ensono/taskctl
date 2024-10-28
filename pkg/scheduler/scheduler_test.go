@@ -31,24 +31,20 @@ func (t2 TestTaskRunner) Cancel() {}
 func (t2 TestTaskRunner) Finish() {}
 
 func TestExecutionGraph_Scheduler(t *testing.T) {
-	stage1 := scheduler.NewStage(func(s *scheduler.Stage) {
-		s.Name = "stage1"
+	stage1 := scheduler.NewStage("stage1", func(s *scheduler.Stage) {
 		s.Task = task.FromCommands("t1", "/usr/bin/true")
 	})
-	stage2 := scheduler.NewStage(func(s *scheduler.Stage) {
-		s.Name = "stage2"
+	stage2 := scheduler.NewStage("stage2", func(s *scheduler.Stage) {
 		s.Task = task.FromCommands("t2", "/usr/bin/false")
 		s.DependsOn = []string{"stage1"}
 	})
 
-	stage3 := scheduler.NewStage(func(s *scheduler.Stage) {
-		s.Name = "stage3"
+	stage3 := scheduler.NewStage("stage3", func(s *scheduler.Stage) {
 		s.Task = task.FromCommands("t2", "/usr/bin/false")
 		s.DependsOn = []string{"stage2"}
 	})
 
-	stage4 := scheduler.NewStage(func(s *scheduler.Stage) {
-		s.Name = "stage4"
+	stage4 := scheduler.NewStage("stage4", func(s *scheduler.Stage) {
 		s.Task = task.FromCommands("t3", "true")
 		s.DependsOn = []string{"stage3"}
 
@@ -71,30 +67,26 @@ func TestExecutionGraph_Scheduler(t *testing.T) {
 		t.Fatal()
 	}
 
-	if stage3.Status.Load() != scheduler.StatusCanceled || stage4.Status.Load() != scheduler.StatusCanceled {
+	if stage3.ReadStatus() != scheduler.StatusCanceled || stage4.ReadStatus() != scheduler.StatusCanceled {
 		t.Fatal("stage3 was not cancelled")
 	}
 }
 
 func TestExecutionGraph_Scheduler_AllowFailure(t *testing.T) {
-	stage1 := scheduler.NewStage(func(s *scheduler.Stage) {
-		s.Name = "stage1"
+	stage1 := scheduler.NewStage("stage1", func(s *scheduler.Stage) {
 		s.Task = task.FromCommands("t1", "true")
 
 	})
-	stage2 := scheduler.NewStage(func(s *scheduler.Stage) {
-		s.Name = "stage2"
+	stage2 := scheduler.NewStage("stage2", func(s *scheduler.Stage) {
 		s.Task = task.FromCommands("t2", "false")
 		s.AllowFailure = true
 		s.DependsOn = []string{"stage1"}
 
 	})
-	stage3 := scheduler.NewStage(func(s *scheduler.Stage) {
-		s.Name = "stage3"
+	stage3 := scheduler.NewStage("stage3", func(s *scheduler.Stage) {
 		s.Task = task.FromCommands("t3", "{{.command}}")
 		s.DependsOn = []string{"stage2"}
-		s.Variables = variables.FromMap(map[string]string{"command": "true"})
-		s.Env = variables.NewVariables()
+		s.WithVariables(variables.FromMap(map[string]string{"command": "true"}))
 	})
 
 	graph, err := scheduler.NewExecutionGraph("t1", stage1, stage2, stage3)
@@ -110,7 +102,7 @@ func TestExecutionGraph_Scheduler_AllowFailure(t *testing.T) {
 		t.Fatalf("unexpected error %v", err)
 	}
 
-	if stage3.Status.Load() == scheduler.StatusCanceled {
+	if stage3.ReadStatus() == scheduler.StatusCanceled {
 		t.Fatal("stage3 was cancelled")
 	}
 
@@ -122,14 +114,12 @@ func TestExecutionGraph_Scheduler_AllowFailure(t *testing.T) {
 }
 
 func TestSkippedStage(t *testing.T) {
-	stage1 := scheduler.NewStage(func(s *scheduler.Stage) {
-		s.Name = "stage1"
+	stage1 := scheduler.NewStage("stage1", func(s *scheduler.Stage) {
 		s.Task = task.FromCommands("t1", "true")
 		s.Condition = "true"
 
 	})
-	stage2 := scheduler.NewStage(func(s *scheduler.Stage) {
-		s.Name = "stage2"
+	stage2 := scheduler.NewStage("stage2", func(s *scheduler.Stage) {
 		s.Task = task.FromCommands("t2", "false")
 		s.AllowFailure = true
 		s.DependsOn = []string{"stage1"}
@@ -149,16 +139,14 @@ func TestSkippedStage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if stage1.Status.Load() != scheduler.StatusDone || stage2.Status.Load() != scheduler.StatusSkipped {
+	if stage1.ReadStatus() != scheduler.StatusDone || stage2.ReadStatus() != scheduler.StatusSkipped {
 		t.Error()
 	}
 }
 
 func TestScheduler_Cancel(t *testing.T) {
-	stage1 := scheduler.NewStage(func(s *scheduler.Stage) {
-		s.Name = "stage1"
+	stage1 := scheduler.NewStage("stage1", func(s *scheduler.Stage) {
 		s.Task = task.FromCommands("t1", "sleep 60")
-
 	})
 
 	graph, err := scheduler.NewExecutionGraph("t1", stage1)
@@ -184,14 +172,12 @@ func TestScheduler_Cancel(t *testing.T) {
 }
 
 func TestConditionErroredStage(t *testing.T) {
-	stage1 := scheduler.NewStage(func(s *scheduler.Stage) {
-		s.Name = "stage1"
+	stage1 := scheduler.NewStage("stage1", func(s *scheduler.Stage) {
 		s.Task = task.FromCommands("t1", "true")
 		s.Condition = "true"
 	})
 
-	stage2 := scheduler.NewStage(func(s *scheduler.Stage) {
-		s.Name = "stage2"
+	stage2 := scheduler.NewStage("stage2", func(s *scheduler.Stage) {
 		s.Task = task.FromCommands("t2", "false")
 		s.AllowFailure = true
 		s.DependsOn = []string{"stage1"}
@@ -211,7 +197,7 @@ func TestConditionErroredStage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if stage1.Status.Load() != scheduler.StatusDone || stage2.Status.Load() != scheduler.StatusError {
+	if stage1.ReadStatus() != scheduler.StatusDone || stage2.ReadStatus() != scheduler.StatusError {
 		t.Error()
 	}
 }
@@ -223,12 +209,10 @@ func ExampleScheduler_Schedule() {
 	s := scheduler.NewScheduler(r)
 
 	graph, err := scheduler.NewExecutionGraph("t1",
-		scheduler.NewStage(func(s *scheduler.Stage) {
-			s.Name = "format"
+		scheduler.NewStage("format", func(s *scheduler.Stage) {
 			s.Task = format
 		}),
-		scheduler.NewStage(func(s *scheduler.Stage) {
-			s.Name = "build"
+		scheduler.NewStage("build", func(s *scheduler.Stage) {
 			s.Task = build
 			s.DependsOn = []string{"format"}
 		}),
