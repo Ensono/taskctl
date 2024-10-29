@@ -106,9 +106,13 @@ func draw(g *dot.Graph, p *scheduler.ExecutionGraph, topLevelStages []string, pa
 				// loop through subgraph - by adding edges to it
 				draw(cluster, v.Pipeline, topLevelStages, v.Pipeline.Name())
 				// add edge fom parent graph to subgraph cluster
+				var edge dot.Edge
 				if pipelineNode := getNode(g, v.Name); pipelineNode != nil {
-					g.Edge(*pipelineNode, anchorNode).Attr("color", "brown")
+					edge = g.Edge(*pipelineNode, anchorNode)
+				} else {
+					edge = g.Edge(g.Node(v.Name), anchorNode)
 				}
+				edge.Attr("color", "brown")
 			}
 		}
 
@@ -120,7 +124,12 @@ func draw(g *dot.Graph, p *scheduler.ExecutionGraph, topLevelStages []string, pa
 		}
 
 		for _, child := range p.Children(v.Name) {
-			edge := g.Edge(g.Node(v.Name), g.Node(child.Name))
+			var edge dot.Edge
+			if parent := getNode(g, v.Name); parent != nil {
+				edge = g.Edge(*parent, g.Node(child.Name))
+			} else {
+				edge = g.Edge(g.Node(v.Name), g.Node(child.Name))
+			}
 			if slices.Contains(topLevelStages, v.Name) {
 				edge.Attr("color", "blue")
 			} else {
