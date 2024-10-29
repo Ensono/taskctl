@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"net/url"
 	"os"
 	"os/exec"
@@ -264,11 +265,10 @@ func ReadEnvFile(r io.ReadCloser) (map[string]string, error) {
 	return envs, nil
 }
 
-// ConvertStringToMachineFriendly takes astring and replaces
-// any occurrence of non machine friendly chars with machine friendly ones
+// ConvertStringToMachineFriendly takes a string and converts it
+// to base62 format - this is safer than using regex or strings replace.
 func ConvertStringToMachineFriendly(str string) string {
-	// These pairs can be extended cane
-	return strings.NewReplacer(":", "__", ` `, "___").Replace(str)
+	return base62EncodeToString([]byte(str))
 }
 
 // ConvertStringToHumanFriendly takes a ConvertStringToMachineFriendly generated string and
@@ -277,13 +277,30 @@ func ConvertStringToHumanFriendly(str string) string {
 	// Order is important
 	// pass in the __ first to replace that with spaces
 	// and only _ should be left to go back to :
-	return strings.NewReplacer("___", ` `, "__", ":").Replace(str)
+	if decoded, err := base62DecodeString(str); err == nil {
+		return string(decoded)
+	}
+	return ""
 }
 
 func CascadeName(parents []string, current string) string {
-
-	// for _, v := range parents {
-
-	// }
 	return fmt.Sprintf("%s->%s", strings.Join(parents, "->"), current)
+}
+
+// base62 helpers included here - to avoid introducing a secondary dependancy
+// NOTE: this is by far not the most performant method
+// performance here is not an issue
+func base62EncodeToString(v []byte) string {
+	var i big.Int
+	i.SetBytes(v[:])
+	return i.Text(62)
+}
+
+func base62DecodeString(s string) ([]byte, error) {
+	var i big.Int
+	_, ok := i.SetString(s, 62)
+	if !ok {
+		return nil, fmt.Errorf("cannot parse base62: %q", s)
+	}
+	return i.Bytes(), nil
 }

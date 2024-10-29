@@ -279,6 +279,7 @@ fdsggfd gdf`},
 }
 
 func TestUtils_ConvertToMapOfStrings(t *testing.T) {
+	t.Parallel()
 	in := make(map[string]any)
 	in["str"] = "string"
 	in["int"] = 123
@@ -298,6 +299,7 @@ func TestUtils_ConvertToMapOfStrings(t *testing.T) {
 }
 
 func TestUtils_ConvertStringToMachineFriendly(t *testing.T) {
+	t.Parallel()
 	ttests := map[string]struct {
 		input string
 	}{
@@ -309,6 +311,12 @@ func TestUtils_ConvertStringToMachineFriendly(t *testing.T) {
 		},
 		"with existing _": {
 			"task123:with space and _",
+		},
+		"with existing _ -> pipeline pointer": {
+			"pipeline1->task123:with space and _",
+		},
+		"with existing _ -> pipeline pointer in the middle": {
+			"pipeline1->task123:with space and _->task:567",
 		},
 	}
 	for name, tt := range ttests {
