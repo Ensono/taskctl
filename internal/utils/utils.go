@@ -283,8 +283,10 @@ func ConvertStringToHumanFriendly(str string) string {
 	return ""
 }
 
+const PipelineDirectionChar string = "->"
+
 func CascadeName(parents []string, current string) string {
-	return fmt.Sprintf("%s->%s", strings.Join(parents, "->"), current)
+	return fmt.Sprintf("%s%s%s", strings.Join(parents, PipelineDirectionChar), PipelineDirectionChar, current)
 }
 
 // base62 helpers included here - to avoid introducing a secondary dependancy

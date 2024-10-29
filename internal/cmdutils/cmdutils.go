@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Ensono/taskctl/internal/config"
+	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/scheduler"
 	"github.com/charmbracelet/huh"
 )
@@ -46,13 +47,17 @@ func DisplayTaskSelection(conf *config.Config, showPipelineOnly bool) (taskOrPip
 }
 
 // printSummary is a TUI helper
-func PrintSummary(g *scheduler.ExecutionGraph, chanOut io.Writer) {
+func PrintSummary(g *scheduler.ExecutionGraph, chanOut io.Writer, detailedSummary bool) {
 	stages := g.BFSNodesFlattened(scheduler.RootNodeName)
-
+	// NOTE: perhaps a radix trie here :"¯\_(ツ)_/¯"
+	if !detailedSummary {
+		stages = mergeSummary(stages)
+	}
 	fmt.Fprintf(chanOut, BOLD_TERMINAL, "Summary: \n")
 
 	var log string
 	for _, stage := range stages {
+		stage.Name = stageNameHelper(g.Name(), stage.Name)
 		switch stage.ReadStatus() {
 		case scheduler.StatusDone:
 			fmt.Fprintf(chanOut, GREEN_TERMINAL, fmt.Sprintf("- Stage %s was completed in %s\n", stage.Name, stage.Duration()))
@@ -72,4 +77,19 @@ func PrintSummary(g *scheduler.ExecutionGraph, chanOut io.Writer) {
 	}
 
 	fmt.Fprintf(chanOut, "%s: %s\n", fmt.Sprintf(BOLD_TERMINAL, "Total duration"), fmt.Sprintf(GREEN_TERMINAL, g.Duration()))
+}
+
+func mergeSummary(inputStages []*scheduler.Stage) (summarizedStages []*scheduler.Stage) {
+	for _, v := range inputStages {
+		tlns := strings.Split(v.Name, utils.PipelineDirectionChar)
+		if len(tlns) == 2 {
+			summarizedStages = append(summarizedStages, v)
+		}
+	}
+	return summarizedStages
+}
+
+// stageNameHelper strips out the root pipeline name
+func stageNameHelper(prefix, stage string) string {
+	return strings.Replace(stage, prefix+"->", "", 1)
 }
