@@ -92,9 +92,6 @@ func (g *ExecutionGraph) addEdge(parent string, child string) error {
 	g.parent[child] = append(g.parent[child], parent)
 	g.children[parent] = append(g.children[parent], child)
 	return g.cycleDfs(parent, make(map[string]bool), make(map[string]bool))
-	// 	return ErrCycleDetected
-	// }
-	// return nil
 }
 
 // Nodes returns ExecutionGraph stages - an n-ary tree itself
@@ -172,7 +169,6 @@ func (g *ExecutionGraph) HasCycle() error {
 func (g *ExecutionGraph) DenormalizePipelineRefs(ancestralParentNames []string, ng *ExecutionGraph) {
 	// Check if the start node exists in the graph
 	if _, exists := g.nodes[RootNodeName]; !exists {
-		fmt.Printf("Start node %s not found in graph\n", RootNodeName)
 		return
 	}
 
@@ -218,19 +214,16 @@ func (g *ExecutionGraph) DenormalizePipelineRefs(ancestralParentNames []string, 
 		uniqueName := utils.CascadeName(ancestralParentNames, currentNode)
 		stg := NewStage(uniqueName)
 		// Task or stage needs adding
-		fmt.Printf("Processing node: %s\n", uniqueName)
 		stg.FromStage(g.nodes[currentNode], g, ancestralParentNames)
 		ng.AddStage(stg)
 
 		// If the stage has a subgraph, recursively perform DFS on it
 		if stage.Pipeline != nil {
-			fmt.Printf("Entering subgraph of node: %s\n", currentNode)
 			nestedAncestors := append(ancestralParentNames, stage.Name)
 			if stage.Name != stage.Pipeline.Name() {
 				nestedAncestors = append(ancestralParentNames, stage.Name, stage.Pipeline.Name())
 			}
-			stage.Pipeline.DenormalizePipelineRefs(nestedAncestors, ng) // Use an arbitrary root for subgraphs
-			fmt.Printf("Exiting subgraph of node: %s\n", currentNode)
+			stage.Pipeline.DenormalizePipelineRefs(nestedAncestors, ng)
 		}
 
 		// Push all children of the current node onto the stack
@@ -254,12 +247,12 @@ func (g *ExecutionGraph) cycleDfs(node string, visited map[string]bool, inStack 
 		// If the child is not visited, recurse
 		if !visited[child] {
 			if err := g.cycleDfs(child, visited, inStack); err != nil {
-				return fmt.Errorf("pipeline: %s\n%s, is depending on %s, creating a cyclical dependency\n%w", g.name, node, child, ErrCycleDetected)
+				return err
 			}
 		}
-		// if a child is already in the stack we return a cycle isdetect it
+		// if a child is already in the stack we return a cycle is detect it
 		if inStack[child] {
-			return fmt.Errorf("%s, is alread a dependency of %s, creating a cyclical dependency\n%w", node, child, ErrCycleDetected)
+			return fmt.Errorf("pipeline (%s) already contains [%s] -> [%s] - reversing it would create a cyclical dependency\n%w", g.name, child, node, ErrCycleDetected)
 		}
 	}
 

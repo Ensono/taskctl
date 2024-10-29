@@ -1,12 +1,14 @@
 package scheduler_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/Ensono/taskctl/pkg/scheduler"
 )
 
 func TestExecutionGraph_AddStage(t *testing.T) {
+	t.Parallel()
 	g, err := scheduler.NewExecutionGraph("test")
 	if err != nil {
 		t.Fatal(err)
@@ -22,6 +24,9 @@ func TestExecutionGraph_AddStage(t *testing.T) {
 		s.DependsOn = []string{"stage1"}
 	}))
 	if err == nil {
-		t.Fatal("add stage cycle detection failed")
+		t.Fatal("add stage cycle detection failed\n")
+	}
+	if err != nil && !errors.Is(err, scheduler.ErrCycleDetected) {
+		t.Fatalf("incorrect error (%q), wanted: %q\n", err, scheduler.ErrCycleDetected)
 	}
 }

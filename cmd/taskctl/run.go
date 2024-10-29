@@ -14,7 +14,7 @@ import (
 )
 
 type runFlags struct {
-	showGraphOnly bool
+	showGraphOnly, detailedSummary bool
 }
 
 type runCmd struct {
@@ -100,6 +100,7 @@ func newRunCmd(rootCmd *TaskCtlCmd) {
 	})
 
 	rc.Flags().BoolVarP(&f.showGraphOnly, "graph-only", "", false, "Show only the denormalized graph")
+	rc.Flags().BoolVarP(&f.detailedSummary, "detailed", "", false, "Show detailed summary, otherwise will be summarised by top level stages only")
 	rootCmd.Cmd.AddCommand(rc)
 }
 
@@ -146,37 +147,11 @@ func (r *runCmd) runPipeline(g *scheduler.ExecutionGraph, taskRunner *runner.Tas
 	fmt.Fprint(r.channelOut, "\r\n")
 
 	if summary {
-		cmdutils.PrintSummary(g, r.channelOut)
+		cmdutils.PrintSummary(ng, r.channelOut, r.flags.detailedSummary)
 	}
 
 	return nil
 }
-
-// func rebuildTree(g *scheduler.ExecutionGraph, ng *scheduler.ExecutionGraph) error {
-// 	for _, node := range g.BFSNodesFlattened(scheduler.RootNodeName) {
-// 		if node.Pipeline != nil {
-// 			rebuildTree(node.Pipeline, ng)
-// 		}
-// 		if node.Task != nil && len(g.From(node.Name)) == 0 {
-// 			stage := scheduler.NewStage(utils.CascadeName(g.Name(), node.Task.Name))
-// 			stage.FromStage(node, g)
-// 			if err := ng.AddStage(stage); err != nil {
-// 				return err
-// 			}
-// 		}
-// 		for _, child := range g.From(node.Name) {
-// 			if child == scheduler.RootNodeName {
-// 				continue
-// 			}
-// 			stage := scheduler.NewStage(utils.CascadeName(g.Name(), child))
-// 			stage.FromStage(node, g)
-// 			if err := ng.AddStage(stage); err != nil {
-// 				return err
-// 			}
-// 		}
-// 	}
-// 	return nil
-// }
 
 func (r *runCmd) runTask(t *task.Task, taskRunner *runner.TaskRunner) error {
 	err := taskRunner.Run(t)
@@ -190,14 +165,6 @@ func (r *runCmd) runTask(t *task.Task, taskRunner *runner.TaskRunner) error {
 }
 
 var ErrIncorrectPipelineTaskArg = errors.New("supplied argument does not match any pipelines or tasks")
-
-// // Arg munging
-// var (
-// 	taskOrPipelineName string                    = ""
-// 	pipelineName       *scheduler.ExecutionGraph = nil
-// 	taskName           *task.Task                = nil
-// 	argsList           []string                  = nil
-// )
 
 type argsToStringsMapper struct {
 	taskOrPipelineName string
