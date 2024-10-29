@@ -93,11 +93,24 @@ func draw(g *dot.Graph, p *scheduler.ExecutionGraph, topLevelStages []string, pa
 	for _, v := range p.BFSNodesFlattened(scheduler.RootNodeName) {
 		if v.Pipeline != nil {
 			// check if subgraph has been added and all it's children
-			if sub, found := g.Root().FindSubgraph(v.Pipeline.Name()); found {
+			psub, _ := g.Root().FindSubgraph(v.Pipeline.Name())
+			vsub, _ := g.Root().FindSubgraph(v.Name)
+			// if sub, found := g.Root().FindSubgraph(v.Pipeline.Name()); found {
+			if psub != nil || vsub != nil {
+				sub := psub
+				if sub == nil {
+					sub = vsub
+				}
 				anchorNode := getNode(sub, anchorName(v.Pipeline.Name()))
 				parentNode := getNode(g, v.Name)
+				if parentNode == nil {
+					// create the pipeline pointer node in the subgraph
+					// if it does not exist
+					pn := g.Node(v.Name)
+					parentNode = &pn
+				}
 				if anchorNode != nil && parentNode != nil {
-					g.Edge(*parentNode, *anchorNode).Attr("color", "brown")
+					g.Root().Edge(*parentNode, *anchorNode).Attr("color", "brown")
 				}
 			} else {
 				// hoist the subgraph to the top
