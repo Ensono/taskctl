@@ -134,6 +134,16 @@ func draw(g *dot.Graph, p *scheduler.ExecutionGraph, topLevelStages []string, pa
 			// a relationship will be drawn from the top level  stage/job to subgraph
 			// so we remove the edge relationship line
 			g.Root().Edge(g.Root().Node(parent), g.Node(v.Name)).Attrs("style", "invis")
+			// check if task already exist in the graph
+			taskNode := getNode(g.Root(), v.Name)
+			// check if parent is another pipeline
+			// locate the anchor of the pipeline
+			parentSubgraph := getNode(g.Root(), anchorName(parent))
+			if parentSubgraph != nil && taskNode != nil {
+				// if parentGRaph anchor and task already exist
+				// then we point to it from the subgrpah anchor
+				g.Edge(*parentSubgraph, *taskNode).Attr("color", "green")
+			}
 		}
 
 		for _, child := range p.Children(v.Name) {
