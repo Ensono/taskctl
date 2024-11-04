@@ -20,7 +20,7 @@ func (g *ExecutionGraph) DenormalizePipeline() (*ExecutionGraph, error) {
 	denormalizedGraph, _ := NewExecutionGraph(g.Name())
 	flattenedStages := map[string]*Stage{}
 
-	cloneHelper(g, RootNodeName, []string{g.Name()}, flattenedStages)
+	g.flatten(RootNodeName, []string{g.Name()}, flattenedStages)
 	// rebuild graph from flatten denormalized stages
 	denormalizedGraph.rebuildFromDenormalized(StageTable(flattenedStages))
 	return denormalizedGraph, nil
@@ -61,9 +61,9 @@ func (st StageTable) NthLevelChildren(prefix string, depth int) []*Stage {
 	return stages
 }
 
-// cloneHelper is a recursive helper function to clone nodes with unique paths
+// flatten is a recursive helper function to clone nodes with unique paths
 // each new instance will have a separate memory address allocation
-func cloneHelper(graph *ExecutionGraph, nodeName string, ancestralParentNames []string, flattenedStage map[string]*Stage) {
+func (graph *ExecutionGraph) flatten(nodeName string, ancestralParentNames []string, flattenedStage map[string]*Stage) {
 	uniqueName := utils.CascadeName(ancestralParentNames, nodeName)
 	if nodeName != RootNodeName {
 		originalNode, _ := graph.Node(nodeName)
@@ -93,7 +93,7 @@ func cloneHelper(graph *ExecutionGraph, nodeName string, ancestralParentNames []
 			}
 			// use alias or name
 			for subNode := range originalNode.Pipeline.Nodes() {
-				cloneHelper(originalNode.Pipeline, subNode, append(ancestralParentNames, originalNode.Name), flattenedStage)
+				originalNode.Pipeline.flatten(subNode, append(ancestralParentNames, originalNode.Name), flattenedStage)
 			}
 			clonedStage.Pipeline = subGraphClone
 		}
@@ -101,7 +101,6 @@ func cloneHelper(graph *ExecutionGraph, nodeName string, ancestralParentNames []
 
 	// Clone each child node, creating unique names based on the current path
 	for _, child := range graph.Children(nodeName) {
-		cloneHelper(graph, child.Name, ancestralParentNames, flattenedStage)
+		graph.flatten(child.Name, ancestralParentNames, flattenedStage)
 	}
-	// return uniqueName
 }
