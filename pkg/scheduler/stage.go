@@ -23,10 +23,14 @@ const (
 // Stage is a structure that describes execution stage
 // Stage is a synonym for a Node in a the unary tree of the execution graph/tree
 type Stage struct {
-	Name         string
-	Condition    string
-	Task         *task.Task
-	Pipeline     *ExecutionGraph
+	Name      string
+	Condition string
+	Task      *task.Task
+	Pipeline  *ExecutionGraph
+	// Alias is a pointer to the source pipeline
+	// this can be referenced multiple times
+	// the denormalization process will dereference these
+	Alias        string
 	DependsOn    []string
 	Dir          string
 	AllowFailure bool
@@ -80,14 +84,27 @@ func (s *Stage) FromStage(_stg *Stage, existingGraph *ExecutionGraph, ancestralP
 	if _stg.Pipeline != nil {
 		// error can be ignored as we have already checked it
 		pipeline, _ := NewExecutionGraph(
-			utils.CascadeName([]string{existingGraph.Name()}, _stg.Pipeline.Name()),
-			_stg.Pipeline.BFSNodesFlattened(RootNodeName)...,
+			utils.CascadeName(ancestralParents, _stg.Pipeline.Name()),
+			// _stg.Pipeline.BFSNodesFlattened(RootNodeName)...,
 		)
 		pipeline.Env = utils.ConvertToMapOfStrings(variables.FromMap(existingGraph.Env).Merge(variables.FromMap(pipeline.Env)).Map())
 		s.Pipeline = pipeline
+		// // if part of denormalized graphs the parent could have a depends - which would be lost
+		// if len(_stg.DependsOn) == 0 {
+		// 	for _, v := range ancestralParents {
+		// 		// has depends on in upper nodes
+		// 		upperNode, _ := existingGraph.Node(v)
+		// 		if upperNode != nil && len(upperNode.DependsOn) > 0 {
+		// 			_stg.DependsOn = append(_stg.DependsOn, upperNode.DependsOn...)
+		// 			// break out of the loop we don't want to add recursively deps
+		// 			break
+		// 		}
+		// 	}
+		// }
 	}
 
 	s.DependsOn = []string{}
+
 	for _, v := range _stg.DependsOn {
 		s.DependsOn = append(s.DependsOn, utils.CascadeName(ancestralParents, v))
 	}

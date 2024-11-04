@@ -82,6 +82,15 @@ func PrintSummary(g *scheduler.ExecutionGraph, chanOut io.Writer, detailedSummar
 func mergeSummary(inputStages []*scheduler.Stage) (summarizedStages []*scheduler.Stage) {
 	for _, v := range inputStages {
 		tlns := strings.Split(v.Name, utils.PipelineDirectionChar)
+		// lagecy behaviour prior to denormalizing
+		if len(tlns) == 1 {
+			summarizedStages = append(summarizedStages, v)
+		}
+		// taking the top level tasks piepline only
+		// name would look like this toplevelpipelinename->pipeline|task
+		// any children of the above would be suffixed with additional ->pipeline|task
+		// thus skipped. Durations and other summaries of child pipelines of pipelines
+		// are already hoisted to the top caller
 		if len(tlns) == 2 {
 			summarizedStages = append(summarizedStages, v)
 		}

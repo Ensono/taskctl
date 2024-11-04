@@ -19,14 +19,15 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 			if stageTask == nil {
 				return nil, fmt.Errorf("stage build failed: no such task %s", def.Task)
 			}
+			stageTask.Generator = def.Generator
 		} else {
 			stagePipeline = cfg.Pipelines[def.Pipeline]
 			if stagePipeline == nil {
 				return nil, fmt.Errorf("stage build failed: no such pipeline %s", def.Task)
 			}
 			stagePipeline.Generator = def.Generator
-		}
 
+		}
 		stage := scheduler.NewStage(def.Name, func(s *scheduler.Stage) {
 			s.Condition = def.Condition
 			s.Task = stageTask
@@ -36,6 +37,11 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 			s.AllowFailure = def.AllowFailure
 			s.Generator = def.Generator
 		})
+		if stagePipeline != nil && def.Name != "" && def.Pipeline != def.Name {
+			fmt.Printf("pipeline (%s) name (%s)\n", def.Pipeline, def.Name)
+			stagePipeline.WithAlias(def.Pipeline)
+			stage.Alias = def.Pipeline
+		}
 		stage.WithEnv(variables.FromMap(def.Env))
 		vars := variables.FromMap(def.Variables)
 		vars.Set(".Stage.Name", def.Name)

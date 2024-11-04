@@ -166,8 +166,11 @@ func (c *ExecutionContext) GenerateEnvfile(env variables.Container) error {
 	// create a string builder object to hold all of the lines that need to be written out to
 	// the resultant file
 	builder := []string{}
-
+	// if envfile path was provided
+	// if
+	// utils.ReadEnvFile()
 	// iterate around all of the environment variables and add the selected ones to the builder
+	// env container at this point should already include all the merged variables by precedence
 	for varName, varValue := range env.Map() {
 		// check to see if the env matches an invalid variable, if it does
 		// move onto the next item in the  loop

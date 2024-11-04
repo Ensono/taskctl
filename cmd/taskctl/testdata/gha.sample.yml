@@ -19,6 +19,7 @@ generator:
             - master
       env:
         TASKCTL_CONFIG_FILE: cmd/taskctl/testdata/gha.samle.yml
+        SOME_TOKEN_FOR_APP1: ${{ secrets.FOO_BAR_Secret }} # coming from the "native" GHA implementation
 
 contexts:
   podman:
@@ -31,6 +32,10 @@ contexts:
       TF_VAR_name_component: ${{ env.COMPONENT }}
       TF_VAR_region: ${{ env.REGION }}
     envfile:
+      # global envfile will be source merged to all the 
+      # subsquent usages of it 
+      # takes least precedence
+      path: cmd/taskctl/testdata/global.env
       exclude:
         - HOME
 
@@ -70,37 +75,56 @@ pipelines:
       depends_on:
         - post:apply
 
-  # gha pipeline 
+  InfraDev:
+    - pipeline: infrapipeline
+      env:
+        ENV_NAME: nonprod
+        SOME_TOKEN_FOR_APP1: fuzzzbarsdsd
+    - task: post:task
+      depends_on:
+        - infrapipeline
+
+  InfraProd:
+    - pipeline: infrapipeline
+      env:
+        ENV_NAME: prod
+        SOME_TOKEN_FOR_APP1: overwritten_in_CI_by_ci_specific_secret
+    - task: post:task
+      depends_on:
+        - infrapipeline
+  # gha pipeline will be used to generate the CI definition
+  # can be run locally as well in entirety
   gha:infra:sample: 
     - pipeline: lint
       generator:
         github: 
           runs-on: ubuntu-24.04
-    - name: InfraDev
-      pipeline: infrapipeline
+          env:
+            SOME_TOKEN_FOR_APP1: ${{ secrets.FOO_BAR_Secret }}
+    - pipeline: InfraDev
       generator:
         github: 
           if: github.ref != 'refs/heads/main'
           environment: nonprod
           runs-on: ubuntu-24.04
-      env:
-        SOME_TOKEN_FOR_APP1: GHA_SECRET://foo/bar/secret
-        ENV_NAME: nonprod
+          env: 
+            SOME_TOKEN_FOR_APP1: ${{ secrets.FOO_BAR_Secret }}
       depends_on:
         - lint
     - task: post:task
       name: post dev
       depends_on:
         - InfraDev
-    - pipeline: infrapipeline
-      name: InfraProd
+    - pipeline: InfraProd
       generator:
         github: 
           if: github.ref == 'refs/heads/main'
           environment: prod
           runs-on: ubuntu-24.04
-      env:
-        ENV_NAME: prod
+          env: 
+            SOME_TOKEN_FOR_APP1: ${{ secrets.FOO_BAR_Secret }}
+      # env:
+      #   ENV_NAME: prod
       depends_on:
         - lint
     - task: post:task
