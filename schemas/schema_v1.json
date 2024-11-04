@@ -457,14 +457,6 @@
         },
         "variables": {
           "$ref": "#/$defs/EnvVarMapType",
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "integer"
-            }
-          ],
           "description": "Variables merged with others if any already priovided\nThese will overwrite any previously set keys"
         },
         "reset_context": {

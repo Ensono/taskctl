@@ -44,7 +44,7 @@ type ConfigDefinition struct {
 	// - task
 	// - commandline.
 	// Variables can be used inside templating using the text/template go package
-	Variables EnvVarMapType `mapstructure:"variables" yaml:"variables" json:"variables,omitempty"` // jsonschema:"additional_properties_type=string;integer"`
+	Variables EnvVarMapType `mapstructure:"variables" yaml:"variables" json:"variables,omitempty"`
 	// Generator defines the options for the desired CI yaml generation
 	// Currently these are just map[string]any so that the user can specify the desired behaviour
 	// NOTE: will provide no build time safety
@@ -157,7 +157,7 @@ type TaskDefinition struct {
 	Envfile *utils.Envfile `mapstructure:"envfile" yaml:"envfile,omitempty" json:"envfile,omitempty"`
 	// Variables merged with others if any already priovided
 	// These will overwrite any previously set keys
-	Variables EnvVarMapType `mapstructure:"variables" yaml:"variables,omitempty" json:"variables,omitempty" jsonschema:"oneof_type=string;integer"`
+	Variables EnvVarMapType `mapstructure:"variables" yaml:"variables,omitempty" json:"variables,omitempty"`
 	// ResetContext ensures each invocation of the variation is run with a Reset on the executor.
 	// Currently only applies to a default executor and when run in variations.
 	ResetContext bool `mapstructure:"reset_context" yaml:"reset_context,omitempty" json:"reset_context,omitempty" jsonschema:"default=false"`

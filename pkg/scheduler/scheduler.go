@@ -168,12 +168,7 @@ func (s *Scheduler) runStage(stage *Stage) error {
 // the task is marked as ready for execution
 func checkStatus(p *ExecutionGraph, stage *Stage) bool {
 	ready := false
-	for _, dep := range p.To(stage.Name) {
-		parentStage, err := p.Node(dep)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
+	for _, parentStage := range p.Parents(stage.Name) {
 		switch parentStage.ReadStatus() {
 		case StatusDone, StatusSkipped:
 			// status remains as ready

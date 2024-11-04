@@ -8,7 +8,10 @@ import (
 )
 
 // ErrCycleDetected occurs when added edge causes cycle to appear
-var ErrCycleDetected = errors.New("cycle detected")
+var (
+	ErrCycleDetected = errors.New("cycle detected")
+	ErrNodeNotFound  = errors.New("node not found")
+)
 
 const (
 	RootNodeName = "root"
@@ -104,6 +107,25 @@ func (g *ExecutionGraph) Nodes() map[string]*Stage {
 	return g.nodes
 }
 
+// Node returns stage by its name
+func (g *ExecutionGraph) Node(name string) (*Stage, error) {
+	t, ok := g.nodes[name]
+	if !ok {
+		return nil, fmt.Errorf("%w %s", ErrNodeNotFound, name)
+	}
+	return t, nil
+}
+
+// Parents returns stages on whiсh given stage depends on
+func (g *ExecutionGraph) Parents(name string) map[string]*Stage {
+	stages := make(map[string]*Stage)
+
+	for _, nodeName := range g.parent[name] {
+		stages[nodeName] = g.nodes[nodeName]
+	}
+	return stages
+}
+
 func (g *ExecutionGraph) Children(node string) map[string]*Stage {
 	stages := make(map[string]*Stage)
 	for _, nodeName := range g.children[node] {
@@ -159,10 +181,6 @@ func (g *ExecutionGraph) BFSNodesFlattenedPostOrder(nodeName string) []*Stage {
 	return bfs
 }
 
-func (g *ExecutionGraph) HasCycle() error {
-	return g.cycleDfs(RootNodeName, make(map[string]bool), make(map[string]bool))
-}
-
 // cycleDfs is DFS utility to traverse
 // the tree to detect any back-edges and hence to detect a cycle
 func (g *ExecutionGraph) cycleDfs(node string, visited map[string]bool, inStack map[string]bool) error {
@@ -189,34 +207,12 @@ func (g *ExecutionGraph) cycleDfs(node string, visited map[string]bool, inStack 
 	return nil
 }
 
-// Node returns stage by its name
-func (g *ExecutionGraph) Node(name string) (*Stage, error) {
-	t, ok := g.nodes[name]
-	if !ok {
-		return nil, fmt.Errorf("unknown task %s", name)
-	}
-	return t, nil
-}
-
-// From returns stages that depend on the given stage
-// Children of the node
-func (g *ExecutionGraph) From(name string) []string {
-	return g.children[name]
-}
-
-// To returns stages on whiсh given stage depends on
-// returns the parents of the node
-func (g *ExecutionGraph) To(name string) []string {
-	// remove the root node
-	return g.parent[name]
-}
-
 // LastError returns latest error appeared during stages execution
 func (g *ExecutionGraph) LastError() error {
 	return g.error
 }
 
-// LastError returns latest error appeared during stages execution
+// Name returns the name of the graph
 func (g *ExecutionGraph) Name() string {
 	return g.name
 }

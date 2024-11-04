@@ -38,7 +38,6 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 			s.Generator = def.Generator
 		})
 		if stagePipeline != nil && def.Name != "" && def.Pipeline != def.Name {
-			fmt.Printf("pipeline (%s) name (%s)\n", def.Pipeline, def.Name)
 			stagePipeline.WithAlias(def.Pipeline)
 			stage.Alias = def.Pipeline
 		}
@@ -65,8 +64,6 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 			}
 		}
 
-		// stage.Variables.Set(".Stage.Name", stage.Name)
-
 		if _, err := g.Node(stage.Name); err == nil {
 			return nil, fmt.Errorf("stage with same name %s already exists", stage.Name)
 		}
@@ -75,10 +72,6 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	if err := g.HasCycle(); err != nil {
-		return nil, err
 	}
 
 	return g, nil
