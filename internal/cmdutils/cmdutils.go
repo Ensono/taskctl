@@ -49,10 +49,7 @@ func DisplayTaskSelection(conf *config.Config, showPipelineOnly bool) (taskOrPip
 // printSummary is a TUI helper
 func PrintSummary(g *scheduler.ExecutionGraph, chanOut io.Writer, detailedSummary bool) {
 	stages := g.BFSNodesFlattened(scheduler.RootNodeName)
-	// NOTE: perhaps a radix trie here :"¯\_(ツ)_/¯"
-	if !detailedSummary {
-		stages = mergeSummary(stages)
-	}
+
 	fmt.Fprintf(chanOut, BOLD_TERMINAL, "Summary: \n")
 
 	var log string

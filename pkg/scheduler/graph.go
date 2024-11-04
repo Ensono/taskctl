@@ -49,10 +49,8 @@ func NewExecutionGraph(name string, stages ...*Stage) (*ExecutionGraph, error) {
 		children: make(map[string][]string),
 	}
 
-	var err error
 	for _, stage := range stages {
-		err = graph.AddStage(stage)
-		if err != nil {
+		if err := graph.AddStage(stage); err != nil {
 			return nil, err
 		}
 	}
@@ -81,16 +79,6 @@ func (g *ExecutionGraph) AddStage(stage *Stage) error {
 		}
 	}
 
-	return nil
-}
-
-// DeleteNode removes a node from the graph
-// also removes the children and parent references
-func (g *ExecutionGraph) DeleteNode(name string) error {
-	// node := g.nodes[name]
-	// c := g.children[name]
-	// p := g.parent[name]
-	delete(g.nodes, name)
 	return nil
 }
 

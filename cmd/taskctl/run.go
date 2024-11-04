@@ -123,22 +123,20 @@ func (r *runCmd) runTarget(taskRunner *runner.TaskRunner, conf *config.Config, a
 }
 
 func (r *runCmd) runPipeline(g *scheduler.ExecutionGraph, taskRunner *runner.TaskRunner, summary bool) error {
-	var err error
-	var ng *scheduler.ExecutionGraph
+	// var err error
+	// var ng *scheduler.ExecutionGraph
 	sd := scheduler.NewScheduler(taskRunner)
 	go func() {
 		<-cancel
 		sd.Cancel()
 	}()
 
-	fmt.Fprintf(r.channelOut, "original graph")
-	_ = graphCmdRun(g, r.channelOut, &graphFlags{})
 	// rebuild the tree with deduped nested graphs
 	// when running embedded pipelines in pipelines referencing
 	// creating a new graph ensures no race occurs as
 	// go routine stages all point to a different address space
-
-	if ng, err = g.DenormalizedPipeline(); err != nil {
+	ng, err := g.DenormalizePipeline()
+	if err != nil {
 		return err
 	}
 	if r.flags.showGraphOnly {
@@ -154,7 +152,7 @@ func (r *runCmd) runPipeline(g *scheduler.ExecutionGraph, taskRunner *runner.Tas
 	fmt.Fprint(r.channelOut, "\r\n")
 
 	if summary {
-		cmdutils.PrintSummary(g, r.channelOut, r.flags.detailedSummary)
+		cmdutils.PrintSummary(ng, r.channelOut, r.flags.detailedSummary)
 	}
 
 	return nil
