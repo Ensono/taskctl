@@ -142,7 +142,7 @@ func (s *Scheduler) runStage(stage *Stage) error {
 	// Precedence setter of env and vars
 	// Context > Pipeline > Task
 	t.Env = t.Env.Merge(stage.Env())
-	t.Variables = t.Env.Merge(stage.Variables())
+	t.Variables = t.Variables.Merge(stage.Variables())
 
 	return s.taskRunner.Run(stage.Task)
 }

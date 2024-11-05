@@ -7,10 +7,11 @@ import (
 	"time"
 )
 
-// ErrCycleDetected occurs when added edge causes cycle to appear
 var (
+	// ErrCycleDetected occurs when added edge causes cycle to appear
 	ErrCycleDetected = errors.New("cycle detected")
-	ErrNodeNotFound  = errors.New("node not found")
+	// ErrNodeNotFound occurs when node is not found in the graph
+	ErrNodeNotFound = errors.New("node not found")
 )
 
 const (

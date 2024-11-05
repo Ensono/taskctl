@@ -20,6 +20,7 @@ type runFlags struct {
 type runCmd struct {
 	channelOut, channelErr io.Writer
 	flags                  *runFlags
+	conf                   *config.Config
 }
 
 func newRunCmd(rootCmd *TaskCtlCmd) {
@@ -43,6 +44,8 @@ func newRunCmd(rootCmd *TaskCtlCmd) {
 			if err != nil {
 				return err
 			}
+			runner.conf = conf
+
 			// display selector if nothing is supplied
 			if len(args) == 0 {
 				selected, err := cmdutils.DisplayTaskSelection(conf, false)
@@ -91,6 +94,7 @@ func newRunCmd(rootCmd *TaskCtlCmd) {
 			if err != nil {
 				return err
 			}
+			runner.conf = conf
 			taskRunner, argsStringer, err := rootCmd.buildTaskRunner(args, conf)
 			if err != nil {
 				return err

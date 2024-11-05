@@ -115,7 +115,9 @@ type PipelineDefinition struct {
 	// Dir is the place where to run the task(s) in.
 	// If empty - currentDir is used
 	Dir string `mapstructure:"dir" yaml:"dir,omitempty" json:"dir,omitempty"`
-	// Env is the Key: Value map of env vars to inject into the tasks
+	// Envfile will overwrite keys set in env 
+	Envfile *utils.Envfile `mapstructure:"envfile" yaml:"envfile,omitempty" json:"envfile,omitempty"`
+	// Env is the Key: Value map of env vars to inject into the tasks within this pipeline
 	Env EnvVarMapType `mapstructure:"env" yaml:"env,omitempty" json:"env,omitempty"`
 	// Variables is the Key: Value map of vars vars to inject into the tasks
 	Variables EnvVarMapType `mapstructure:"variables" yaml:"variables,omitempty" json:"variables,omitempty"`
@@ -151,7 +153,8 @@ type TaskDefinition struct {
 	AllowFailure bool           `mapstructure:"allow_failure" yaml:"allow_failure,omitempty" json:"allow_failure,omitempty"`
 	Interactive  bool           `mapstructure:"interactive" yaml:"interactive,omitempty" json:"interactive,omitempty"`
 	Artifacts    *task.Artifact `mapstructure:"artifacts" yaml:"artifacts,omitempty" json:"artifacts,omitempty"`
-	Env          EnvVarMapType  `mapstructure:"env" yaml:"env,omitempty" json:"env,omitempty"`
+	// Env key=value map that will overwrite everything set at a higher level
+	Env EnvVarMapType `mapstructure:"env" yaml:"env,omitempty" json:"env,omitempty"`
 	// EnvFile string pointing to the file that could be read in as an envFile
 	// contents will be merged with the Env (os.Environ())
 	Envfile *utils.Envfile `mapstructure:"envfile" yaml:"envfile,omitempty" json:"envfile,omitempty"`

@@ -1,25 +1,6 @@
 # yaml-language-server: $schema=../../../schemas/schema_v1.json
 
 output: prefixed
-# import:
-#   - https://raw.githubusercontent.com/Ensono/stacks-infrastructure-eks/11fcb55621bee0f24ebf2fdbacc7ced7be6ec5d8/build/taskctl/tasks.yaml
-
-generator:
-  version: v1.8.0-alpha-aaaabbbb1234
-  targetOpts:
-    github:
-      "on":
-        push:
-          branches:
-            - main
-            - master
-        pull_request:
-          branches:
-            - main
-            - master
-      env:
-        TASKCTL_CONFIG_FILE: cmd/taskctl/testdata/generate.yml
-
 contexts:
   podman:
     container:
@@ -37,7 +18,8 @@ contexts:
 pipelines:
   prod:
     - pipeline: graph:pipeline2
-      # depends_on: [graph:task3]
+      env:
+        ENV_NAME: prod
   graph:pipeline1:
     - task: graph:task2
       depends_on: 
@@ -47,16 +29,14 @@ pipelines:
     - name: dev
       pipeline: graph:pipeline2
       depends_on: [graph:task3]
-    # - name: prod
-    #   graph:pipeline2
+      env:
+        ENV_NAME: dev
     - pipeline: prod
       depends_on: [graph:task3]
     - task: graph:task4
       depends_on:
         - graph:task2
     - task: graph:task1
-      # depends_on:
-      #   - graph:task2
     - pipeline: graph:pipeline3
       depends_on:
         - graph:task4
@@ -69,11 +49,7 @@ pipelines:
 
   graph:pipeline3:
     - task: graph:task2
-      # depends_on:
-      #   - graph:task3
     - task: graph:task3
-      # depends_on:
-      #   - graph:task2
 
 tasks:
   graph:task1:
@@ -104,7 +80,7 @@ tasks:
   task-p2:1:
     command:
       - |
-        echo "hello, p2 ${FOO}"
+        echo "hello, p2 ${FOO} env: ${ENV_NAME:-unknown}"
     context: podman
     env:
       FOO: task1
@@ -113,7 +89,7 @@ tasks:
     command:
       - |
         for i in $(seq 1 5); do
-          echo "hello, p2 ${FOO} - iteration $i"
+          echo "hello, p2 ${FOO} - env: ${ENV_NAME:-unknown} - iteration $i"
           sleep 0
         done
     env:

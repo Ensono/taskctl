@@ -71,11 +71,9 @@ func (s *Stage) FromStage(originalStage *Stage, existingGraph *ExecutionGraph, a
 	s.AllowFailure = originalStage.AllowFailure
 	s.Generator = originalStage.Generator
 	// top level env vars
-	// if existingGraph != nil {
-	// 	s.env = s.env.Merge(variables.FromMap(existingGraph.Env))
-	// 	// fmt.Printf("originalStage env : %s\n", _stg.env.Map())
-	// 	// fmt.Printf("merged : %s\n", s.env.Map())
-	// }
+	if existingGraph != nil {
+		s.env = s.env.Merge(variables.FromMap(existingGraph.Env))
+	}
 	s.env = s.env.Merge(originalStage.env)
 	s.variables = s.variables.Merge(originalStage.variables)
 

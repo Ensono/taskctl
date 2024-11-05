@@ -186,5 +186,4 @@ func helperGraph(t *testing.T, name string) *scheduler.ExecutionGraph {
 	cl := config.NewConfigLoader(config.NewConfig())
 	cfg, err := cl.Load(tf.Name())
 	return cfg.Pipelines[name]
-
 }

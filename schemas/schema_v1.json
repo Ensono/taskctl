@@ -365,9 +365,13 @@
           "type": "string",
           "description": "Dir is the place where to run the task(s) in.\nIf empty - currentDir is used"
         },
+        "envfile": {
+          "$ref": "#/$defs/Envfile",
+          "description": "Envfile will overwrite keys set in env"
+        },
         "env": {
           "$ref": "#/$defs/EnvVarMapType",
-          "description": "Env is the Key: Value map of env vars to inject into the tasks"
+          "description": "Env is the Key: Value map of env vars to inject into the tasks within this pipeline"
         },
         "variables": {
           "$ref": "#/$defs/EnvVarMapType",
@@ -449,7 +453,8 @@
           "$ref": "#/$defs/Artifact"
         },
         "env": {
-          "$ref": "#/$defs/EnvVarMapType"
+          "$ref": "#/$defs/EnvVarMapType",
+          "description": "Env key=value map that will overwrite everything set at a higher level"
         },
         "envfile": {
           "$ref": "#/$defs/Envfile",
