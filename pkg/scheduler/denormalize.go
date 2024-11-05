@@ -11,7 +11,7 @@ import (
 // NOTE: used for read only at this point
 type StageTable map[string]*Stage
 
-// DenormalizePipeline performs a DFS traversal on the ExecutionGraph from the root node
+// Denormalize performs a DFS traversal on the ExecutionGraph from the root node
 //
 // In order to be able to call the same pipeline from another pipeline, we want to create a new
 // pointer to it, this will avoid race conditions in times/outputs/env vars/etc...
@@ -19,16 +19,16 @@ type StageTable map[string]*Stage
 //
 // The denormalized pipeline will include all the same stages and nested pipelines,
 // but with all names rebuilt using the cascaded ancestors as prefixes
-func (g *ExecutionGraph) DenormalizePipeline() (*ExecutionGraph, error) {
-	denormalizedGraph, _ := NewExecutionGraph(g.Name())
+func (g *ExecutionGraph) Denormalize() (*ExecutionGraph, error) {
+	dg, _ := NewExecutionGraph(g.Name())
 	flattenedStages := map[string]*Stage{}
 
-	g.flatten(RootNodeName, []string{g.Name()}, flattenedStages)
+	g.Flatten(RootNodeName, []string{g.Name()}, flattenedStages)
 	// rebuild graph from flatten denormalized stages
-	if err := denormalizedGraph.rebuildFromDenormalized(StageTable(flattenedStages)); err != nil {
+	if err := dg.rebuildFromDenormalized(StageTable(flattenedStages)); err != nil {
 		return nil, err
 	}
-	return denormalizedGraph, nil
+	return dg, nil
 }
 
 // rebuildFromDenormalized rebuilds the whole tree from scratch using the denormalized stages as input
@@ -75,9 +75,10 @@ func (st StageTable) NthLevelChildren(prefix string, depth int) []*Stage {
 	return stages
 }
 
-// flatten is a recursive helper function to clone nodes with unique paths
-// each new instance will have a separate memory address allocation
-func (graph *ExecutionGraph) flatten(nodeName string, ancestralParentNames []string, flattenedStage map[string]*Stage) {
+// Flatten is a recursive helper function to clone nodes with unique paths.
+//
+// Each new instance will have a separate memory address allocation. Will be used for denormalization.
+func (graph *ExecutionGraph) Flatten(nodeName string, ancestralParentNames []string, flattenedStage map[string]*Stage) {
 	uniqueName := utils.CascadeName(ancestralParentNames, nodeName)
 	if nodeName != RootNodeName {
 		originalNode, _ := graph.Node(nodeName)
@@ -92,22 +93,27 @@ func (graph *ExecutionGraph) flatten(nodeName string, ancestralParentNames []str
 			// creating a graph without stages - cannot error here
 			subGraphClone, _ := NewExecutionGraph(uniqueName)
 			// peek if children are a single pipeline
-			peek := originalNode.Pipeline.Children(RootNodeName)
+			peek := originalNode.Pipeline.Nodes()
 			// its name is likely reused elsewhere
-			if len(peek) == 1 {
+			if len(peek) == 2 {
 				for _, peekStage := range peek {
+					if peekStage.Name == RootNodeName {
+						continue
+					}
 					if peekStage.Pipeline != nil {
 						// aliased stage only contains a single item and
 						// that is a pipeline we advance  move forward
 						peekStage.DependsOn = clonedStage.DependsOn
 						peekStage.Name = originalNode.Name
+						peekStage.WithEnv(originalNode.Env())
+						peekStage.WithVariables(originalNode.Variables())
 						originalNode = peekStage
 					}
 				}
 			}
 			// use alias or name
 			for subNode := range originalNode.Pipeline.Nodes() {
-				originalNode.Pipeline.flatten(subNode, append(ancestralParentNames, originalNode.Name), flattenedStage)
+				originalNode.Pipeline.Flatten(subNode, append(ancestralParentNames, originalNode.Name), flattenedStage)
 			}
 			clonedStage.Pipeline = subGraphClone
 		}
@@ -115,6 +121,6 @@ func (graph *ExecutionGraph) flatten(nodeName string, ancestralParentNames []str
 
 	// Clone each child node, creating unique names based on the current path
 	for _, child := range graph.Children(nodeName) {
-		graph.flatten(child.Name, ancestralParentNames, flattenedStage)
+		graph.Flatten(child.Name, ancestralParentNames, flattenedStage)
 	}
 }

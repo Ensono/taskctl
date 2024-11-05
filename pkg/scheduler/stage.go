@@ -65,38 +65,38 @@ func NewStage(name string, opts ...StageOpts) *Stage {
 	return s
 }
 
-func (s *Stage) FromStage(_stg *Stage, existingGraph *ExecutionGraph, ancestralParents []string) {
-	s.Condition = _stg.Condition
-	s.Dir = _stg.Dir
-	s.AllowFailure = _stg.AllowFailure
-	s.Generator = _stg.Generator
+func (s *Stage) FromStage(originalStage *Stage, existingGraph *ExecutionGraph, ancestralParents []string) {
+	s.Condition = originalStage.Condition
+	s.Dir = originalStage.Dir
+	s.AllowFailure = originalStage.AllowFailure
+	s.Generator = originalStage.Generator
 	// top level env vars
-	if existingGraph != nil {
-		s.env = s.env.Merge(variables.FromMap(existingGraph.Env))
-		// fmt.Printf("originalStage env : %s\n", _stg.env.Map())
-		// fmt.Printf("merged : %s\n", s.env.Map())
-	}
-	s.env = s.env.Merge(_stg.env)
-	s.variables = s.variables.Merge(_stg.variables)
+	// if existingGraph != nil {
+	// 	s.env = s.env.Merge(variables.FromMap(existingGraph.Env))
+	// 	// fmt.Printf("originalStage env : %s\n", _stg.env.Map())
+	// 	// fmt.Printf("merged : %s\n", s.env.Map())
+	// }
+	s.env = s.env.Merge(originalStage.env)
+	s.variables = s.variables.Merge(originalStage.variables)
 
-	if _stg.Task != nil {
-		tsk := task.NewTask(utils.CascadeName(ancestralParents, _stg.Task.Name))
-		tsk.FromTask(_stg.Task)
-		tsk.Env.Merge(variables.FromMap(existingGraph.Env))
+	if originalStage.Task != nil {
+		tsk := task.NewTask(utils.CascadeName(ancestralParents, originalStage.Task.Name))
+		tsk.FromTask(originalStage.Task)
+		tsk.Env = tsk.Env.Merge(variables.FromMap(existingGraph.Env))
 		s.Task = tsk
 	}
-	if _stg.Pipeline != nil {
+	if originalStage.Pipeline != nil {
 		// error can be ignored as we have already checked it
 		pipeline, _ := NewExecutionGraph(
-			utils.CascadeName(ancestralParents, _stg.Pipeline.Name()),
+			utils.CascadeName(ancestralParents, originalStage.Pipeline.Name()),
 		)
-		pipeline.Env = utils.ConvertToMapOfStrings(variables.FromMap(existingGraph.Env).Merge(variables.FromMap(pipeline.Env)).Map())
+		pipeline.Env = utils.ConvertToMapOfStrings(variables.FromMap(existingGraph.Env).Merge(variables.FromMap(originalStage.Pipeline.Env)).Map())
 		s.Pipeline = pipeline
 	}
 
 	s.DependsOn = []string{}
 
-	for _, v := range _stg.DependsOn {
+	for _, v := range originalStage.DependsOn {
 		s.DependsOn = append(s.DependsOn, utils.CascadeName(ancestralParents, v))
 	}
 }

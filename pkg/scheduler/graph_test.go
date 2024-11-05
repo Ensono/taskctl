@@ -137,18 +137,3 @@ func TestExecutionGraph_TreeWalk_BFS(t *testing.T) {
 		t.Errorf("first node (%q) should be either stage1 or stage4", bfs[0].Name)
 	}
 }
-
-func TestExecutionGraph_Denormalize(t *testing.T) {
-	ttests := map[string]struct {
-		objType any
-	}{
-		"test1": {
-			objType: nil,
-		},
-	}
-	for name, _ := range ttests {
-		t.Run(name, func(t *testing.T) {
-
-		})
-	}
-}

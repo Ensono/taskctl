@@ -66,6 +66,22 @@ func (g *ExecutionGraph) WithAlias(v string) *ExecutionGraph {
 	return g
 }
 
+// VisitNodes visits all nodes in a given graph
+// or recursively through all subgraphs in a parented graph
+func (g *ExecutionGraph) VisitNodes(callback func(node *Stage) (done bool), recursive bool) {
+	for _, node := range g.Nodes() {
+		if recursive {
+			if node.Pipeline != nil {
+				node.Pipeline.VisitNodes(callback, true)
+			}
+		}
+		done := callback(node)
+		if done {
+			return
+		}
+	}
+}
+
 // AddStage adds Stage to ExecutionGraph.
 // If newly added stage causes a cycle to appear in the graph it return an error
 func (g *ExecutionGraph) AddStage(stage *Stage) error {

@@ -86,6 +86,30 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 			return nil, err
 		}
 	}
+	// check graph has a start node and that all children and parents exist
+	rootNodes := []string{}
+	var finalWalkErr error
+	g.VisitNodes(func(node *scheduler.Stage) (done bool) {
+		if len(node.DependsOn) > 0 {
+			for _, depsOn := range node.DependsOn {
+				// check if stage exists
+				if _, err := g.Node(depsOn); err != nil {
+					finalWalkErr = fmt.Errorf("%w, stage (%s) depends on a stage (%s) which does not exist", ErrStageBuildFailure, node.Name, depsOn)
+					return true
+				}
+			}
+			return
+		}
+		rootNodes = append(rootNodes, node.Name)
+		return
+	}, false)
+
+	if finalWalkErr != nil {
+		return nil, finalWalkErr
+	}
+	if len(rootNodes) == 0 {
+		return nil, fmt.Errorf("%w, pipeline (%s) has no starting point (at least one stage have no 'depends_on')", ErrStageBuildFailure, g.Name())
+	}
 
 	return g, nil
 }

@@ -84,14 +84,14 @@ pipelines:
       depends_on:
         - infrapipeline
 
-  # InfraProd:
-  #   - pipeline: infrapipeline
-  #     env:
-  #       ENV_NAME: prod
-  #       SOME_TOKEN_FOR_APP1: overwritten_in_CI_by_ci_specific_secret
-  #   - task: post:task
-  #     depends_on:
-  #       - infrapipeline
+  InfraProd:
+    - pipeline: infrapipeline
+      env:
+        ENV_NAME: prod
+        SOME_TOKEN_FOR_APP1: overwritten_in_CI_by_ci_specific_secret
+    - task: post:task
+      depends_on:
+        - infrapipeline
   # gha pipeline will be used to generate the CI definition
   # can be run locally as well in entirety
   gha:infra:sample: 
@@ -113,13 +113,16 @@ pipelines:
         - lint
     - task: post:task
       name: post dev
+      env:
+        ENV_NAME: nonprod
       depends_on:
         - InfraDev
-    - name: InfraProd
-      pipeline: infrapipeline
-      env:
-        ENV_NAME: prod
-        SOME_TOKEN_FOR_APP1: overwritten_in_CI_by_ci_specific_secret
+    - pipeline: InfraProd
+    # - name: InfraProd
+    #   pipeline: infrapipeline
+    #   env:
+    #     ENV_NAME: prod
+    #     SOME_TOKEN_FOR_APP1: overwritten_in_CI_by_ci_specific_secret
       generator:
         github: 
           if: github.ref == 'refs/heads/main'
@@ -131,6 +134,8 @@ pipelines:
         - lint
     - task: post:task
       name: post prod
+      env:
+        ENV_NAME: prod
       depends_on:
         - InfraProd
 
@@ -150,7 +155,7 @@ tasks:
     command:
       - | 
         for i in $(seq 1 2); do
-          echo "tf init ${ENV_NAME} - iteration $i"
+          echo "tf init ${ENV_NAME} in TF_DIR: ${TF_DIR} - iteration $i"
           sleep 1
         done
     env:
@@ -161,7 +166,7 @@ tasks:
     command:
       - | 
         for i in $(seq 1 3); do
-          echo "tf plan ${ENV_NAME} - iteration $i"
+          echo "tf plan ${ENV_NAME} in TF_DIR: ${TF_DIR} - iteration $i"
           sleep 1
         done
     env:
@@ -172,7 +177,7 @@ tasks:
     command:
       - | 
         for i in $(seq 1 5); do
-          echo "tf apply ${ENV_NAME} - iteration $i"
+          echo "tf apply ${ENV_NAME} in TF_DIR: ${TF_DIR} - iteration $i"
           sleep 1
         done
     env:
@@ -202,4 +207,4 @@ tasks:
 
   post:task:
     command:
-      - echo "helm post:task in env $ENV_NAME"
+      - echo "post:task in env $ENV_NAME"

@@ -135,7 +135,7 @@ func (r *runCmd) runPipeline(g *scheduler.ExecutionGraph, taskRunner *runner.Tas
 	// when running embedded pipelines in pipelines referencing
 	// creating a new graph ensures no race occurs as
 	// go routine stages all point to a different address space
-	ng, err := g.DenormalizePipeline()
+	ng, err := g.Denormalize()
 	if err != nil {
 		return err
 	}
