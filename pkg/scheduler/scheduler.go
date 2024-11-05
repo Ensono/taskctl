@@ -139,26 +139,10 @@ func (s *Scheduler) runStage(stage *Stage) error {
 	}
 
 	t := stage.Task
-	t.Env.Merge(stage.Env())
 	// Precedence setter of env and vars
 	// Context > Pipeline > Task
-
-	// if stage.Env != nil {
-	// 	if t.Env == nil {
-	// 		t.Env = stage.Env
-	// 	} else {
-	// 		t.Env = t.Env.Merge(stage.Env())
-	// 	}
-	// }
-
-	// if stage.Variables != nil {
-	// 	if t.Variables == nil {
-	// 		t.Variables = stage.Variables
-	// 	} else {
-	// 		t.Variables = t.Env.Merge(stage.Variables())
-	// 	}
-	// }
-	t.Env.Merge(stage.Variables())
+	t.Env = t.Env.Merge(stage.Env())
+	t.Variables = t.Env.Merge(stage.Variables())
 
 	return s.taskRunner.Run(stage.Task)
 }

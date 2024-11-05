@@ -70,10 +70,14 @@ func (s *Stage) FromStage(_stg *Stage, existingGraph *ExecutionGraph, ancestralP
 	s.Dir = _stg.Dir
 	s.AllowFailure = _stg.AllowFailure
 	s.Generator = _stg.Generator
+	// top level env vars
 	if existingGraph != nil {
-		s.env.Merge(variables.FromMap(existingGraph.Env)).Merge(_stg.env)
-		s.variables.Merge(_stg.variables)
+		s.env = s.env.Merge(variables.FromMap(existingGraph.Env))
+		// fmt.Printf("originalStage env : %s\n", _stg.env.Map())
+		// fmt.Printf("merged : %s\n", s.env.Map())
 	}
+	s.env = s.env.Merge(_stg.env)
+	s.variables = s.variables.Merge(_stg.variables)
 
 	if _stg.Task != nil {
 		tsk := task.NewTask(utils.CascadeName(ancestralParents, _stg.Task.Name))
@@ -85,22 +89,9 @@ func (s *Stage) FromStage(_stg *Stage, existingGraph *ExecutionGraph, ancestralP
 		// error can be ignored as we have already checked it
 		pipeline, _ := NewExecutionGraph(
 			utils.CascadeName(ancestralParents, _stg.Pipeline.Name()),
-			// _stg.Pipeline.BFSNodesFlattened(RootNodeName)...,
 		)
 		pipeline.Env = utils.ConvertToMapOfStrings(variables.FromMap(existingGraph.Env).Merge(variables.FromMap(pipeline.Env)).Map())
 		s.Pipeline = pipeline
-		// // if part of denormalized graphs the parent could have a depends - which would be lost
-		// if len(_stg.DependsOn) == 0 {
-		// 	for _, v := range ancestralParents {
-		// 		// has depends on in upper nodes
-		// 		upperNode, _ := existingGraph.Node(v)
-		// 		if upperNode != nil && len(upperNode.DependsOn) > 0 {
-		// 			_stg.DependsOn = append(_stg.DependsOn, upperNode.DependsOn...)
-		// 			// break out of the loop we don't want to add recursively deps
-		// 			break
-		// 		}
-		// 	}
-		// }
 	}
 
 	s.DependsOn = []string{}
@@ -111,7 +102,7 @@ func (s *Stage) FromStage(_stg *Stage, existingGraph *ExecutionGraph, ancestralP
 }
 
 func (s *Stage) WithEnv(v variables.Container) {
-	s.env.Merge(v)
+	s.env = s.env.Merge(v)
 }
 
 func (s *Stage) Env() variables.Container {
@@ -119,7 +110,7 @@ func (s *Stage) Env() variables.Container {
 }
 
 func (s *Stage) WithVariables(v variables.Container) {
-	s.variables.Merge(v)
+	s.variables = s.variables.Merge(v)
 }
 
 func (s *Stage) Variables() variables.Container {

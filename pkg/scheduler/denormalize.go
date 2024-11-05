@@ -16,16 +16,24 @@ type StageTable map[string]*Stage
 // In order to be able to call the same pipeline from another pipeline, we want to create a new
 // pointer to it, this will avoid race conditions in times/outputs/env vars/etc...
 // We can also set separate vars and environment variables
+//
+// The denormalized pipeline will include all the same stages and nested pipelines,
+// but with all names rebuilt using the cascaded ancestors as prefixes
 func (g *ExecutionGraph) DenormalizePipeline() (*ExecutionGraph, error) {
 	denormalizedGraph, _ := NewExecutionGraph(g.Name())
 	flattenedStages := map[string]*Stage{}
 
 	g.flatten(RootNodeName, []string{g.Name()}, flattenedStages)
 	// rebuild graph from flatten denormalized stages
-	denormalizedGraph.rebuildFromDenormalized(StageTable(flattenedStages))
+	if err := denormalizedGraph.rebuildFromDenormalized(StageTable(flattenedStages)); err != nil {
+		return nil, err
+	}
 	return denormalizedGraph, nil
 }
 
+// rebuildFromDenormalized rebuilds the whole tree from scratch using the denormalized stages as input
+//
+// Following the same layout as original with same levels of nestedness
 func (g *ExecutionGraph) rebuildFromDenormalized(st StageTable) error {
 	for _, stage := range st.NthLevelChildren(g.Name(), 1) {
 		if stage.Pipeline != nil {
@@ -36,10 +44,16 @@ func (g *ExecutionGraph) rebuildFromDenormalized(st StageTable) error {
 			if err != nil {
 				return err
 			}
-			ng.rebuildFromDenormalized(st)
+			if err := ng.rebuildFromDenormalized(st); err != nil {
+				return err
+			}
 			stage.Pipeline = ng
 		}
-		g.AddStage(stage)
+		// Check err just in case the denormalized graph has cyclical dependancies
+		if err := g.AddStage(stage); err != nil {
+			// This should never be hit, but good to keep in place.
+			return err
+		}
 	}
 	return nil
 }

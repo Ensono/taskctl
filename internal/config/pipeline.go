@@ -1,13 +1,22 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"slices"
 
+	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/variables"
 
 	"github.com/Ensono/taskctl/pkg/scheduler"
 	"github.com/Ensono/taskctl/pkg/task"
 )
+
+var ErrStageBuildFailure = errors.New("stage build failed")
+
+var forbiddenCharSequence = []string{
+	utils.PipelineDirectionChar, // is used by the program to delimit nested graphs
+}
 
 func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cfg *Config) (*scheduler.ExecutionGraph, error) {
 	for _, def := range stages {
@@ -17,13 +26,13 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 		if def.Task != "" {
 			stageTask = cfg.Tasks[def.Task]
 			if stageTask == nil {
-				return nil, fmt.Errorf("stage build failed: no such task %s", def.Task)
+				return nil, fmt.Errorf("%w: no such task %s", ErrStageBuildFailure, def.Task)
 			}
 			stageTask.Generator = def.Generator
 		} else {
 			stagePipeline = cfg.Pipelines[def.Pipeline]
 			if stagePipeline == nil {
-				return nil, fmt.Errorf("stage build failed: no such pipeline %s", def.Task)
+				return nil, fmt.Errorf("%w: no such pipeline %s", ErrStageBuildFailure, def.Pipeline)
 			}
 			stagePipeline.Generator = def.Generator
 
@@ -38,7 +47,7 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 			s.Generator = def.Generator
 		})
 		if stagePipeline != nil && def.Name != "" && def.Pipeline != def.Name {
-			stagePipeline.WithAlias(def.Pipeline)
+			_ = stagePipeline.WithAlias(def.Pipeline)
 			stage.Alias = def.Pipeline
 		}
 		stage.WithEnv(variables.FromMap(def.Env))
@@ -60,12 +69,16 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 			}
 
 			if stage.Name == "" {
-				return nil, fmt.Errorf("stage for task %s must have name", def.Task)
+				return nil, fmt.Errorf("%w, stage for task %s must have name", ErrStageBuildFailure, def.Task)
 			}
 		}
 
+		if slices.Contains(forbiddenCharSequence, stage.Name) {
+			return nil, fmt.Errorf("%w: name (%s) contains a forbidden character [ %q ]", ErrStageBuildFailure, stage.Name, forbiddenCharSequence)
+		}
+
 		if _, err := g.Node(stage.Name); err == nil {
-			return nil, fmt.Errorf("stage with same name %s already exists", stage.Name)
+			return nil, fmt.Errorf("%w, stage with same name %s already exists", ErrStageBuildFailure, stage.Name)
 		}
 
 		err := g.AddStage(stage)

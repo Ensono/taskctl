@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/Ensono/taskctl/internal/config"
-	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/scheduler"
 	"github.com/charmbracelet/huh"
 )
@@ -74,25 +73,6 @@ func PrintSummary(g *scheduler.ExecutionGraph, chanOut io.Writer, detailedSummar
 	}
 
 	fmt.Fprintf(chanOut, "%s: %s\n", fmt.Sprintf(BOLD_TERMINAL, "Total duration"), fmt.Sprintf(GREEN_TERMINAL, g.Duration()))
-}
-
-func mergeSummary(inputStages []*scheduler.Stage) (summarizedStages []*scheduler.Stage) {
-	for _, v := range inputStages {
-		tlns := strings.Split(v.Name, utils.PipelineDirectionChar)
-		// lagecy behaviour prior to denormalizing
-		if len(tlns) == 1 {
-			summarizedStages = append(summarizedStages, v)
-		}
-		// taking the top level tasks piepline only
-		// name would look like this toplevelpipelinename->pipeline|task
-		// any children of the above would be suffixed with additional ->pipeline|task
-		// thus skipped. Durations and other summaries of child pipelines of pipelines
-		// are already hoisted to the top caller
-		if len(tlns) == 2 {
-			summarizedStages = append(summarizedStages, v)
-		}
-	}
-	return summarizedStages
 }
 
 // stageNameHelper strips out the root pipeline name

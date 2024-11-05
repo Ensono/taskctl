@@ -51,7 +51,7 @@ func newGenerateCmd(rootCmd *TaskCtlCmd) {
 		},
 	}
 	c.Flags().StringVarP(&f.targetTyp, "target", "t", "", "Target type of the generation. Valid values include github, etc...")
-	c.MarkFlagRequired("target")
+	_ = c.MarkFlagRequired("target")
 	rootCmd.Cmd.AddCommand(c)
 }
 

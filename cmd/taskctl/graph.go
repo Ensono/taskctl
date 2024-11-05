@@ -71,14 +71,6 @@ func graphCmdRun(p *scheduler.ExecutionGraph, channelOut io.Writer, f *graphFlag
 	return nil
 }
 
-func clusterName(v string) string {
-	return fmt.Sprintf("cluster_%s", v)
-}
-
-func pipelineName(v string) string {
-	return fmt.Sprintf("%s_pipeline", v)
-}
-
 func anchorName(v string) string {
 	return fmt.Sprintf("%s_anchor", v)
 }

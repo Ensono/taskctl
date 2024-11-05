@@ -1,3 +1,7 @@
+// Package variables is a thin wrapper over the sync.Map package
+//
+// TODO: This implementation may not really be necessary anymore since we denormalize the graph
+// any/all vars and env vars will have their own space
 package variables
 
 import (
@@ -36,12 +40,12 @@ func FromMap(values map[string]string) Container {
 }
 
 // Set stores value with given key
-func (vars *Variables) Set(key string, value interface{}) {
+func (vars *Variables) Set(key string, value any) {
 	vars.m.Store(key, value)
 }
 
 // Get returns value by given key
-func (vars *Variables) Get(key string) interface{} {
+func (vars *Variables) Get(key string) any {
 	v, ok := vars.m.Load(key)
 	if !ok {
 		return ""
@@ -66,7 +70,9 @@ func (vars *Variables) Map() map[string]interface{} {
 	return m
 }
 
-// Merge merges two Containers into new one
+// Merge merges into current container with the src Container
+// src will overwrite the existing keys if exists
+// returns a new Container
 func (vars *Variables) Merge(src Container) Container {
 	dst := &Variables{}
 
