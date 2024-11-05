@@ -178,7 +178,7 @@ func Test_Generate_Env_file(t *testing.T) {
 
 }
 
-func genEnvFileHelperTestRunner(t *testing.T, envVars variables.Container, envFile *utils.Envfile) string {
+func genEnvFileHelperTestRunner(t *testing.T, envVars *variables.Variables, envFile *utils.Envfile) string {
 	t.Helper()
 
 	execContext := runner.NewExecutionContext(nil, "", envVars, envFile, []string{}, []string{}, []string{}, []string{})

@@ -35,8 +35,8 @@ type Stage struct {
 	Dir          string
 	AllowFailure bool
 	status       *atomic.Int32
-	env          variables.Container
-	variables    variables.Container
+	env          *variables.Variables
+	variables    *variables.Variables
 	start        time.Time
 	end          time.Time
 	mu           sync.Mutex
@@ -99,19 +99,19 @@ func (s *Stage) FromStage(originalStage *Stage, existingGraph *ExecutionGraph, a
 	}
 }
 
-func (s *Stage) WithEnv(v variables.Container) {
+func (s *Stage) WithEnv(v *variables.Variables) {
 	s.env = s.env.Merge(v)
 }
 
-func (s *Stage) Env() variables.Container {
+func (s *Stage) Env() *variables.Variables {
 	return s.env
 }
 
-func (s *Stage) WithVariables(v variables.Container) {
+func (s *Stage) WithVariables(v *variables.Variables) {
 	s.variables = s.variables.Merge(v)
 }
 
-func (s *Stage) Variables() variables.Container {
+func (s *Stage) Variables() *variables.Variables {
 	return s.variables
 }
 

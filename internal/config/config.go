@@ -28,7 +28,7 @@ type Config struct {
 	Quiet, Debug, DryRun, Summary bool
 	Output                        output.OutputEnum
 
-	Variables variables.Container
+	Variables *variables.Variables
 	// Options are computed cli or other API inputs
 	//
 	Options struct {
@@ -131,7 +131,7 @@ func buildFromDefinition(def *ConfigDefinition, lc *loaderContext) (cfg *Config,
 	return cfg, nil
 }
 
-func defaultConfigVariables() variables.Container {
+func defaultConfigVariables() *variables.Variables {
 	return variables.FromMap(map[string]string{
 		"TempDir": os.TempDir(),
 	})

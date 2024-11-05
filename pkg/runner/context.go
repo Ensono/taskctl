@@ -30,9 +30,9 @@ type ExecutionContext struct {
 	Executable *utils.Binary
 	container  *utils.Container
 	Dir        string
-	Env        variables.Container
+	Env        *variables.Variables
 	Envfile    *utils.Envfile
-	Variables  variables.Container
+	Variables  *variables.Variables
 	// Quote character to use around a command
 	// when passed to another executable, e.g. docker
 	Quote string
@@ -54,7 +54,7 @@ type ExecutionContextOption func(c *ExecutionContext)
 
 // NewExecutionContext creates new ExecutionContext instance
 func NewExecutionContext(executable *utils.Binary, dir string,
-	env variables.Container, envfile *utils.Envfile, up, down, before, after []string,
+	env *variables.Variables, envfile *utils.Envfile, up, down, before, after []string,
 	options ...ExecutionContextOption) *ExecutionContext {
 	c := &ExecutionContext{
 		Executable: executable,
@@ -155,7 +155,7 @@ var ErrMutuallyExclusiveVarSet = errors.New("mutually exclusive vars have been s
 // the file names are generated using the `generated_{Task_Name}_{UNIX_timestamp}.env`.
 //
 // Note: it will create the directory
-func (c *ExecutionContext) GenerateEnvfile(env variables.Container) error {
+func (c *ExecutionContext) GenerateEnvfile(env *variables.Variables) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	// return an error if the include and exclude have both been specified

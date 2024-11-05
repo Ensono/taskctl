@@ -144,7 +144,7 @@ func (s *Scheduler) runStage(stage *Stage) error {
 	t.Env = t.Env.Merge(stage.Env())
 	t.Variables = t.Variables.Merge(stage.Variables())
 
-	return s.taskRunner.Run(stage.Task)
+	return s.taskRunner.Run(t)
 }
 
 // checkStatus checks the parents of the stage

@@ -38,8 +38,8 @@ type Artifact struct {
 type Task struct {
 	Commands     []string // Commands to run
 	Context      string
-	Env          variables.Container
-	Variables    variables.Container
+	Env          *variables.Variables
+	Variables    *variables.Variables
 	Variations   []map[string]string
 	Dir          string
 	Timeout      *time.Duration

@@ -35,8 +35,8 @@ type TaskRunner struct {
 	Executor  executor.Executor
 	DryRun    bool
 	contexts  map[string]*ExecutionContext
-	variables variables.Container
-	env       variables.Container
+	variables *variables.Variables
+	env       *variables.Variables
 
 	ctx         context.Context
 	cancelFunc  context.CancelFunc
@@ -84,7 +84,7 @@ func (r *TaskRunner) SetContexts(contexts map[string]*ExecutionContext) *TaskRun
 }
 
 // SetVariables sets task runner's variables
-func (r *TaskRunner) SetVariables(vars variables.Container) *TaskRunner {
+func (r *TaskRunner) SetVariables(vars *variables.Variables) *TaskRunner {
 	r.variables = vars
 
 	return r
@@ -214,7 +214,7 @@ func (r *TaskRunner) WithVariable(key, value string) *TaskRunner {
 	return r
 }
 
-func (r *TaskRunner) before(ctx context.Context, t *task.Task, env, vars variables.Container) error {
+func (r *TaskRunner) before(ctx context.Context, t *task.Task, env, vars *variables.Variables) error {
 	if len(t.Before) == 0 {
 		return nil
 	}
@@ -244,7 +244,7 @@ func (r *TaskRunner) before(ctx context.Context, t *task.Task, env, vars variabl
 	return nil
 }
 
-func (r *TaskRunner) after(ctx context.Context, t *task.Task, env, vars variables.Container) error {
+func (r *TaskRunner) after(ctx context.Context, t *task.Task, env, vars *variables.Variables) error {
 	if len(t.After) == 0 {
 		return nil
 	}
@@ -395,7 +395,7 @@ func WithContexts(contexts map[string]*ExecutionContext) Opts {
 }
 
 // WithVariables adds provided variables to task runner
-func WithVariables(variables variables.Container) Opts {
+func WithVariables(variables *variables.Variables) Opts {
 	return func(runner *TaskRunner) {
 		runner.variables = variables
 		runner.compiler.variables = variables

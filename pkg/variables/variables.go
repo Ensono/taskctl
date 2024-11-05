@@ -1,23 +1,13 @@
 // Package variables is a thin wrapper over the sync.Map package
 //
-// TODO: This implementation may not really be necessary anymore since we denormalize the graph
-// any/all vars and env vars will have their own space
+// TODO: The sync.Map implementation may not really be necessary anymore since we denormalize the graph
+// any/all vars and env vars will have their own address space so collision _will_ not occur.
+// "¯\_(ツ)_/¯"
 package variables
 
 import (
 	"sync"
 )
-
-// Container is an interface of variables container.
-// Is is simple key-value structure.
-type Container interface {
-	Set(string, interface{})
-	Get(string) interface{}
-	Has(string) bool
-	Map() map[string]interface{}
-	Merge(Container) Container
-	With(string, interface{}) Container
-}
 
 // Variables is struct containing simple key-value string values
 type Variables struct {
@@ -26,11 +16,12 @@ type Variables struct {
 
 // NewVariables creates new Variables instance
 func NewVariables() *Variables {
+	// sync.Map is lazy initialized
 	return &Variables{}
 }
 
 // FromMap creates new Variables instance from given map
-func FromMap(values map[string]string) Container {
+func FromMap(values map[string]string) *Variables {
 	vars := &Variables{}
 	for k, v := range values {
 		vars.m.Store(k, v)
@@ -72,8 +63,11 @@ func (vars *Variables) Map() map[string]interface{} {
 
 // Merge merges into current container with the src Container
 // src will overwrite the existing keys if exists
-// returns a new Container
-func (vars *Variables) Merge(src Container) Container {
+// returns a the merged Container
+//
+// TODO: since we are dealing with pointers this does not need to return anything
+// instead update only the underlying reference, create new story for this.
+func (vars *Variables) Merge(src *Variables) *Variables {
 	dst := &Variables{}
 
 	if vars != nil {
@@ -90,10 +84,9 @@ func (vars *Variables) Merge(src Container) Container {
 }
 
 // With creates new container and sets key to given value
-func (vars *Variables) With(key string, value interface{}) Container {
+func (vars *Variables) With(key string, value interface{}) *Variables {
 	dst := &Variables{}
-	dst = dst.Merge(vars).(*Variables)
+	dst = dst.Merge(vars)
 	dst.Set(key, value)
-
 	return dst
 }
