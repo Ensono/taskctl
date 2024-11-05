@@ -233,7 +233,7 @@ func (tc *TaskCtlCmd) buildTaskRunner(args []string, conf *config.Config) (*runn
 	}
 
 	go func() {
-		<-cancel
+		<-cancel // tc.Cmd.Context().Done()
 		tr.Cancel()
 	}()
 

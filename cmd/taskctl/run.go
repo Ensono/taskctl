@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -21,6 +22,7 @@ type runCmd struct {
 	channelOut, channelErr io.Writer
 	flags                  *runFlags
 	conf                   *config.Config
+	ctx                    context.Context
 }
 
 func newRunCmd(rootCmd *TaskCtlCmd) {
@@ -29,6 +31,7 @@ func newRunCmd(rootCmd *TaskCtlCmd) {
 		channelOut: rootCmd.ChannelOut,
 		channelErr: rootCmd.ChannelErr,
 		flags:      f,
+		ctx:        rootCmd.Cmd.Context(),
 	}
 
 	rc := &cobra.Command{
@@ -131,7 +134,7 @@ func (r *runCmd) runPipeline(g *scheduler.ExecutionGraph, taskRunner *runner.Tas
 	// var ng *scheduler.ExecutionGraph
 	sd := scheduler.NewScheduler(taskRunner)
 	go func() {
-		<-cancel
+		<-cancel // r.ctx.Done()
 		sd.Cancel()
 	}()
 
