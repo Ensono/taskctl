@@ -30,6 +30,17 @@ func Test_runCommand(t *testing.T) {
 		defer os.Unsetenv("TASKCTL_CONFIG_FILE")
 		cmdRunTestHelper(t, &cmdRunTestInput{args: []string{"--output=prefixed", "-c", "testdata/graph.yaml", "run", "graph:pipeline1"}, output: []string{"graph:task1", "graph:task2", "graph:task3", "hello, world!"}})
 	})
+
+	t.Run("correct with graph-only - denormalized", func(t *testing.T) {
+		os.Setenv("TASKCTL_CONFIG_FILE", "testdata/generate.yml")
+		defer os.Unsetenv("TASKCTL_CONFIG_FILE")
+		cmdRunTestHelper(t, &cmdRunTestInput{
+			args: []string{"run", "graph:pipeline1", "--graph-only"},
+			output: []string{`[label="graph:pipeline1->dev_anchor",shape="point",style="invis"]`,
+				`[label="graph:pipeline1->graph:pipeline3_anchor",shape="point",style="invis"]`, `label="graph:pipeline1->prod"`,
+			},
+		})
+	})
 }
 
 func Test_runCommandWithArgumentsList(t *testing.T) {
