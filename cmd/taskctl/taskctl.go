@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"strings"
 
@@ -70,28 +69,8 @@ func NewTaskCtlCmd(channelOut, channelErr io.Writer) *TaskCtlCmd {
 	tc.viperConf.SetConfigName("taskctl_conf")
 
 	tc.Cmd.PersistentFlags().StringVarP(&tc.rootFlags.CfgFilePath, "config", "c", "taskctl.yaml", "config file to use") // tasks.yaml or taskctl.yaml
-	if err := tc.viperConf.BindEnv("config", "TASKCTL_CONFIG_FILE"); err != nil {
-		log.Fatal(err)
-	}
-	if err := tc.viperConf.BindPFlag("config", tc.Cmd.PersistentFlags().Lookup("config")); err != nil {
-		log.Fatal(err)
-	}
-
-	tc.Cmd.PersistentFlags().StringVarP(&tc.rootFlags.Output, "output", "o", "", "output format (raw, prefixed or cockpit)")
-	_ = tc.viperConf.BindEnv("output", "TASKCTL_OUTPUT_FORMAT")
-	_ = tc.viperConf.BindPFlag("output", tc.Cmd.PersistentFlags().Lookup("output"))
-
-	// Shortcut flags
-	tc.Cmd.PersistentFlags().BoolVarP(&tc.rootFlags.Raw, "raw", "r", false, "shortcut for --output=raw")
-	_ = tc.viperConf.BindPFlag("raw", tc.Cmd.PersistentFlags().Lookup("raw")) // TASKCTL_DEBUG
-
-	tc.Cmd.PersistentFlags().BoolVarP(&tc.rootFlags.Cockpit, "cockpit", "", false, "shortcut for --output=cockpit")
-	_ = tc.viperConf.BindPFlag("cockpit", tc.Cmd.PersistentFlags().Lookup("cockpit")) // TASKCTL_DEBUG
-
-	// Key=Value pairs
-	// can be supplied numerous times
-	tc.Cmd.PersistentFlags().StringToStringVarP(&tc.rootFlags.VariableSet, "set", "", nil, "set global variable value")
-	_ = tc.viperConf.BindPFlag("set", tc.Cmd.PersistentFlags().Lookup("set")) // TASKCTL_DEBUG
+	_ = tc.viperConf.BindEnv("config", "TASKCTL_CONFIG_FILE")
+	_ = tc.viperConf.BindPFlag("config", tc.Cmd.PersistentFlags().Lookup("config"))
 
 	// flag toggles
 	tc.Cmd.PersistentFlags().BoolVarP(&tc.rootFlags.Debug, "debug", "d", false, "enable debug")

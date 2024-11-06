@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/Ensono/taskctl/internal/utils"
@@ -11,7 +12,7 @@ import (
 // NOTE: used for read only at this point
 type StageTable map[string]*Stage
 
-// Denormalize performs a DFS traversal on the ExecutionGraph from the root node
+// Denormalize performs a recursive DFS traversal on the ExecutionGraph from the root node and creates a new stage reference.
 //
 // In order to be able to call the same pipeline from another pipeline, we want to create a new
 // pointer to it, this will avoid race conditions in times/outputs/env vars/etc...
@@ -49,6 +50,11 @@ func (g *ExecutionGraph) rebuildFromDenormalized(st StageTable) error {
 			}
 			stage.Pipeline = ng
 		}
+		// stage is task - merge into the stage all the previous env and vars
+		parentStages := st.RecurseParents(stage.Name)
+		for _, v := range parentStages {
+			stage.Env().MergeV2(v.Env())
+		}
 		// Check err just in case the denormalized graph has cyclical dependancies
 		if err := g.AddStage(stage); err != nil {
 			// This should never be hit, but good to keep in place.
@@ -72,6 +78,21 @@ func (st StageTable) NthLevelChildren(prefix string, depth int) []*Stage {
 			}
 		}
 	}
+	return stages
+}
+
+// RecurseParents walks all the parents recursively 
+// and appends to the list in revers order 
+func (st StageTable) RecurseParents(prefix string) []*Stage {
+	prefixParts := strings.Split(prefix, utils.PipelineDirectionChar)
+	stages := []*Stage{}
+	for i := 1; i < len(prefixParts); i++ {
+		parentKey := strings.Join(prefixParts[0:len(prefixParts)-i], utils.PipelineDirectionChar)
+		if stageVal, ok := st[parentKey]; ok {
+			stages = append(stages, stageVal)
+		}
+	}
+	slices.Reverse(stages)
 	return stages
 }
 
@@ -107,6 +128,8 @@ func (graph *ExecutionGraph) Flatten(nodeName string, ancestralParentNames []str
 						peekStage.Name = originalNode.Name
 						peekStage.WithEnv(originalNode.Env())
 						peekStage.WithVariables(originalNode.Variables())
+						clonedStage.WithEnv(peekStage.Env())
+						clonedStage.WithVariables(peekStage.Variables())
 						originalNode = peekStage
 					}
 				}

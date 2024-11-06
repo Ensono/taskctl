@@ -97,6 +97,8 @@ contexts:
 pipelines:
   prod:
     - pipeline: graph:pipeline2
+      env:
+        ENV_NAME: prod
   graph:pipeline1:
     - task: graph:task2
       depends_on: 
@@ -106,6 +108,8 @@ pipelines:
     - name: dev
       pipeline: graph:pipeline2
       depends_on: [graph:task3]
+      env:
+        ENV_NAME: dev
     - pipeline: prod
       depends_on: [graph:task3]
     - task: graph:task4
@@ -130,7 +134,7 @@ tasks:
   graph:task1:
     command: |
       for i in $(seq 1 5); do
-        echo "hello task 1 - iteration $i"
+        echo "hello task 1 in env ${ENV_NAME} - iteration $i"
         sleep 0
       done
     context: podman
@@ -141,13 +145,14 @@ tasks:
     context: podman
 
   graph:task3:
-    command: "echo 'hello, task3!'"
+    command: 
+      - echo "hello, task3 in env ${ENV_NAME}"
     env:
       FOO: bar
 
   graph:task4:
     command: | 
-      echo "hello, task4"
+      echo "hello, task4 in env ${ENV_NAME}"
     context: podman
     env:
       FOO: bar
@@ -155,7 +160,7 @@ tasks:
   task-p2:1:
     command:
       - |
-        echo "hello, p2 ${FOO}"
+        echo "hello, p2 ${FOO} env: ${ENV_NAME:-unknown}"
     context: podman
     env:
       FOO: task1
@@ -164,7 +169,7 @@ tasks:
     command:
       - |
         for i in $(seq 1 5); do
-          echo "hello, p2 ${FOO} - iteration $i"
+          echo "hello, p2 ${FOO} - env: ${ENV_NAME:-unknown} - iteration $i"
           sleep 0
         done
     env:

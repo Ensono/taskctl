@@ -44,6 +44,8 @@ pipelines:
   # CI pipelines
   lint:
     - task: lint:ci
+      env: 
+        ENV_NAME: caller-lint
 
   helm:
     - task: helm:test
@@ -143,6 +145,8 @@ tasks:
   lint:ci:
     command:
       - echo "lint stuff"
+    env: 
+      ENV_NAME: ci
   post:apply: 
     command:
       - echo "post apply run"

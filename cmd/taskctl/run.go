@@ -106,8 +106,25 @@ func newRunCmd(rootCmd *TaskCtlCmd) {
 		},
 	})
 
-	rc.Flags().BoolVarP(&f.showGraphOnly, "graph-only", "", false, "Show only the denormalized graph")
-	rc.Flags().BoolVarP(&f.detailedSummary, "detailed", "", false, "Show detailed summary, otherwise will be summarised by top level stages only")
+	rc.PersistentFlags().StringVarP(&rootCmd.rootFlags.Output, "output", "o", "", "output format (raw, prefixed or cockpit)")
+	_ = rootCmd.viperConf.BindEnv("output", "TASKCTL_OUTPUT_FORMAT")
+	_ = rootCmd.viperConf.BindPFlag("output", rc.PersistentFlags().Lookup("output"))
+
+	// Shortcut flags
+	rc.PersistentFlags().BoolVarP(&rootCmd.rootFlags.Raw, "raw", "r", false, "shortcut for --output=raw")
+	_ = rootCmd.viperConf.BindPFlag("raw", rc.PersistentFlags().Lookup("raw")) // TASKCTL_DEBUG
+
+	rc.PersistentFlags().BoolVarP(&rootCmd.rootFlags.Cockpit, "cockpit", "", false, "shortcut for --output=cockpit")
+	_ = rootCmd.viperConf.BindPFlag("cockpit", rc.PersistentFlags().Lookup("cockpit")) // TASKCTL_DEBUG
+
+	// Key=Value pairs
+	// can be supplied numerous times
+	rc.PersistentFlags().StringToStringVarP(&rootCmd.rootFlags.VariableSet, "set", "", nil, "set global variable value")
+	_ = rootCmd.viperConf.BindPFlag("set", rc.PersistentFlags().Lookup("set")) // TASKCTL_DEBUG
+
+	rc.PersistentFlags().BoolVarP(&f.showGraphOnly, "graph-only", "", false, "Show only the denormalized graph")
+	rc.PersistentFlags().BoolVarP(&f.detailedSummary, "detailed", "", false, "Show detailed summary, otherwise will be summarised by top level stages only")
+
 	rootCmd.Cmd.AddCommand(rc)
 }
 
@@ -130,8 +147,6 @@ func (r *runCmd) runTarget(taskRunner *runner.TaskRunner, conf *config.Config, a
 }
 
 func (r *runCmd) runPipeline(g *scheduler.ExecutionGraph, taskRunner *runner.TaskRunner, summary bool) error {
-	// var err error
-	// var ng *scheduler.ExecutionGraph
 	sd := scheduler.NewScheduler(taskRunner)
 	go func() {
 		<-cancel // r.ctx.Done()

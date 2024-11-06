@@ -55,7 +55,7 @@ tasks:
   graph:task1:
     command: |
       for i in $(seq 1 5); do
-        echo "hello task 1 - iteration $i"
+        echo "hello task 1 in env ${ENV_NAME} - iteration $i"
         sleep 0
       done
     context: podman
@@ -66,13 +66,14 @@ tasks:
     context: podman
 
   graph:task3:
-    command: "echo 'hello, task3!'"
+    command: 
+      - echo "hello, task3 in env ${ENV_NAME}"
     env:
       FOO: bar
 
   graph:task4:
     command: | 
-      echo "hello, task4"
+      echo "hello, task4 in env ${ENV_NAME}"
     context: podman
     env:
       FOO: bar
