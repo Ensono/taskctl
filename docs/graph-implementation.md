@@ -3,7 +3,17 @@
 The internal processes generate, essentially, an n-ary tree.
 The tree may have nodes which themselves are other trees. 
 
-> There never any edges between nodes in a subtree, i.e. subtree node cannot `depend_on` parent tree node.
+> There are never any edges between nodes in a child tree to the parent tree, i.e. only single level stages (nodes) can `depends_on` on each other.
+
+The generated graphs will have the following legend, it can also be embedded in the generated digraph by specifying the `--legend` flag.
+
+![](./svg/legend.svg)
+
+Blue arrows are the first level stages in the pipeline, these can be direct tasks or other pipelines.
+
+Brown arrows denote a job that is a pipeline itself and points to the subgraph that represents that pipeline.
+
+Green arrows are point from stage to stage (stage can be a task or a pipeline) in any subgraphs.
 
 ## Normalized vs Denormalized
 

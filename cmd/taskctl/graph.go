@@ -41,7 +41,7 @@ The output is in the DOT format, which can be used by GraphViz to generate chart
 	graphCmd.Flags().BoolVarP(&f.leftToRight, "lr", "", false, "orientates outputted graph left-to-right")
 	_ = rootCmd.viperConf.BindPFlag("lr", graphCmd.Flags().Lookup("lr"))
 	graphCmd.Flags().BoolVarP(&f.isMermaid, "is-mermaid", "", false, "output the graph in mermaid flowchart format")
-	graphCmd.Flags().BoolVarP(&f.embedLegend, "embed-legend", "", false, "embed a legend in the generated dotviz graph")
+	graphCmd.Flags().BoolVarP(&f.embedLegend, "legend", "", false, "embed a legend in the generated dotviz graph")
 
 	rootCmd.Cmd.AddCommand(graphCmd)
 }
