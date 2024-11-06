@@ -78,6 +78,96 @@ func TestExecutionGraph_Flatten(t *testing.T) {
 	}
 }
 
+func TestStageTable_ops(t *testing.T) {
+	g := helperGraph(t, "graph:pipeline1")
+	flattenedStages := map[string]*scheduler.Stage{}
+	g.Flatten(scheduler.RootNodeName, []string{g.Name()}, flattenedStages)
+	// add the root stage just for testing
+	flattenedStages["graph:pipeline1"] = &scheduler.Stage{Name: "graph:pipeline1"}
+
+	st := scheduler.StageTable(flattenedStages)
+	t.Run("parents", func(t *testing.T) {
+
+		t2 := st.RecurseParents("graph:pipeline1->graph:pipeline3->graph:task2")
+		if len(t2) != 2 {
+			t.Errorf("%v is not the required length 2", len(t2))
+		}
+		if t2[0].Name != "graph:pipeline1" {
+			t.Errorf("incorrectly reversed order in slice")
+		}
+		if t2[1].Name != "graph:pipeline1->graph:pipeline3" {
+			t.Errorf("incorrectly reversed order in slice")
+		}
+
+		tp1 := st.RecurseParents("graph:pipeline1->prod->task-p2:2")
+
+		if len(tp1) != 2 {
+			t.Errorf("%v is not the required length 2", len(t2))
+		}
+		if tp1[0].Name != "graph:pipeline1" {
+			t.Errorf("incorrectly reversed order in slice")
+		}
+		if tp1[1].Name != "graph:pipeline1->prod" {
+			t.Errorf("incorrectly reversed order in slice")
+		}
+	})
+
+	t.Run("nth children", func(t *testing.T) {
+		prod := st.NthLevelChildren("graph:pipeline1->prod", 1)
+		if len(prod) != 2 {
+			t.Error("wrong number of children")
+		}
+
+		gp1 := st.NthLevelChildren("graph:pipeline1", 2)
+		if len(gp1) != 6 {
+			t.Error("wrong number of children at that level")
+		}
+
+		prod2 := st.NthLevelChildren("graph:pipeline1->prod", 2)
+		if len(prod2) != 0 {
+			t.Error("wrong number of children")
+		}
+	})
+}
+
+func TestExecutionGraph_Denormalize(t *testing.T) {
+	t.Parallel()
+	g := helperGraph(t, "graph:pipeline1")
+
+	t.Run("check sample graph", func(t *testing.T) {
+		got, err := g.Denormalize()
+		if err != nil {
+			t.Error(err.Error())
+		}
+		if got == nil {
+			t.Error("got nil, wanted a denormalized graph")
+		}
+
+		// "graph:pipeline1->prod->task-p2:1"
+		prodPipeline, err := got.Node("graph:pipeline1->prod")
+		if err != nil || prodPipeline == nil {
+			t.Error("incorrectly built denormalized graph")
+		}
+
+		if prodPipeline.Pipeline == nil {
+			t.Error("incorrectly built denormalized graph")
+		}
+
+		tp21, err := prodPipeline.Pipeline.Node("graph:pipeline1->prod->task-p2:1")
+		if err != nil {
+			t.Error("incorrectly built denormalized graph")
+		}
+
+		val, ok := tp21.Env().Map()["ENV_NAME"]
+		if !ok {
+			t.Error("incorrectly built denormalized graph")
+		}
+		if val != "prod" {
+			t.Errorf("incorrectly inherited env across stages, got %s, wanted prod", val)
+		}
+	})
+}
+
 var ymlInputTester = []byte(`
 output: prefixed
 contexts:

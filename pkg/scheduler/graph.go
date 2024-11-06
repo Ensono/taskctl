@@ -188,16 +188,6 @@ func (g *ExecutionGraph) BFSNodesFlattened(nodeName string) []*Stage {
 	return bfsStages
 }
 
-// BFSNodesFlattenedPostOrder returns the nodes in a reverse order
-// this is useful for adding nodes to graphviz like graph - ensuring parents were created and can always be looked up
-func (g *ExecutionGraph) BFSNodesFlattenedPostOrder(nodeName string) []*Stage {
-	bfs := g.BFSNodesFlattened(nodeName)
-	for i, j := 0, len(bfs)-1; i < j; i, j = i+1, j-1 {
-		bfs[i], bfs[j] = bfs[j], bfs[i]
-	}
-	return bfs
-}
-
 // cycleDfs is DFS utility to traverse
 // the tree to detect any back-edges and hence to detect a cycle
 func (g *ExecutionGraph) cycleDfs(node string, visited map[string]bool, inStack map[string]bool) error {

@@ -1,4 +1,6 @@
-// package schemagenerator
+//go:build ignore
+
+// Package schemagenerator
 //
 // Generates the schema for the config file
 // Accepts the dir to generate the output in

@@ -81,8 +81,8 @@ func (st StageTable) NthLevelChildren(prefix string, depth int) []*Stage {
 	return stages
 }
 
-// RecurseParents walks all the parents recursively 
-// and appends to the list in revers order 
+// RecurseParents walks all the parents recursively
+// and appends to the list in revers order
 func (st StageTable) RecurseParents(prefix string) []*Stage {
 	prefixParts := strings.Split(prefix, utils.PipelineDirectionChar)
 	stages := []*Stage{}
@@ -111,29 +111,8 @@ func (graph *ExecutionGraph) Flatten(nodeName string, ancestralParentNames []str
 
 		// If the node has a subgraph, recursively clone it with a new prefix
 		if originalNode.Pipeline != nil {
-			// creating a graph without stages - cannot error here
-			subGraphClone, _ := NewExecutionGraph(uniqueName)
-			// peek if children are a single pipeline
-			peek := originalNode.Pipeline.Nodes()
-			// its name is likely reused elsewhere
-			if len(peek) == 2 {
-				for _, peekStage := range peek {
-					if peekStage.Name == RootNodeName {
-						continue
-					}
-					if peekStage.Pipeline != nil {
-						// aliased stage only contains a single item and
-						// that is a pipeline we advance  move forward
-						peekStage.DependsOn = clonedStage.DependsOn
-						peekStage.Name = originalNode.Name
-						peekStage.WithEnv(originalNode.Env())
-						peekStage.WithVariables(originalNode.Variables())
-						clonedStage.WithEnv(peekStage.Env())
-						clonedStage.WithVariables(peekStage.Variables())
-						originalNode = peekStage
-					}
-				}
-			}
+			var subGraphClone *ExecutionGraph
+			subGraphClone, originalNode = graphClone(originalNode, clonedStage, uniqueName)
 			// use alias or name
 			for subNode := range originalNode.Pipeline.Nodes() {
 				originalNode.Pipeline.Flatten(subNode, append(ancestralParentNames, originalNode.Name), flattenedStage)
@@ -146,4 +125,32 @@ func (graph *ExecutionGraph) Flatten(nodeName string, ancestralParentNames []str
 	for _, child := range graph.Children(nodeName) {
 		graph.Flatten(child.Name, ancestralParentNames, flattenedStage)
 	}
+}
+
+func graphClone(originalNode *Stage, clonedStage *Stage, uniqueName string) (*ExecutionGraph, *Stage) {
+	// creating a graph without stages - cannot error here
+	subGraphClone, _ := NewExecutionGraph(uniqueName)
+	// peek if children are a single pipeline
+	peek := originalNode.Pipeline.Nodes()
+	// its name is likely reused elsewhere
+	if len(peek) == 2 { // there will always be a "root" node and 1 or more others
+		for _, peekStage := range peek {
+			// we skip the root node
+			if peekStage.Name == RootNodeName {
+				continue
+			}
+			if peekStage.Pipeline != nil {
+				// aliased stage only contains a single item and
+				// that is a pipeline we advance  move forward
+				peekStage.DependsOn = clonedStage.DependsOn
+				peekStage.Name = originalNode.Name
+				peekStage.WithEnv(originalNode.Env())
+				peekStage.WithVariables(originalNode.Variables())
+				clonedStage.WithEnv(peekStage.Env())
+				clonedStage.WithVariables(peekStage.Variables())
+				originalNode = peekStage
+			}
+		}
+	}
+	return subGraphClone, originalNode
 }
