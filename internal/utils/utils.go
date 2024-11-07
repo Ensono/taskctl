@@ -265,15 +265,39 @@ func ReadEnvFile(r io.ReadCloser) (map[string]string, error) {
 	return envs, nil
 }
 
-// ConvertStringToMachineFriendly takes a string and converts it
+// ConvertToMachineFriendly converts a string containing characters that would not play nice key names
+// e.g. `->` or `|` `/` `\\` `:`
+// To make it easier to decipher the names we replace these characters with a map to a known sequence.
+//
+//	replaceSequence := []string{
+//			"->", "__a__",
+//			`|`, "__b__",
+//			`/`, "__c__",
+//			`\`, "__d__",
+//			`:`, "__e__",
+//			` `, "__f__", // space sequence
+//	}
+func ConvertToMachineFriendly(str string) string {
+	replaceSequence := []string{
+		"->", "__a__",
+		`|`, "__b__",
+		`/`, "__c__",
+		`\`, "__d__",
+		`:`, "__e__",
+		` `, "__f__",
+	}
+	return strings.NewReplacer(replaceSequence...).Replace(str)
+}
+
+// EncodeBase62 takes a string and converts it
 // to base62 format - this is safer than using regex or strings replace.
-func ConvertStringToMachineFriendly(str string) string {
+func EncodeBase62(str string) string {
 	return base62EncodeToString([]byte(str))
 }
 
-// ConvertStringToHumanFriendly takes a ConvertStringToMachineFriendly generated string and
+// DecodeBase62 takes a EncodeBase62 generated string and
 // and converts it back to its original human friendly form
-func ConvertStringToHumanFriendly(str string) string {
+func DecodeBase62(str string) string {
 	// Order is important
 	// pass in the __ first to replace that with spaces
 	// and only _ should be left to go back to :
@@ -285,8 +309,15 @@ func ConvertStringToHumanFriendly(str string) string {
 
 const PipelineDirectionChar string = "->"
 
+// CascadeName builds the name using the ancestors with a pipeline separator
 func CascadeName(parents []string, current string) string {
 	return fmt.Sprintf("%s%s%s", strings.Join(parents, PipelineDirectionChar), PipelineDirectionChar, current)
+}
+
+// TailExtract takes the last possible node from a pipeline string
+func TailExtract(v string) string {
+	split := strings.Split(v, PipelineDirectionChar)
+	return split[len(split)-1]
 }
 
 // base62 helpers included here - to avoid introducing a secondary dependancy

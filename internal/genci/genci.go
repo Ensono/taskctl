@@ -18,9 +18,15 @@ import (
 
 	"github.com/Ensono/taskctl/internal/config"
 	"github.com/Ensono/taskctl/pkg/scheduler"
+	"gopkg.in/yaml.v2"
 )
 
-var ErrImplementationNotExist = errors.New("implementation does not exist")
+var (
+	ErrImplementationNotExist   = errors.New("implementation does not exist")
+	ErrFailedImplementationInit = errors.New("failed to initialise the implementation")
+)
+
+// const taskctlVersion string = "v1.8."
 
 type CITarget string
 
@@ -33,26 +39,36 @@ const (
 type GenCi struct {
 	implTyp        CITarget
 	implementation GenCiIface
+	// CITargetOS sets the CI Runner node OS.
+	// The default is linux
+	CITargetOS string
+	// CITargetArch sets the CI Runner node Architecture
+	// The default is amd64
+	CITargetArch string
 	// conf            *config.Config
 	// taskctlPipeline *scheduler.ExecutionGraph
 }
 
 type GenCiIface interface {
-	convert() ([]byte, error)
+	Convert(pipeline *scheduler.ExecutionGraph) ([]byte, error)
 }
 
 type Opts func(*GenCi)
 
-func New(implTyp CITarget, conf *config.Config, taskctlPipeline *scheduler.ExecutionGraph, opts ...Opts) (*GenCi, error) {
+func New(implTyp CITarget, conf *config.Config, opts ...Opts) (*GenCi, error) {
 	gci := &GenCi{
 		implTyp: implTyp,
 	}
 
 	switch implTyp {
 	case GitHubCITarget:
-		gci.implementation = newGithubCiImpl(conf, taskctlPipeline)
-	case GitlabCITarget:
-		gci.implementation = &DefualtCiImpl{}
+		gh, err := newGithubCiImpl(conf)
+		if err != nil {
+			return nil, fmt.Errorf("%w, %v", ErrFailedImplementationInit, err)
+		}
+		gci.implementation = gh
+	// case GitlabCITarget:
+	// 	gci.implementation = &DefualtCiImpl{}
 	// TODO: add more here
 	default:
 		return nil, fmt.Errorf("%s, %w", implTyp, ErrImplementationNotExist)
@@ -60,12 +76,26 @@ func New(implTyp CITarget, conf *config.Config, taskctlPipeline *scheduler.Execu
 	return gci, nil
 }
 
-func (g *GenCi) Convert(conf *config.Config, taskctlPipeline *scheduler.ExecutionGraph) ([]byte, error) {
-	return g.implementation.convert()
+func (g *GenCi) Convert(taskctlPipeline *scheduler.ExecutionGraph) ([]byte, error) {
+	return g.implementation.Convert(taskctlPipeline)
 }
 
 type DefualtCiImpl struct{}
 
-func (impl *DefualtCiImpl) convert() ([]byte, error) {
+func (impl *DefualtCiImpl) Convert(pipeline *scheduler.ExecutionGraph) ([]byte, error) {
 	return nil, nil
+}
+
+func extractGeneratorMetadata[T any](implTyp CITarget, generatorMeta map[string]any) (*T, error) {
+	typ := new(T)
+	if gh, found := generatorMeta[string(implTyp)]; found {
+		b, err := yaml.Marshal(gh)
+		if err != nil {
+			return typ, err
+		}
+		if err := yaml.Unmarshal(b, typ); err != nil {
+			return typ, err
+		}
+	}
+	return typ, nil
 }

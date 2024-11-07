@@ -4,7 +4,7 @@ output: prefixed
 # import:
 #   - https://raw.githubusercontent.com/Ensono/stacks-infrastructure-eks/11fcb55621bee0f24ebf2fdbacc7ced7be6ec5d8/build/taskctl/tasks.yaml
 
-generator:
+ci_meta:
   version: v1.8.0-alpha-aaaabbbb1234
   targetOpts:
     github:
@@ -94,17 +94,18 @@ pipelines:
     - task: post:task
       depends_on:
         - infrapipeline
+
   # gha pipeline will be used to generate the CI definition
   # can be run locally as well in entirety
   gha:infra:sample: 
     - pipeline: lint
-      generator:
+      ci_meta:
         github: 
           runs-on: ubuntu-24.04
           env:
             SOME_TOKEN_FOR_APP1: ${{ secrets.FOO_BAR_Secret }}
     - pipeline: InfraDev
-      generator:
+      ci_meta:
         github: 
           if: github.ref != 'refs/heads/main'
           environment: nonprod
@@ -125,7 +126,7 @@ pipelines:
     #   env:
     #     ENV_NAME: prod
     #     SOME_TOKEN_FOR_APP1: overwritten_in_CI_by_ci_specific_secret
-      generator:
+      ci_meta:
         github: 
           if: github.ref == 'refs/heads/main'
           environment: prod
@@ -147,6 +148,7 @@ tasks:
       - echo "lint stuff"
     env: 
       ENV_NAME: ci
+  
   post:apply: 
     command:
       - echo "post apply run"

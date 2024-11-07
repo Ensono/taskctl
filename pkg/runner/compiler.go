@@ -114,7 +114,7 @@ func (tc *TaskCompiler) CompileCommand(
 		filename := utils.GetFullPath(
 			filepath.Join(
 				executionCtx.Envfile.GeneratedDir,
-				fmt.Sprintf("generated_%s.env", utils.ConvertStringToMachineFriendly(taskName)),
+				fmt.Sprintf("generated_%s.env", utils.EncodeBase62(taskName)),
 			))
 
 		commandArgs = executionCtx.Executable.BuildArgsWithEnvFile(filename)

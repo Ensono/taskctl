@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/Ensono/taskctl/internal/cmdutils"
 	"github.com/Ensono/taskctl/internal/config"
@@ -15,6 +16,7 @@ import (
 
 type generateFlags struct {
 	targetTyp string
+	outputDir string
 }
 
 func newGenerateCmd(rootCmd *TaskCtlCmd) {
@@ -47,34 +49,49 @@ func newGenerateCmd(rootCmd *TaskCtlCmd) {
 			if err != nil {
 				return err
 			}
-			return generateDefinition(conf, argsStringer, genci.CITarget(f.targetTyp))
+			return generateDefinition(conf, argsStringer, f)
 		},
 	}
+
 	c.Flags().StringVarP(&f.targetTyp, "target", "t", "", "Target type of the generation. Valid values include github, etc...")
 	_ = c.MarkFlagRequired("target")
+	c.Flags().StringVarP(&f.outputDir, "output", "", "", "Output directory where to create the generated file(s). Default value varies by target - e.g. github => .github/workflows")
 	rootCmd.Cmd.AddCommand(c)
 }
 
-func generateDefinition(conf *config.Config, argsStringer *argsToStringsMapper, implTyp genci.CITarget) (err error) {
+var DefaultCIOutput = map[genci.CITarget]string{
+	genci.GitHubCITarget: ".github/workflows",
+}
+
+func generateDefinition(conf *config.Config, argsStringer *argsToStringsMapper, f *generateFlags) (err error) {
 	pipeline := argsStringer.pipelineName
 	if pipeline == nil {
 		return fmt.Errorf("specified arg is not a pipeline")
 	}
 
-	genci, err := genci.New(implTyp, conf, pipeline)
-	if err != nil {
-		return err
-	}
-	b, err := genci.Convert(conf, pipeline)
+	g, err := genci.New(genci.CITarget(f.targetTyp), conf)
 	if err != nil {
 		return err
 	}
 
-	f, err := os.Create(fmt.Sprintf(".github/workflows/%s.yml", utils.ConvertStringToMachineFriendly(pipeline.Name())))
+	b, err := g.Convert(pipeline)
 	if err != nil {
 		return err
 	}
-	if _, err := f.Write(b); err != nil {
+
+	output := f.outputDir
+	if output == "" {
+		// lookup the default path - it must be of a valid target
+		if defaultPath, ok := DefaultCIOutput[genci.CITarget(f.targetTyp)]; ok {
+			output = defaultPath
+		}
+	}
+
+	file, err := os.Create(filepath.Join(output, fmt.Sprintf("%s.yml", utils.ConvertToMachineFriendly(pipeline.Name()))))
+	if err != nil {
+		return err
+	}
+	if _, err := file.Write(b); err != nil {
 		return err
 	}
 	return nil

@@ -48,7 +48,7 @@ type ConfigDefinition struct {
 	// Generator defines the options for the desired CI yaml generation
 	// Currently these are just map[string]any so that the user can specify the desired behaviour
 	// NOTE: will provide no build time safety
-	Generator *Generator `yaml:"generator,omitempty" json:"generator,omitempty"`
+	Generator *Generator `mapstructure:"ci_meta,omitempty" yaml:"ci_meta,omitempty" json:"ci_meta,omitempty"`
 }
 
 type ContextDefinition struct {
@@ -115,17 +115,18 @@ type PipelineDefinition struct {
 	// Dir is the place where to run the task(s) in.
 	// If empty - currentDir is used
 	Dir string `mapstructure:"dir" yaml:"dir,omitempty" json:"dir,omitempty"`
-	// Envfile will overwrite keys set in env 
+	// Envfile will overwrite keys set in env
 	Envfile *utils.Envfile `mapstructure:"envfile" yaml:"envfile,omitempty" json:"envfile,omitempty"`
 	// Env is the Key: Value map of env vars to inject into the tasks within this pipeline
 	Env EnvVarMapType `mapstructure:"env" yaml:"env,omitempty" json:"env,omitempty"`
 	// Variables is the Key: Value map of vars vars to inject into the tasks
 	Variables EnvVarMapType `mapstructure:"variables" yaml:"variables,omitempty" json:"variables,omitempty"`
 	// Generator PipelineLevel
-	Generator map[string]any `yaml:"generator,omitempty" json:"generator,omitempty"`
+	Generator map[string]any `yaml:"ci_meta,omitempty" json:"ci_meta,omitempty"`
 }
 
 type Generator struct {
+	// Version sets the version of taskctl to use for generation of default tasks, defaults to the current version of the binary
 	Version       string         `mapstructure:"version" yaml:"version,omitempty" json:"version,omitempty"`
 	TargetOptions map[string]any `mapstructure:"targetOpts" yaml:"targetOpts,omitempty" json:"targetOpts,omitempty"`
 }
@@ -164,8 +165,8 @@ type TaskDefinition struct {
 	// ResetContext ensures each invocation of the variation is run with a Reset on the executor.
 	// Currently only applies to a default executor and when run in variations.
 	ResetContext bool `mapstructure:"reset_context" yaml:"reset_context,omitempty" json:"reset_context,omitempty" jsonschema:"default=false"`
-	//
-	Generator map[string]any `yaml:"generator,omitempty" json:"generator,omitempty"`
+	// Generator is the CI meta properties that will only be used during a generate process
+	Generator map[string]any `yaml:"ci_meta,omitempty" json:"ci_meta,omitempty"`
 }
 
 type WatcherDefinition struct {

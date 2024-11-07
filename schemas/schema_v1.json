@@ -112,7 +112,7 @@
           "$ref": "#/$defs/EnvVarMapType",
           "description": "Variables are the top most variables and will be merged and overwritten with lower level\nspecifications.\ne.g. variable of Version=123\nwill be overwritten by a variables specified in this order, lowest takes the highest precedence\n- context\n- pipeline\n- task\n- commandline.\nVariables can be used inside templating using the text/template go package"
         },
-        "generator": {
+        "ci_meta": {
           "$ref": "#/$defs/Generator",
           "description": "Generator defines the options for the desired CI yaml generation\nCurrently these are just map[string]any so that the user can specify the desired behaviour\nNOTE: will provide no build time safety"
         }
@@ -282,7 +282,8 @@
     "Generator": {
       "properties": {
         "version": {
-          "type": "string"
+          "type": "string",
+          "description": "Version sets the version of taskctl to use for generation of default tasks, defaults to the current version of the binary"
         },
         "targetOpts": {
           "type": "object"
@@ -377,7 +378,7 @@
           "$ref": "#/$defs/EnvVarMapType",
           "description": "Variables is the Key: Value map of vars vars to inject into the tasks"
         },
-        "generator": {
+        "ci_meta": {
           "type": "object",
           "description": "Generator PipelineLevel"
         }
@@ -469,8 +470,9 @@
           "description": "ResetContext ensures each invocation of the variation is run with a Reset on the executor.\nCurrently only applies to a default executor and when run in variations.",
           "default": false
         },
-        "generator": {
-          "type": "object"
+        "ci_meta": {
+          "type": "object",
+          "description": "Generator is the CI meta properties that will only be used during a generate process"
         }
       },
       "additionalProperties": false,

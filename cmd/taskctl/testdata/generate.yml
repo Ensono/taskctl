@@ -15,6 +15,14 @@ contexts:
       exclude:
         - HOME
 
+ci_meta:
+  targetOpts:
+    github:
+      "on": 
+        push:
+          branches:
+            - gfooo
+
 pipelines:
   prod:
     - pipeline: graph:pipeline2

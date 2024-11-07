@@ -2,42 +2,76 @@ package genci
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"regexp"
 
 	"github.com/Ensono/taskctl/internal/config"
 	"github.com/Ensono/taskctl/internal/schema"
 	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/scheduler"
 	"github.com/Ensono/taskctl/pkg/task"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
+var ErrInvalidCiMeta = errors.New("CI meta is invalid")
+
+// githubCiImpl is the implementation of GHA pipeline generation from TaskCtl ExecutionGraph
+// The graph has to be denormalized to ensure that all env variables are correctly cascaded to the tasks
 type githubCiImpl struct {
 	// TODO: internal props
-	conf     *config.Config
-	pipeline *scheduler.ExecutionGraph
+	taskctlVersion string
+	conf           *config.Config
+	pipeline       *scheduler.ExecutionGraph
 }
 
-func newGithubCiImpl(conf *config.Config, pipeline *scheduler.ExecutionGraph) *githubCiImpl {
-	return &githubCiImpl{
-		conf:     conf,
-		pipeline: pipeline,
+func newGithubCiImpl(conf *config.Config) (*githubCiImpl, error) {
+	impl := &githubCiImpl{
+		taskctlVersion: "v2.0.0",
+		conf:           conf,
 	}
+	if conf.Generate != nil && conf.Generate.Version != "" {
+		impl.taskctlVersion = conf.Generate.Version
+	}
+	return impl, nil
 }
 
-func (impl *githubCiImpl) convert() ([]byte, error) {
+func (impl *githubCiImpl) Convert(pipeline *scheduler.ExecutionGraph) ([]byte, error) {
+	// use the denormalized pipeline to ensure unique variables are injected into the
+	// tasks
+	dp, err := pipeline.Denormalize()
 
+	if err != nil {
+		return nil, err
+	}
+
+	impl.pipeline = dp
 	ghaWorkflow := &schema.GithubWorkflow{
-		Name: utils.ConvertStringToHumanFriendly(impl.pipeline.Name()),
+		Name: impl.pipeline.Name(), // this can be the raw name as it's a string value not the key
 		Jobs: yaml.MapSlice{},
 	}
-	if gh, err := extractGeneratorMetadata[schema.GithubWorkflow](impl.conf.Generate.TargetOptions); err == nil {
-		if gh.On != nil {
-			ghaWorkflow.On = gh.On
-		}
-		if gh.Env != nil {
-			ghaWorkflow.Env = gh.Env
-		}
+
+	// top level On is required for a valid GHA pipeline
+	// if this is missing we need to exit
+	if impl.conf.Generate == nil {
+		return nil, fmt.Errorf("cannot generate a GHA pipeline (%s) without required "+
+			"info in ci_meta, at least the ci_meta.targetOpts.on property must be set, %w",
+			pipeline.Name(), ErrInvalidCiMeta)
+	}
+
+	gh, err := extractGeneratorMetadata[schema.GithubWorkflow](GitHubCITarget, impl.conf.Generate.TargetOptions)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse ci_meta")
+	}
+	if gh.On == nil {
+		return nil, fmt.Errorf("on is a required key for GHA pipeline (%s) it must be included in "+
+			"the top level inside the ci_meta.targetOpts: property, %w",
+			pipeline.Name(), ErrInvalidCiMeta)
+	}
+	ghaWorkflow.On = gh.On
+	if gh.Env != nil {
+		ghaWorkflow.Env = gh.Env
 	}
 
 	if err := jobLooper(ghaWorkflow, impl.pipeline); err != nil {
@@ -52,12 +86,15 @@ func (impl *githubCiImpl) convert() ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+// addDefaultStepsToJob should be included at the top of each stage
+// it injects the required steps for the runner to successfully execute the job.
+//
+// Checkout step and install taskctl step which will run all subsequent steps.
 func addDefaultStepsToJob(job *schema.GithubJob) {
 	// toggle if checkout or not
 	_ = job.AddStep(&schema.GithubStep{
 		Uses: "actions/checkout@v4",
 	})
-	// name: 'Install taskctl'
 	_ = job.AddStep(&schema.GithubStep{
 		Name: "Install taskctl",
 		ID:   "install-taskctl",
@@ -69,29 +106,15 @@ chmod u+x /usr/local/bin/taskctl`,
 	})
 }
 
-func extractGeneratorMetadata[T any](generatorMeta map[string]any) (T, error) {
-	typ := new(T)
-	if gh, found := generatorMeta["github"]; found {
-		b, err := yaml.Marshal(gh)
-		if err != nil {
-			return *typ, err
-		}
-		if err := yaml.Unmarshal(b, typ); err != nil {
-			return *typ, err
-		}
-	}
-	return *typ, nil
-}
-
 func convertTaskToStep(task *task.Task) *schema.GithubStep {
 
 	step := &schema.GithubStep{
-		Name: utils.ConvertStringToHumanFriendly(task.Name),
-		ID:   utils.ConvertStringToMachineFriendly(task.Name),
+		Name: ghaNameConverter(task.Name),
+		ID:   ghaNameConverter(task.Name),
 		Run:  fmt.Sprintf("taskctl run task %s", task.Name),
 		Env:  utils.ConvertToMapOfStrings(task.Env.Map()),
 	}
-	if gh, err := extractGeneratorMetadata[schema.GithubStep](task.Generator); err == nil {
+	if gh, err := extractGeneratorMetadata[schema.GithubStep](GitHubCITarget, task.Generator); err == nil {
 		if gh.If != "" {
 			step.If = gh.If
 		}
@@ -99,6 +122,7 @@ func convertTaskToStep(task *task.Task) *schema.GithubStep {
 	return step
 }
 
+// flattenTasksInPipeline extracts all the tasks recursively across pipelines
 func flattenTasksInPipeline(job *schema.GithubJob, graph *scheduler.ExecutionGraph) {
 	nodes := graph.BFSNodesFlattened(scheduler.RootNodeName)
 	for _, node := range nodes {
@@ -115,9 +139,9 @@ func flattenTasksInPipeline(job *schema.GithubJob, graph *scheduler.ExecutionGra
 func jobLooper(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph) error {
 	nodes := pipeline.BFSNodesFlattened(scheduler.RootNodeName)
 	for _, node := range nodes {
-		jobName := utils.ConvertStringToMachineFriendly(node.Name)
+		jobName := ghaNameConverter(utils.TailExtract(node.Name))
 		job := &schema.GithubJob{
-			Name:   utils.ConvertStringToHumanFriendly(node.Name),
+			Name:   jobName,
 			RunsOn: "ubuntu-24.04",
 			Env:    utils.ConvertToMapOfStrings(node.Env().Map()),
 		}
@@ -131,13 +155,18 @@ func jobLooper(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph
 			_ = job.AddStep(convertTaskToStep(node.Task))
 		}
 
+		// These are top level jobs only
 		for _, v := range node.DependsOn {
 			job.Needs = append(
 				job.Needs,
-				utils.ConvertStringToMachineFriendly(v),
+				// reference it the same way it was set
+				ghaNameConverter(utils.TailExtract(v)),
 			)
 		}
-		if gh, err := extractGeneratorMetadata[schema.GithubJob](node.Generator); err == nil {
+
+		gh, err := extractGeneratorMetadata[schema.GithubJob](GitHubCITarget, node.Generator)
+		if gh != nil && err == nil {
+			logrus.Debugf("")
 			if gh.If != "" {
 				job.If = gh.If
 			}
@@ -149,13 +178,13 @@ func jobLooper(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph
 			}
 		}
 		ciyaml.Jobs = append(ciyaml.Jobs, yaml.MapItem{Key: jobName, Value: job})
-		// jm[jobName] = *job
 	}
-	// TODO: enable yamlv3 using yaml.Node :|
-	// yn, err := schema.ToYAMLNode(jm)
-	// if err != nil {
-	// 	return err
-	// }
-	// ciyaml.Jobs = *yn
 	return nil
+}
+
+// ghaNameConverter is a GHA specific converter of names and IDs which has to conform to the GHA rules
+// It has to be alphanumeric and `-` and `_` only
+func ghaNameConverter(str string) string {
+	rgx, _ := regexp.Compile(`[^A-Za-z0-9\-\_]`)
+	return string(rgx.ReplaceAll([]byte(str), []byte(`_`)))
 }

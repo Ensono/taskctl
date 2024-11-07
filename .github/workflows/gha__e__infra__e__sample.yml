@@ -1,0 +1,172 @@
+name: gha:infra:sample
+"on":
+  push:
+    branches:
+    - main
+    - master
+  pull_request:
+    branches:
+    - main
+    - master
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install taskctl
+      id: install-taskctl
+      run: |-
+        rm -rf /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+        wget https://github.com/Ensono/taskctl/releases/download/v1.8.0-alpha-aaaabbbb1234/taskctl-linux-amd64 -O /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+        cp /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234 /usr/local/bin/taskctl
+        chmod u+x /usr/local/bin/taskctl
+      shell: bash
+    - name: gha_infra_sample-_lint-_lint_ci
+      id: gha_infra_sample-_lint-_lint_ci
+      run: taskctl run task lint:ci
+      env:
+        ENV_NAME: ci
+  InfraDev:
+    name: InfraDev
+    needs:
+    - lint
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install taskctl
+      id: install-taskctl
+      run: |-
+        rm -rf /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+        wget https://github.com/Ensono/taskctl/releases/download/v1.8.0-alpha-aaaabbbb1234/taskctl-linux-amd64 -O /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+        cp /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234 /usr/local/bin/taskctl
+        chmod u+x /usr/local/bin/taskctl
+      shell: bash
+    - name: gha_infra_sample-_InfraDev-_infrapipeline-_infra_init
+      id: gha_infra_sample-_InfraDev-_infrapipeline-_infra_init
+      run: taskctl run task gha:infra:sample->InfraDev->infrapipeline->infra:init
+      env:
+        BOOL: "1"
+        TF_DIR: foo/bar
+    - name: gha_infra_sample-_InfraDev-_infrapipeline-_infra_plan
+      id: gha_infra_sample-_InfraDev-_infrapipeline-_infra_plan
+      run: taskctl run task gha:infra:sample->InfraDev->infrapipeline->infra:plan
+      env:
+        BOOL: "1"
+        TF_DIR: foo/bar
+    - name: gha_infra_sample-_InfraDev-_infrapipeline-_infra_apply
+      id: gha_infra_sample-_InfraDev-_infrapipeline-_infra_apply
+      run: taskctl run task gha:infra:sample->InfraDev->infrapipeline->infra:apply
+      env:
+        TF_DIR: foo/bar
+    - name: gha_infra_sample-_InfraDev-_infrapipeline-_post_apply
+      id: gha_infra_sample-_InfraDev-_infrapipeline-_post_apply
+      run: taskctl run task gha:infra:sample->InfraDev->infrapipeline->post:apply
+    - name: gha_infra_sample-_InfraDev-_infrapipeline-_helm-_helm_test
+      id: gha_infra_sample-_InfraDev-_infrapipeline-_helm-_helm_test
+      run: taskctl run task gha:infra:sample->InfraDev->infrapipeline->helm->helm:test
+    - name: gha_infra_sample-_InfraDev-_infrapipeline-_helm-_helm_deploy
+      id: gha_infra_sample-_InfraDev-_infrapipeline-_helm-_helm_deploy
+      run: taskctl run task gha:infra:sample->InfraDev->infrapipeline->helm->helm:deploy
+    - name: gha_infra_sample-_InfraDev-_infrapipeline-_helm-_helm_notification
+      id: gha_infra_sample-_InfraDev-_infrapipeline-_helm-_helm_notification
+      run: taskctl run task gha:infra:sample->InfraDev->infrapipeline->helm->helm:notification
+    - name: gha_infra_sample-_InfraDev-_infrapipeline-_helm-_helm_docs
+      id: gha_infra_sample-_InfraDev-_infrapipeline-_helm-_helm_docs
+      run: taskctl run task gha:infra:sample->InfraDev->infrapipeline->helm->helm:docs
+    - name: gha_infra_sample-_InfraDev-_post_task
+      id: gha_infra_sample-_InfraDev-_post_task
+      run: taskctl run task gha:infra:sample->InfraDev->post:task
+  InfraProd:
+    name: InfraProd
+    needs:
+    - lint
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install taskctl
+      id: install-taskctl
+      run: |-
+        rm -rf /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+        wget https://github.com/Ensono/taskctl/releases/download/v1.8.0-alpha-aaaabbbb1234/taskctl-linux-amd64 -O /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+        cp /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234 /usr/local/bin/taskctl
+        chmod u+x /usr/local/bin/taskctl
+      shell: bash
+    - name: gha_infra_sample-_InfraProd-_infrapipeline-_infra_init
+      id: gha_infra_sample-_InfraProd-_infrapipeline-_infra_init
+      run: taskctl run task gha:infra:sample->InfraProd->infrapipeline->infra:init
+      env:
+        BOOL: "1"
+        TF_DIR: foo/bar
+    - name: gha_infra_sample-_InfraProd-_infrapipeline-_infra_plan
+      id: gha_infra_sample-_InfraProd-_infrapipeline-_infra_plan
+      run: taskctl run task gha:infra:sample->InfraProd->infrapipeline->infra:plan
+      env:
+        BOOL: "1"
+        TF_DIR: foo/bar
+    - name: gha_infra_sample-_InfraProd-_infrapipeline-_infra_apply
+      id: gha_infra_sample-_InfraProd-_infrapipeline-_infra_apply
+      run: taskctl run task gha:infra:sample->InfraProd->infrapipeline->infra:apply
+      env:
+        TF_DIR: foo/bar
+    - name: gha_infra_sample-_InfraProd-_infrapipeline-_post_apply
+      id: gha_infra_sample-_InfraProd-_infrapipeline-_post_apply
+      run: taskctl run task gha:infra:sample->InfraProd->infrapipeline->post:apply
+    - name: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_test
+      id: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_test
+      run: taskctl run task gha:infra:sample->InfraProd->infrapipeline->helm->helm:test
+    - name: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_deploy
+      id: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_deploy
+      run: taskctl run task gha:infra:sample->InfraProd->infrapipeline->helm->helm:deploy
+    - name: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_notification
+      id: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_notification
+      run: taskctl run task gha:infra:sample->InfraProd->infrapipeline->helm->helm:notification
+    - name: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_docs
+      id: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_docs
+      run: taskctl run task gha:infra:sample->InfraProd->infrapipeline->helm->helm:docs
+    - name: gha_infra_sample-_InfraProd-_post_task
+      id: gha_infra_sample-_InfraProd-_post_task
+      run: taskctl run task gha:infra:sample->InfraProd->post:task
+  post_dev:
+    name: post_dev
+    needs:
+    - InfraDev
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install taskctl
+      id: install-taskctl
+      run: |-
+        rm -rf /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+        wget https://github.com/Ensono/taskctl/releases/download/v1.8.0-alpha-aaaabbbb1234/taskctl-linux-amd64 -O /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+        cp /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234 /usr/local/bin/taskctl
+        chmod u+x /usr/local/bin/taskctl
+      shell: bash
+    - name: gha_infra_sample-_post_task
+      id: gha_infra_sample-_post_task
+      run: taskctl run task gha:infra:sample->post:task
+    env:
+      ENV_NAME: nonprod
+  post_prod:
+    name: post_prod
+    needs:
+    - InfraProd
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install taskctl
+      id: install-taskctl
+      run: |-
+        rm -rf /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+        wget https://github.com/Ensono/taskctl/releases/download/v1.8.0-alpha-aaaabbbb1234/taskctl-linux-amd64 -O /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234
+        cp /tmp/taskctl-linux-amd64-v1.8.0-alpha-aaaabbbb1234 /usr/local/bin/taskctl
+        chmod u+x /usr/local/bin/taskctl
+      shell: bash
+    - name: gha_infra_sample-_post_task
+      id: gha_infra_sample-_post_task
+      run: taskctl run task gha:infra:sample->post:task
+    env:
+      ENV_NAME: prod
+env:
+  SOME_TOKEN_FOR_APP1: ${{ secrets.FOO_BAR_Secret }}
+  TASKCTL_CONFIG_FILE: cmd/taskctl/testdata/gha.samle.yml

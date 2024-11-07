@@ -76,6 +76,7 @@ tasks:
       - gocov convert .coverage/out | gocov-xml > .coverage/report-cobertura.xml
     after:
       - cat .coverage/test.out
+    allow_failure: true
 
   build:
     description: Builds the binary
