@@ -13,12 +13,15 @@ func TestGenCi_GithubImpl(t *testing.T) {
 	sp, _ := scheduler.NewExecutionGraph("foo",
 		scheduler.NewStage("s1", func(s *scheduler.Stage) {
 			s.Pipeline, _ = scheduler.NewExecutionGraph("dev",
-				scheduler.NewStage("one", func(s *scheduler.Stage) {
+				scheduler.NewStage("sub-one", func(s *scheduler.Stage) {
 					s.Task = task.NewTask("t2")
 				}))
+			s.Generator = map[string]any{"github": map[string]any{"if": "condition1 != false", "environment": "some-env", "runs-on": "my-own-stuff"}}
 		}),
-		scheduler.NewStage("s2", func(s *scheduler.Stage) {
-			s.Task = task.NewTask("t3")
+		scheduler.NewStage("t3", func(s *scheduler.Stage) {
+			ts1 := task.NewTask("t3")
+			ts1.Generator = map[string]any{"github": map[string]any{"if": "condition2 != false"}}
+			s.Task = ts1
 			s.DependsOn = []string{"s1"}
 		}))
 
@@ -30,7 +33,7 @@ func TestGenCi_GithubImpl(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to generate github, %v\n", err)
 	}
-	b, err := gc.Convert(&scheduler.ExecutionGraph{})
+	b, err := gc.Convert(sp)
 	if err != nil {
 		t.Fatal(err)
 	}

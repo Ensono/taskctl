@@ -104,6 +104,7 @@ func (t *Task) FromTask(task *Task) {
 	t.Condition = task.Condition
 	t.Artifacts = task.Artifacts
 	t.Description = task.Description
+	t.Generator = task.Generator
 	// merge vars
 	t.Env = t.Env.Merge(task.Env)
 	t.Variables = t.Variables.Merge(task.Variables)

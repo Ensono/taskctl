@@ -10,7 +10,6 @@ import (
 	"github.com/Ensono/taskctl/internal/schema"
 	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/scheduler"
-	"github.com/Ensono/taskctl/pkg/task"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
@@ -106,15 +105,15 @@ chmod u+x /usr/local/bin/taskctl`,
 	})
 }
 
-func convertTaskToStep(task *task.Task) *schema.GithubStep {
+func convertTaskToStep(node *scheduler.Stage) *schema.GithubStep {
 
 	step := &schema.GithubStep{
-		Name: ghaNameConverter(task.Name),
-		ID:   ghaNameConverter(task.Name),
-		Run:  fmt.Sprintf("taskctl run task %s", task.Name),
-		Env:  task.Env.Map(),
+		Name: ghaNameConverter(node.Name),
+		ID:   ghaNameConverter(node.Name),
+		Run:  fmt.Sprintf("taskctl run task %s", utils.TailExtract(node.Task.Name)),
+		Env:  node.Env().Merge(node.Task.Env).Map(),
 	}
-	if gh, err := extractGeneratorMetadata[schema.GithubStep](GitHubCITarget, task.Generator); err == nil {
+	if gh, err := extractGeneratorMetadata[schema.GithubStep](GitHubCITarget, node.Generator); err == nil {
 		if gh.If != "" {
 			step.If = gh.If
 		}
@@ -130,7 +129,7 @@ func flattenTasksInPipeline(job *schema.GithubJob, graph *scheduler.ExecutionGra
 			flattenTasksInPipeline(job, node.Pipeline)
 		}
 		if node.Task != nil {
-			_ = job.AddStep(convertTaskToStep(node.Task))
+			_ = job.AddStep(convertTaskToStep(node))
 		}
 	}
 }
@@ -152,7 +151,7 @@ func jobLooper(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph
 			flattenTasksInPipeline(job, node.Pipeline)
 		}
 		if node.Task != nil {
-			_ = job.AddStep(convertTaskToStep(node.Task))
+			_ = job.AddStep(convertTaskToStep(node))
 		}
 
 		// These are top level jobs only
