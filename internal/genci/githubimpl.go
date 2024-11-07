@@ -112,7 +112,7 @@ func convertTaskToStep(task *task.Task) *schema.GithubStep {
 		Name: ghaNameConverter(task.Name),
 		ID:   ghaNameConverter(task.Name),
 		Run:  fmt.Sprintf("taskctl run task %s", task.Name),
-		Env:  utils.ConvertToMapOfStrings(task.Env.Map()),
+		Env:  task.Env.Map(),
 	}
 	if gh, err := extractGeneratorMetadata[schema.GithubStep](GitHubCITarget, task.Generator); err == nil {
 		if gh.If != "" {
@@ -143,7 +143,7 @@ func jobLooper(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph
 		job := &schema.GithubJob{
 			Name:   jobName,
 			RunsOn: "ubuntu-24.04",
-			Env:    utils.ConvertToMapOfStrings(node.Env().Map()),
+			Env:    node.Env().Map(),
 		}
 		// Add defaults
 		addDefaultStepsToJob(job)

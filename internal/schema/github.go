@@ -65,16 +65,16 @@ type GithubInput struct {
 
 // Job represents a job in the GitHub workflow.
 type GithubJob struct {
-	Name           string            `json:"name,omitempty" yaml:"name,omitempty"`
-	Needs          []string          `json:"needs,omitempty" yaml:"needs,omitempty"`
-	RunsOn         string            `json:"runs-on,omitempty" yaml:"runs-on,omitempty"`
-	Container      *GithubContainer  `json:"container,omitempty" yaml:"container,omitempty"`
-	Steps          []*GithubStep     `json:"steps,omitempty" yaml:"steps,omitempty"`
-	If             string            `json:"if,omitempty" yaml:"if,omitempty"`
-	Env            map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
-	Environment    string            `json:"environment,omitempty" yaml:"environment,omitempty"`
-	TimeoutMinutes int               `json:"timeout-minutes,omitempty" yaml:"timeout_minutes,omitempty"`
-	Strategy       *GithubStrategy   `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+	Name           string           `json:"name,omitempty" yaml:"name,omitempty"`
+	Needs          []string         `json:"needs,omitempty" yaml:"needs,omitempty"`
+	RunsOn         string           `json:"runs-on,omitempty" yaml:"runs-on,omitempty"`
+	Container      *GithubContainer `json:"container,omitempty" yaml:"container,omitempty"`
+	Steps          []*GithubStep    `json:"steps,omitempty" yaml:"steps,omitempty"`
+	If             string           `json:"if,omitempty" yaml:"if,omitempty"`
+	Env            map[string]any   `json:"env,omitempty" yaml:"env,omitempty"`
+	Environment    string           `json:"environment,omitempty" yaml:"environment,omitempty"`
+	TimeoutMinutes int              `json:"timeout-minutes,omitempty" yaml:"timeout_minutes,omitempty"`
+	Strategy       *GithubStrategy  `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 }
 
 var ErrMustIncludeSubComponents = errors.New("must include at least one")
@@ -110,7 +110,7 @@ type GithubStep struct {
 	Uses            string            `json:"uses,omitempty" yaml:"uses,omitempty"`
 	Run             string            `json:"run,omitempty" yaml:"run,omitempty"`
 	With            map[string]string `json:"with,omitempty" yaml:"with,omitempty"`
-	Env             map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
+	Env             map[string]any    `json:"env,omitempty" yaml:"env,omitempty"`
 	Shell           string            `json:"shell,omitempty" yaml:"shell,omitempty"`
 	ContinueOnError bool              `json:"continue-on-error,omitempty" yaml:"continue_on_error,omitempty"`
 	TimeoutMinutes  int               `json:"timeout-minutes,omitempty" yaml:"timeout_minutes,omitempty"`
