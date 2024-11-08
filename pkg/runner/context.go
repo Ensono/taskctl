@@ -20,7 +20,7 @@ import (
 var (
 	// define a list of environment variable names that are not permitted
 	invalidEnvVarKeys = []string{
-		"",                              //skip any empty key names
+		"",                              // skip any empty key names
 		`!::`, `=::`, `::=::`, `::=::\`, // this is found in a cygwin environment
 	}
 )
@@ -57,14 +57,6 @@ func NewExecutionContext(executable *utils.Binary, dir string,
 	env *variables.Variables, envfile *utils.Envfile, up, down, before, after []string,
 	options ...ExecutionContextOption) *ExecutionContext {
 	c := &ExecutionContext{
-		Executable: executable,
-		Env:        env,
-		Envfile:    envfile,
-		Dir:        dir,
-		up:         up,
-		down:       down,
-		before:     before,
-		after:      after,
 		// mu is a pointer to a mutex
 		// so that it's shared across all
 		// the instances that are using the given ExecutionContext
@@ -75,6 +67,15 @@ func NewExecutionContext(executable *utils.Binary, dir string,
 	for _, o := range options {
 		o(c)
 	}
+
+	c.Executable = executable
+	c.Env = env
+	c.Envfile = envfile
+	c.Dir = dir
+	c.up = up
+	c.down = down
+	c.before = before
+	c.after = after
 
 	return c
 }

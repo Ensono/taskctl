@@ -18,7 +18,7 @@ ci_meta:
             - main
             - master
       env:
-        TASKCTL_CONFIG_FILE: cmd/taskctl/testdata/gha.samle.yml
+        TASKCTL_CONFIG_FILE: cmd/taskctl/testdata/gha.sample.yml
         SOME_TOKEN_FOR_APP1: ${{ secrets.FOO_BAR_Secret }} # coming from the "native" GHA implementation
 
 contexts:

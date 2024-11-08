@@ -10,7 +10,6 @@ import (
 	"github.com/Ensono/taskctl/internal/schema"
 	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/scheduler"
-	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -105,6 +104,24 @@ chmod u+x /usr/local/bin/taskctl`,
 	})
 }
 
+func addStepsToTopLevelJob(job *schema.GithubJob, node *scheduler.Stage) {
+	if node.Pipeline != nil {
+		flattenTasksInPipeline(job, node.Pipeline)
+	}
+	if node.Task != nil {
+		_ = job.AddStep(convertTaskToStep(node))
+	}
+
+	// These are top level jobs only
+	for _, v := range node.DependsOn {
+		job.Needs = append(
+			job.Needs,
+			// reference it the same way it was set
+			ghaNameConverter(utils.TailExtract(v)),
+		)
+	}
+}
+
 func convertTaskToStep(node *scheduler.Stage) *schema.GithubStep {
 
 	step := &schema.GithubStep{
@@ -147,25 +164,10 @@ func jobLooper(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph
 		// Add defaults
 		addDefaultStepsToJob(job)
 
-		if node.Pipeline != nil {
-			flattenTasksInPipeline(job, node.Pipeline)
-		}
-		if node.Task != nil {
-			_ = job.AddStep(convertTaskToStep(node))
-		}
-
-		// These are top level jobs only
-		for _, v := range node.DependsOn {
-			job.Needs = append(
-				job.Needs,
-				// reference it the same way it was set
-				ghaNameConverter(utils.TailExtract(v)),
-			)
-		}
+		addStepsToTopLevelJob(job, node)
 
 		gh, err := extractGeneratorMetadata[schema.GithubJob](GitHubCITarget, node.Generator)
 		if gh != nil && err == nil {
-			logrus.Debugf("")
 			if gh.If != "" {
 				job.If = gh.If
 			}

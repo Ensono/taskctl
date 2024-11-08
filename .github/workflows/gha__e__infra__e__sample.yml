@@ -215,4 +215,4 @@ jobs:
       ENV_NAME: nonprod
 env:
   SOME_TOKEN_FOR_APP1: ${{ secrets.FOO_BAR_Secret }}
-  TASKCTL_CONFIG_FILE: cmd/taskctl/testdata/gha.samle.yml
+  TASKCTL_CONFIG_FILE: cmd/taskctl/testdata/gha.sample.yml
