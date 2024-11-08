@@ -83,21 +83,23 @@ jobs:
       env:
         ENV_NAME: prod
         SOME_TOKEN_FOR_APP1: overwritten_in_CI_by_ci_specific_secret
-    - name: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_docs
-      id: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_docs
-      run: taskctl run task helm:docs
-      env:
-        ENV_NAME: prod
-        SOME_TOKEN_FOR_APP1: overwritten_in_CI_by_ci_specific_secret
     - name: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_notification
       id: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_notification
       run: taskctl run task helm:notification
       env:
         ENV_NAME: prod
         SOME_TOKEN_FOR_APP1: overwritten_in_CI_by_ci_specific_secret
+    - name: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_docs
+      id: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_docs
+      run: taskctl run task helm:docs
+      env:
+        ENV_NAME: prod
+        SOME_TOKEN_FOR_APP1: overwritten_in_CI_by_ci_specific_secret
     - name: gha_infra_sample-_InfraProd-_post_task
       id: gha_infra_sample-_InfraProd-_post_task
       run: taskctl run task post:task
+    if: github.ref == 'refs/heads/main'
+    environment: prod
   InfraDev:
     name: InfraDev
     needs:
@@ -169,6 +171,8 @@ jobs:
     - name: gha_infra_sample-_InfraDev-_post_task
       id: gha_infra_sample-_InfraDev-_post_task
       run: taskctl run task post:task
+    if: github.ref != 'refs/heads/main'
+    environment: nonprod
   post_prod:
     name: post_prod
     needs:

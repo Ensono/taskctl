@@ -122,7 +122,7 @@ type PipelineDefinition struct {
 	// Variables is the Key: Value map of vars vars to inject into the tasks
 	Variables EnvVarMapType `mapstructure:"variables" yaml:"variables,omitempty" json:"variables,omitempty"`
 	// Generator PipelineLevel
-	Generator map[string]any `yaml:"ci_meta,omitempty" json:"ci_meta,omitempty"`
+	Generator map[string]any `mapstructure:"ci_meta,omitempty" yaml:"ci_meta,omitempty" json:"ci_meta,omitempty"`
 }
 
 type Generator struct {
@@ -166,7 +166,7 @@ type TaskDefinition struct {
 	// Currently only applies to a default executor and when run in variations.
 	ResetContext bool `mapstructure:"reset_context" yaml:"reset_context,omitempty" json:"reset_context,omitempty" jsonschema:"default=false"`
 	// Generator is the CI meta properties that will only be used during a generate process
-	Generator map[string]any `yaml:"ci_meta,omitempty" json:"ci_meta,omitempty"`
+	Generator map[string]any `mapstructure:"ci_meta,omitempty" yaml:"ci_meta,omitempty" json:"ci_meta,omitempty"`
 }
 
 type WatcherDefinition struct {
