@@ -4,9 +4,9 @@ Generate a CI yaml file(s) - [the initial discussion](https://github.com/Ensono/
 
 ## Internals
 
-The internal execution graph can be thought of as a unary tree with nodes (Stages), the root will be a taskctl "pipeline".
+The internal execution graph can be thought of as an n-ary tree with nodes (Stages), the root will be a taskctl "pipeline".
 
-Where a pipeline can a collection of tasks that are executed in parallel or in an order set by the `depends on` keyword.
+Where a pipeline can be a collection of tasks that are executed in parallel or in an order set by the `depends on` keyword.
 
 ```mermaid
 flowchart TD
@@ -38,3 +38,16 @@ flowchart TD
     C -->|Taskctl| E[Step2 - Github]
     C -->|Taskctl| F[Step3 - Github]
 ```
+
+## Supported Generators
+
+The list of supported generators will grow as more are added. To add an additional "generator", one needs to follow the existing strategy pattern in the [genci package](../internal/genci/genci.go), see example [githubimpl](../internal/genci/githubimpl.go) for an example (still in beta).
+
+Currently implemented:
+
+    - Github
+    - ...
+
+## Sample outputs
+
+[GHA sample](../.github/workflows/gha__e__infra__e__sample.yml)
