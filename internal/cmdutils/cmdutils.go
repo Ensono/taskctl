@@ -28,7 +28,7 @@ func DisplayTaskSelection(conf *config.Config, showPipelineOnly bool) (taskOrPip
 	}
 	if !showPipelineOnly {
 		for _, task := range conf.Tasks {
-			optionMap = append(optionMap, huh.NewOption(fmt.Sprintf("%s - %s", task.Name, fmt.Sprintf(GREY_TERMINAL, task.Description)), task.Name)) // fmt.Sprintf("Task: %s", task.Name)
+			optionMap = append(optionMap, huh.NewOption(fmt.Sprintf("%s - %s", task.Name, fmt.Sprintf(GREY_TERMINAL, task.Description)), task.Name))
 		}
 	}
 

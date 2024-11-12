@@ -9,9 +9,7 @@ import (
 	"github.com/Ensono/taskctl/internal/config"
 	"github.com/Ensono/taskctl/internal/genci"
 	"github.com/Ensono/taskctl/internal/utils"
-
 	"github.com/spf13/cobra"
-	// yamlv3 "gopkg.in/yaml.v3"
 )
 
 type generateFlags struct {
@@ -33,9 +31,6 @@ func newGenerateCmd(rootCmd *TaskCtlCmd) {
 			if err != nil {
 				return err
 			}
-			// if len(f.targetTyp) == 0 {
-			// 	return fmt.Errorf("target ")
-			// }
 			// display selector if nothing is supplied
 			if len(args) == 0 {
 				selected, err := cmdutils.DisplayTaskSelection(conf, true)

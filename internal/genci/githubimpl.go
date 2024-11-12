@@ -18,7 +18,6 @@ var ErrInvalidCiMeta = errors.New("CI meta is invalid")
 // githubCiImpl is the implementation of GHA pipeline generation from TaskCtl ExecutionGraph
 // The graph has to be denormalized to ensure that all env variables are correctly cascaded to the tasks
 type githubCiImpl struct {
-	// TODO: internal props
 	taskctlVersion string
 	conf           *config.Config
 	pipeline       *scheduler.ExecutionGraph

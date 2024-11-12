@@ -26,8 +26,6 @@ var (
 	ErrFailedImplementationInit = errors.New("failed to initialise the implementation")
 )
 
-// const taskctlVersion string = "v1.8."
-
 type CITarget string
 
 const (
@@ -56,6 +54,7 @@ type GenCiIface interface {
 type Opts func(*GenCi)
 
 func New(implTyp CITarget, conf *config.Config, opts ...Opts) (*GenCi, error) {
+	// Pass in the version from config or set default the current binary Version
 	gci := &GenCi{
 		implTyp: implTyp,
 	}
@@ -67,9 +66,9 @@ func New(implTyp CITarget, conf *config.Config, opts ...Opts) (*GenCi, error) {
 			return nil, fmt.Errorf("%w, %v", ErrFailedImplementationInit, err)
 		}
 		gci.implementation = gh
+	// Add new cases here with their implementation
 	// case GitlabCITarget:
 	// 	gci.implementation = &DefualtCiImpl{}
-	// TODO: add more here
 	default:
 		return nil, fmt.Errorf("%s, %w", implTyp, ErrImplementationNotExist)
 	}

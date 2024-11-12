@@ -56,18 +56,13 @@ type Task struct {
 	Description string
 	// internal fields updated by a mutex
 	// only used with the single instance of the task
-	mu       sync.Mutex // guards the below private fields
-	start    time.Time
-	end      time.Time
-	skipped  bool
-	exitCode int16
-	errored  bool
-	errorVal error
-	// Log      struct {
-	// 	Stderr *bytes.Buffer
-	// 	Stdout *bytes.Buffer
-	// }
-	// Generator Task Level
+	mu        sync.Mutex // guards the below private fields
+	start     time.Time
+	end       time.Time
+	skipped   bool
+	exitCode  int16
+	errored   bool
+	errorVal  error
 	Generator map[string]any
 }
 
@@ -80,13 +75,6 @@ func NewTask(name string) *Task {
 		exitCode:  -1,
 		errored:   false,
 		mu:        sync.Mutex{},
-		// Log: struct {
-		// 	Stderr *bytes.Buffer
-		// 	Stdout *bytes.Buffer
-		// }{
-		// 	Stderr: &bytes.Buffer{},
-		// 	Stdout: &bytes.Buffer{},
-		// },
 	}
 }
 
@@ -105,14 +93,12 @@ func (t *Task) FromTask(task *Task) {
 	t.Artifacts = task.Artifacts
 	t.Description = task.Description
 	t.Generator = task.Generator
-	// merge vars
+	// merge vars from preceeding higher contexts
 	t.Env = t.Env.Merge(task.Env)
 	t.Variables = t.Variables.Merge(task.Variables)
 
 }
 
-// Withers
-// start  time.Time
 func (t *Task) WithStart(start time.Time) *Task {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -126,7 +112,6 @@ func (t *Task) Start() time.Time {
 	return t.start
 }
 
-// end      time.Time
 func (t *Task) WithEnd(end time.Time) *Task {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -140,7 +125,6 @@ func (t *Task) End() time.Time {
 	return t.end
 }
 
-// skipped  bool
 func (t *Task) WithSkipped(val bool) *Task {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -211,12 +195,6 @@ func (t *Task) ErrorMessage() string {
 		return ""
 	}
 	return t.Error().Error()
-
-	// if t.Log.Stderr.Len() > 0 {
-	// 	return utils.LastLine(t.Log.Stderr)
-	// }
-
-	// return utils.LastLine(t.Error())
 }
 
 // WithEnv sets environment variable
@@ -237,7 +215,8 @@ func (t *Task) GetVariations() []map[string]string {
 }
 
 // Output returns task's stdout as a string
+//
+// This is left as a legacy method for now. will be removed in the stable 2.x versions
 func (t *Task) Output() string {
-	// return t.Log.Stdout.String()
 	return ""
 }

@@ -9,13 +9,12 @@ import (
 
 // Workflow represents the root of a GitHub workflow file.
 type GithubWorkflow struct {
-	Name string               `json:"name,omitempty" yaml:"name,omitempty"`
-	On   *GithubTriggerEvents `json:"on" yaml:"on"`
-	Jobs yaml.MapSlice        `json:"jobs" yaml:"jobs"`
-	// Jobs        yaml.Node         `json:"jobs" yaml:"jobs"`
-	Defaults    *GithubDefaults   `json:"defaults,omitempty" yaml:"defaults,omitempty"`
-	Env         map[string]any    `json:"env,omitempty" yaml:"env,omitempty"`
-	Permissions map[string]string `json:"permissions,omitempty" yaml:"permissions,omitempty"`
+	Name        string               `json:"name,omitempty" yaml:"name,omitempty"`
+	On          *GithubTriggerEvents `json:"on" yaml:"on"`
+	Jobs        yaml.MapSlice        `json:"jobs" yaml:"jobs"`
+	Defaults    *GithubDefaults      `json:"defaults,omitempty" yaml:"defaults,omitempty"`
+	Env         map[string]any       `json:"env,omitempty" yaml:"env,omitempty"`
+	Permissions map[string]string    `json:"permissions,omitempty" yaml:"permissions,omitempty"`
 }
 
 // TriggerEvents represents the trigger events for the GitHub workflow.
