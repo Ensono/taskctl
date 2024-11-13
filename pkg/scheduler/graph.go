@@ -18,9 +18,14 @@ const (
 	RootNodeName = "root"
 )
 
+type GraphError struct {
+	stage *Stage
+	err   error
+}
+
 // ExecutionGraph is a DAG whose nodes are Stages and edges are their dependencies
 type ExecutionGraph struct {
-	error
+	errors    []GraphError
 	Generator map[string]any
 	Env       map[string]string
 	name      string
@@ -47,6 +52,7 @@ func NewExecutionGraph(name string, stages ...*Stage) (*ExecutionGraph, error) {
 	nodes := map[string]*Stage{RootNodeName: rootNode}
 
 	graph := &ExecutionGraph{
+		errors:   []GraphError{},
 		nodes:    nodes,
 		name:     name,
 		parent:   make(map[string][]string),
@@ -214,9 +220,29 @@ func (g *ExecutionGraph) cycleDfs(node string, visited map[string]bool, inStack 
 	return nil
 }
 
+func (g *ExecutionGraph) WithStageError(stage *Stage, err error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.errors = append(g.errors)
+}
+
 // LastError returns latest error appeared during stages execution
 func (g *ExecutionGraph) LastError() error {
-	return g.error
+	if len(g.errors) > 0 {
+		return g.errors[len(g.errors)-1].err
+	}
+	return nil
+}
+
+func (g *ExecutionGraph) Error() error {
+	if len(g.errors) > 0 {
+		es := ""
+		for _, v := range g.errors {
+			es += fmt.Sprintf("stage: %s\nerror: %v\n", v.stage.Name, v.err)
+		}
+		return fmt.Errorf(es)
+	}
+	return nil
 }
 
 // Name returns the name of the graph

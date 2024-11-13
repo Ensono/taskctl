@@ -91,9 +91,9 @@ func (s *Scheduler) Schedule(g *ExecutionGraph) error {
 				err := s.runStage(stage)
 				if err != nil {
 					stage.UpdateStatus(StatusError)
-
 					if !stage.AllowFailure {
-						g.error = err
+						// Store error
+						g.WithStageError(stage, err)
 						return
 					}
 				}
