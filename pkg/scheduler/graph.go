@@ -14,6 +14,7 @@ var (
 	ErrCycleDetected = errors.New("cycle detected")
 	// ErrNodeNotFound occurs when node is not found in the graph
 	ErrNodeNotFound = errors.New("node not found")
+	ErrRunTimeFault = errors.New("task execution fault")
 )
 
 const (
@@ -243,7 +244,7 @@ func (g *ExecutionGraph) Error() error {
 		for _, v := range g.errors {
 			es += fmt.Sprintf("stage: %s\nerror: %v\n", v.stage.Name, v.err)
 		}
-		return fmt.Errorf(es)
+		return fmt.Errorf("%w, %q", ErrRunTimeFault, es)
 	}
 	return nil
 }
