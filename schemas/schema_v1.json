@@ -238,7 +238,7 @@
       "properties": {
         "generate": {
           "type": "boolean",
-          "description": "Generate will toggle the creation of the envFile\nthis \"envFile\" is only used in executables of type `docker|podman`"
+          "description": "Generate will toggle the creation of the envfile inside a Context context\nwhen the context is `docker|podman`.\n\nWhen used inside a Task context this is Generate is ignored."
         },
         "exclude": {
           "items": {
@@ -255,7 +255,7 @@
         },
         "path": {
           "type": "string",
-          "description": "Path is generated using task name and current timestamp\nTODO: include additional graph info about the execution\ne.g. owning pipeline (if any) execution number"
+          "description": "Path points to the file to read in and compute using the modify/include/exclude instructions."
         },
         "replace_char": {
           "type": "string"
