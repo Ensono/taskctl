@@ -84,10 +84,19 @@ func (vars *Variables) Merge(src *Variables) *Variables {
 }
 
 func (vars *Variables) MergeV2(src *Variables) *Variables {
-	for k, v := range src.Map() {
-		vars.Set(k, v)
+	dst := &Variables{}
+
+	if vars != nil {
+		for k, v := range vars.Map() {
+			dst.Set(k, v)
+		}
 	}
-	return vars
+
+	for k, v := range src.Map() {
+		dst.Set(k, v)
+	}
+
+	return dst
 }
 
 // With creates new container and sets key to given value

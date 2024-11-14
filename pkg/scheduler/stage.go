@@ -100,7 +100,7 @@ func (s *Stage) FromStage(originalStage *Stage, existingGraph *ExecutionGraph, a
 }
 
 func (s *Stage) WithEnv(v *variables.Variables) {
-	s.env.MergeV2(v)
+	s.env = s.env.Merge(v)
 }
 
 func (s *Stage) Env() *variables.Variables {
@@ -108,7 +108,7 @@ func (s *Stage) Env() *variables.Variables {
 }
 
 func (s *Stage) WithVariables(v *variables.Variables) {
-	s.variables.MergeV2(v)
+	s.variables = s.variables.Merge(v)
 }
 
 func (s *Stage) Variables() *variables.Variables {

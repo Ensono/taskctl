@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/variables"
 )
 
@@ -39,6 +40,7 @@ type Task struct {
 	Commands     []string // Commands to run
 	Context      string
 	Env          *variables.Variables
+	EnvFile      *utils.Envfile
 	Variables    *variables.Variables
 	Variations   []map[string]string
 	Dir          string
@@ -93,10 +95,10 @@ func (t *Task) FromTask(task *Task) {
 	t.Artifacts = task.Artifacts
 	t.Description = task.Description
 	t.Generator = task.Generator
+	t.EnvFile = task.EnvFile
 	// merge vars from preceeding higher contexts
 	t.Env = t.Env.Merge(task.Env)
 	t.Variables = t.Variables.Merge(task.Variables)
-
 }
 
 func (t *Task) WithStart(start time.Time) *Task {

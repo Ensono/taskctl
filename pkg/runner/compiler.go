@@ -36,11 +36,11 @@ func (tc *TaskCompiler) CompileTask(t *task.Task, executionContext *ExecutionCon
 			continue
 		}
 
-		v, err := utils.RenderString(v.(string), vars.Map())
+		renderedStr, err := utils.RenderString(v.(string), vars.Map())
 		if err != nil {
 			return nil, err
 		}
-		vars.Set(k, v)
+		vars.Set(k, renderedStr)
 	}
 
 	// creating multiple versions of the same task with different env input

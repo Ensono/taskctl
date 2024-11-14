@@ -19,7 +19,7 @@ ci_meta:
             - master
       env:
         TASKCTL_CONFIG_FILE: cmd/taskctl/testdata/gha.sample.yml
-        SOME_TOKEN_FOR_APP1: ${{ secrets.FOO_BAR_Secret }} # coming from the "native" GHA implementation
+        GLOBAL_VAR1: globVar1_foo
 
 contexts:
   podman:
@@ -158,6 +158,11 @@ tasks:
       - echo "installing taskctl"
 
   infra:init:
+    description: |
+      multi line 
+
+      desc goes here
+      
     command:
       - | 
         for i in $(seq 1 2); do

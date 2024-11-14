@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/Ensono/taskctl/internal/utils"
 )
 
 var (
@@ -28,6 +30,7 @@ type ExecutionGraph struct {
 	errors    []GraphError
 	Generator map[string]any
 	Env       map[string]string
+	EnvFile   *utils.Envfile
 	name      string
 	alias     string
 	nodes     map[string]*Stage
@@ -223,7 +226,7 @@ func (g *ExecutionGraph) cycleDfs(node string, visited map[string]bool, inStack 
 func (g *ExecutionGraph) WithStageError(stage *Stage, err error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	g.errors = append(g.errors)
+	g.errors = append(g.errors, GraphError{stage: stage, err: err})
 }
 
 // LastError returns latest error appeared during stages execution
