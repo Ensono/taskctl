@@ -148,7 +148,11 @@ func (r *TaskRunner) Run(t *task.Task) error {
 	env := r.env.Merge(execContext.Env)
 	env = env.With("TASK_NAME", t.Name)
 	env = env.Merge(t.Env)
-
+	// denormalized graph will append all ancestral env keys to the task
+	// if task also includes an envfile property
+	// We need to read it in and hang on the env for the command compiler.
+	// TODO: add envfile reader here
+	// t.EnvFile.Path
 	meets, err := r.checkTaskCondition(t)
 	if err != nil {
 		return err
@@ -274,7 +278,12 @@ func (r *TaskRunner) after(ctx context.Context, t *task.Task, env, vars *variabl
 	return nil
 }
 
+// contextForTask initializes a default or returns an initialized context from config.
+//
+// It checks whether there is a `.taskctl.env` in the cwd if so it ingests it
+// and merges with the specified env.
 func (r *TaskRunner) contextForTask(t *task.Task) (c *ExecutionContext, err error) {
+
 	if t.Context == "" {
 		c = DefaultContext()
 	} else {
@@ -297,6 +306,8 @@ func (r *TaskRunner) contextForTask(t *task.Task) (c *ExecutionContext, err erro
 		return nil, err
 	}
 
+	// This will be run at every task start allowing dynamic changes
+	c.Env = c.Env.Merge(utils.DefaultTaskctlEnv())
 	return c, nil
 }
 

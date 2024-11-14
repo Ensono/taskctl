@@ -37,16 +37,14 @@ type ExecutionContext struct {
 	// when passed to another executable, e.g. docker
 	Quote string
 
-	up     []string
-	down   []string
-	before []string
-	after  []string
-
+	up           []string
+	down         []string
+	before       []string
+	after        []string
 	startupError error
-
-	onceUp   sync.Once
-	onceDown sync.Once
-	mu       *sync.Mutex
+	onceUp       sync.Once
+	onceDown     sync.Once
+	mu           *sync.Mutex
 }
 
 // ExecutionContextOption is a functional option to configure ExecutionContext

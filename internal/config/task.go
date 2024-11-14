@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/variables"
 
 	"github.com/Ensono/taskctl/pkg/task"
@@ -24,6 +25,16 @@ func buildTask(def *TaskDefinition, lc *loaderContext) (*task.Task, error) {
 	t.ResetContext = def.ResetContext
 
 	t.Env = variables.FromMap(def.Env).Merge(t.Env)
+	t.EnvFile = utils.NewEnvFile(func(e *utils.Envfile) {
+		if def.Envfile != nil {
+			e.Exclude = def.Envfile.Exclude
+			e.Include = def.Envfile.Include
+			e.Modify = def.Envfile.Modify
+			e.Path = def.Envfile.Path
+			e.Quote = def.Envfile.Quote
+			e.ReplaceChar = def.Envfile.ReplaceChar
+		}
+	})
 	t.Variables = variables.FromMap(def.Variables).Merge(t.Variables)
 
 	t.Dir = def.Dir

@@ -81,6 +81,17 @@ func (s *Stage) FromStage(originalStage *Stage, existingGraph *ExecutionGraph, a
 		tsk := task.NewTask(utils.CascadeName(ancestralParents, originalStage.Task.Name))
 		tsk.FromTask(originalStage.Task)
 		tsk.Env = tsk.Env.Merge(variables.FromMap(existingGraph.Env))
+
+		tsk.EnvFile = utils.NewEnvFile(func(e *utils.Envfile) {
+			if tsk.EnvFile != nil {
+				e.Exclude = tsk.EnvFile.Exclude
+				e.Include = tsk.EnvFile.Include
+				e.Modify = tsk.EnvFile.Modify
+				e.Path = tsk.EnvFile.Path
+				e.Quote = tsk.EnvFile.Quote
+				e.ReplaceChar = tsk.EnvFile.ReplaceChar
+			}
+		})
 		s.Task = tsk
 	}
 	if originalStage.Pipeline != nil {
