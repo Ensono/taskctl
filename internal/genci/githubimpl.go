@@ -10,6 +10,7 @@ import (
 	"github.com/Ensono/taskctl/internal/schema"
 	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/scheduler"
+	"github.com/Ensono/taskctl/pkg/variables"
 	"gopkg.in/yaml.v2"
 )
 
@@ -133,6 +134,13 @@ func convertTaskToStep(node *scheduler.Stage) *schema.GithubStep {
 		if gh.If != "" {
 			step.If = gh.If
 		}
+		// if env is specified on this level we want to overwrite it
+		if gh.Env != nil {
+			step.Env = node.Env().
+				Merge(node.Task.Env).
+				Merge(variables.FromMap(utils.ConvertToMapOfStrings(gh.Env))).
+				Map()
+		}
 	}
 	return step
 }
@@ -175,6 +183,12 @@ func jobLooper(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph
 			}
 			if gh.RunsOn != "" {
 				job.RunsOn = gh.RunsOn
+			}
+			if gh.Env != nil {
+				// merge top level pipeline env vars into the top level GHA Job
+				job.Env = node.Env().
+					Merge(variables.FromMap(utils.ConvertToMapOfStrings(gh.Env))).
+					Map()
 			}
 		}
 		ciyaml.Jobs = append(ciyaml.Jobs, yaml.MapItem{Key: jobName, Value: job})
