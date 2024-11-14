@@ -63,9 +63,9 @@ type Envfile struct {
 	// defaults to .taskctl in the current directory
 	// again this should be hidden from the user...
 	GeneratedDir string `mapstructure:"generated_dir" yaml:"generated_dir,omitempty" json:"generated_dir,omitempty"`
-	// mutex is not copieable - during denormalization we create a new instance 
-	// during generate the paths will be different 
-	// during read it is if path is provided 
+	// mutex is not copieable - during denormalization we create a new instance
+	// during generate the paths will be different
+	// during read it is if path is provided
 	mu sync.Mutex
 }
 
@@ -111,7 +111,6 @@ func NewEnvFile(opts ...EnvFileOpts) *Envfile {
 	e.mu = sync.Mutex{}
 	return e
 }
-
 
 func (e *Envfile) WithPath(path string) *Envfile {
 	e.mu.Lock()
@@ -257,6 +256,20 @@ func MustGetUserHomeDir() string {
 	}
 
 	return hd
+}
+
+// ReaderFromPath returns an io.ReaderCloser from provided path
+// Returning false if the file does not exist or is unable to read it
+func ReaderFromPath(path string) (io.ReadCloser, bool) {
+	if fi, err := os.Stat(path); fi != nil && err == nil {
+		f, err := os.Open(path)
+		if err != nil {
+			logrus.Debugf("unable to open %s", path)
+			return nil, false
+		}
+		return f, true
+	}
+	return nil, false
 }
 
 // ReadEnvFile reads env file inv `k=v` format

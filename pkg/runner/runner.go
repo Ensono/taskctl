@@ -153,6 +153,16 @@ func (r *TaskRunner) Run(t *task.Task) error {
 	// We need to read it in and hang on the env for the command compiler.
 	// TODO: add envfile reader here
 	// t.EnvFile.Path
+	if reader, exists := utils.ReaderFromPath(t.EnvFile.Path); exists {
+		m, err := utils.ReadEnvFile(reader)
+		if err != nil {
+			// TODO: specify error wrapping here
+			return err
+		}
+		// now overwriting any env set properties in the envfile
+		env = variables.FromMap(m).Merge(env)
+	}
+
 	meets, err := r.checkTaskCondition(t)
 	if err != nil {
 		return err

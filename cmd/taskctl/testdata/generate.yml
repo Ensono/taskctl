@@ -92,7 +92,7 @@ tasks:
       FOO: task1
       GLOBAL_VAR: overwritteninTask
     envfile:
-      path: dev.env
+      path: ./cmd/taskctl/testdata/dev.env
 
   task-p2:2:
     command:
