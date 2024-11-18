@@ -166,9 +166,11 @@ func (g *ExecutionGraph) Children(node string) map[string]*Stage {
 // on the same level to show in that order before the level below and so on.
 //
 // When generating CI definitions - we don't need to generate the same jobs/steps over and over again
-// they will be referenced with a needs/depends_on/etc... keyword
-func (g *ExecutionGraph) BFSNodesFlattened(nodeName string) []*Stage {
-	bfsStages := []*Stage{}
+// they will be referenced with a needs/depends_on/etc... keyword.
+//
+// Returns a slice of stages in this level of the graph.
+func (g *ExecutionGraph) BFSNodesFlattened(nodeName string) StageList {
+	bfsStages := StageList{}
 	// Create a queue to keep track of nodes to visit
 	queue := []string{nodeName}
 	// Create a map to keep track of visited nodes
@@ -195,8 +197,6 @@ func (g *ExecutionGraph) BFSNodesFlattened(nodeName string) []*Stage {
 			}
 		}
 	}
-	// return sorted by depends on
-	//
 	return bfsStages
 }
 

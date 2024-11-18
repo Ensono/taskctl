@@ -3,6 +3,7 @@ package scheduler_test
 import (
 	"errors"
 	"slices"
+	"sort"
 	"testing"
 
 	"github.com/Ensono/taskctl/pkg/scheduler"
@@ -124,16 +125,56 @@ func TestExecutionGraph_TreeWalk_BFS(t *testing.T) {
 	}
 
 	bfs := g.BFSNodesFlattened(scheduler.RootNodeName)
+	// - stage1
+	// - stage4
+	// - stage3
+	// - stage2
+	if bfs[2].Name != "stage3" {
+		t.Errorf("penultimate node (%q) should be stage3", bfs[2].Name)
+	}
 
 	if bfs[3].Name != "stage2" {
 		t.Errorf("last node (%q) should be stage2", bfs[3].Name)
 	}
 
-	if bfs[2].Name != "stage3" {
-		t.Errorf("penultimate node (%q) should be stage3", bfs[2].Name)
-	}
 	// stage1 or stage4 are run in parallel and the first node can be either
 	if !slices.Contains([]string{"stage1", "stage4"}, bfs[0].Name) {
 		t.Errorf("first node (%q) should be either stage1 or stage4", bfs[0].Name)
+	}
+}
+
+func TestExecutionGraph_BFS_Sorted(t *testing.T) {
+	t.Parallel()
+	stages := []*scheduler.Stage{
+		scheduler.NewStage("stage1", func(s *scheduler.Stage) {
+			s.Pipeline = &scheduler.ExecutionGraph{}
+		}),
+		scheduler.NewStage("stage2", func(s *scheduler.Stage) {
+			s.DependsOn = []string{"stage3", "stage1"}
+		}),
+		scheduler.NewStage("stage3", func(s *scheduler.Stage) {
+			s.DependsOn = []string{"stage1"}
+		}),
+		scheduler.NewStage("stage4"),
+		scheduler.NewStage("stage5"),
+	}
+
+	g, err := scheduler.NewExecutionGraph("test_bfs", stages...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bfs := g.BFSNodesFlattened(scheduler.RootNodeName)
+	sort.Sort(bfs)
+	// after sorting it needs to look like this - always
+	// - stage1
+	// - stage4
+	// - stage5
+	// - stage3
+	// - stage2
+	for idx, v := range []string{"stage1", "stage4", "stage5", "stage3", "stage2"} {
+		if bfs[idx].Name != v {
+			t.Errorf("last node (%q) should be %s", bfs[idx].Name, v)
+		}
 	}
 }

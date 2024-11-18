@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 
 	"github.com/Ensono/taskctl/internal/config"
 	"github.com/Ensono/taskctl/internal/schema"
@@ -135,6 +136,7 @@ func convertTaskToStep(node *scheduler.Stage) *schema.GithubStep {
 			step.If = gh.If
 		}
 		// if env is specified on this level we want to overwrite it
+		// with ci_meta.github.env keys
 		if gh.Env != nil {
 			step.Env = node.Env().
 				Merge(node.Task.Env).
@@ -148,6 +150,8 @@ func convertTaskToStep(node *scheduler.Stage) *schema.GithubStep {
 // flattenTasksInPipeline extracts all the tasks recursively across pipelines
 func flattenTasksInPipeline(job *schema.GithubJob, graph *scheduler.ExecutionGraph) {
 	nodes := graph.BFSNodesFlattened(scheduler.RootNodeName)
+	// sort nodes according to depends on order
+	sort.Sort(nodes)
 	for _, node := range nodes {
 		if node.Pipeline != nil {
 			flattenTasksInPipeline(job, node.Pipeline)
