@@ -246,7 +246,7 @@ func (g *ExecutionGraph) Error() error {
 		for _, v := range g.errors {
 			es += fmt.Sprintf("stage: %s\nerror: %v\n", v.stage.Name, v.err)
 		}
-		return fmt.Errorf("%w, %q", ErrRunTimeFault, es)
+		return fmt.Errorf("%w, %s", ErrRunTimeFault, es)
 	}
 	return nil
 }
