@@ -272,3 +272,30 @@ func TestRunner_Run_with_Artifacts(t *testing.T) {
 		t.Errorf("failed to write output in correct formant\n\ngot: %v\nwant: TEST_VAR=foo\n", string(outb))
 	}
 }
+
+func TestRunner_RunWithEnvFile(t *testing.T) {
+	t.Parallel()
+
+	tf, _ := os.CreateTemp("", "ingest-*.env")
+	defer os.Remove(tf.Name())
+	tf.Write([]byte(`FOO=bar
+BAZ=quzxxx`))
+
+	tr, err := runner.NewTaskRunner()
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	task := taskpkg.NewTask("test:with:env")
+	task.Env = task.Env.Merge(variables.FromMap(map[string]string{"ONE": "two"}))
+	task.EnvFile = utils.NewEnvFile().WithPath(tf.Name())
+	task.Commands = []string{"true"}
+
+	err = tr.Run(task)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// if got := task.Env.Get("FOO"); got != "bar" {
+	// 	t.Errorf("FOO env var not merged from file, got %s, wanted bar", got)
+	// }
+}

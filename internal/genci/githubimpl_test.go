@@ -17,6 +17,7 @@ func TestGenCi_GithubImpl(t *testing.T) {
 			s.Pipeline, _ = scheduler.NewExecutionGraph("dev",
 				scheduler.NewStage("sub-one", func(s *scheduler.Stage) {
 					s.Task = task.NewTask("t2")
+					s.Generator = map[string]any{"github": map[string]any{"env": map[string]any{"bar": "${{ secrets.VAR2}}", "foo": "${{ secrets.VAR1}}"}}}
 				}),
 				scheduler.NewStage("sub-two", func(s *scheduler.Stage) {
 					s.Task = task.NewTask("t4")
@@ -27,7 +28,7 @@ func TestGenCi_GithubImpl(t *testing.T) {
 					s.DependsOn = []string{"t2", "t4"}
 				}),
 			)
-			s.Generator = map[string]any{"github": map[string]any{"if": "condition1 != false", "environment": "some-env", "runs-on": "my-own-stuff"}}
+			s.Generator = map[string]any{"github": map[string]any{"if": "condition1 != false", "environment": "some-env", "runs-on": "my-own-stuff", "env": map[string]any{"bar": "${{ secrets.VAR2}}", "foo": "${{ secrets.VAR1}}"}}}
 		}),
 		scheduler.NewStage("stage2", func(s *scheduler.Stage) {
 			ts1 := task.NewTask("task:dostuff")

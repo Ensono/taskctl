@@ -51,7 +51,7 @@ func TestExecutionGraph_Scheduler(t *testing.T) {
 	})
 
 	graph, err := scheduler.NewExecutionGraph("g1", stage1, stage2, stage3, stage4)
-	if err != nil {
+	if err != nil || graph.Error() != nil {
 		t.Fatal(err)
 	}
 

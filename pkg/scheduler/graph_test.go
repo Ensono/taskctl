@@ -180,6 +180,7 @@ func TestExecutionGraph_BFS_Sorted(t *testing.T) {
 			t.Errorf("last node (%q) should be %s", bfs[idx].Name, v)
 		}
 	}
+	
 }
 
 func TestExecutionGraph_Error(t *testing.T) {
