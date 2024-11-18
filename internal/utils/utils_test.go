@@ -421,6 +421,28 @@ func TestUtils_DefaultTaskctlEnv(t *testing.T) {
 	})
 }
 
+func TestUtils_ReaderFromPath(t *testing.T) {
+	tf, _ := os.CreateTemp("", "test-reader-*.env")
+	_, err := tf.Write([]byte(`FOO=bar`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tf.Name())
+	ef := utils.NewEnvFile()
+	ef.WithPath(tf.Name())
+	r, success := utils.ReaderFromPath(ef)
+	if !success {
+		t.Error("reader failed to create")
+	}
+	if r == nil {
+		t.Fatal("reader empty")
+	}
+	b, err := io.ReadAll(r)
+	if string(b) != `FOO=bar` {
+		t.Error("wrong data written")
+	}
+}
+
 func TestUtils_B62Encode_Decode(t *testing.T) {
 	t.Parallel()
 	ttests := map[string]struct {

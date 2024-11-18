@@ -239,7 +239,7 @@ func (r *TaskRunner) before(ctx context.Context, t *task.Task, env, vars *variab
 	for _, command := range t.Before {
 		job, err := r.compiler.CompileCommand(t.Name, command, execContext, t.Dir, t.Timeout, nil, r.Stdout, r.Stderr, env, vars)
 		if err != nil {
-			return fmt.Errorf("\"before\" command compilation failed: %w", err)
+			return fmt.Errorf(`"before\" command compilation failed: %w`, err)
 		}
 
 		exec, err := executor.NewDefaultExecutor(job.Stdin, job.Stdout, job.Stderr)
@@ -269,7 +269,7 @@ func (r *TaskRunner) after(ctx context.Context, t *task.Task, env, vars *variabl
 	for _, command := range t.After {
 		job, err := r.compiler.CompileCommand(t.Name, command, execContext, t.Dir, t.Timeout, nil, r.Stdout, r.Stderr, env, vars)
 		if err != nil {
-			return fmt.Errorf("\"after\" command compilation failed: %w", err)
+			return fmt.Errorf(`"after" command compilation failed: %w`, err)
 		}
 
 		exec, err := executor.NewDefaultExecutor(job.Stdin, job.Stdout, job.Stderr)
