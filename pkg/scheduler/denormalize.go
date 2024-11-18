@@ -38,10 +38,9 @@ func (g *ExecutionGraph) Denormalize() (*ExecutionGraph, error) {
 func (g *ExecutionGraph) rebuildFromDenormalized(st StageTable) error {
 	for _, stage := range st.NthLevelChildren(g.Name(), 1) {
 		if stage.Pipeline != nil {
-			c := st.NthLevelChildren(stage.Name, 1)
 			// There is no chance that at this point there would be a cycle
 			// but keep this check here just in case
-			ng, err := NewExecutionGraph(stage.Name, c...)
+			ng, err := NewExecutionGraph(stage.Name)
 			if err != nil {
 				return err
 			}

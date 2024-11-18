@@ -72,7 +72,7 @@ func (impl *githubCiImpl) Convert(pipeline *scheduler.ExecutionGraph) ([]byte, e
 		ghaWorkflow.Env = gh.Env
 	}
 
-	if err := jobLooper(ghaWorkflow, impl.pipeline); err != nil {
+	if err := jobBuilder(ghaWorkflow, impl.pipeline); err != nil {
 		return nil, err
 	}
 	b := &bytes.Buffer{}
@@ -158,8 +158,13 @@ func flattenTasksInPipeline(job *schema.GithubJob, graph *scheduler.ExecutionGra
 	}
 }
 
-// jobLooper accepts a list of top level jobs
-func jobLooper(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph) error {
+// jobBuilder accepts a list of top level jobs.
+//
+// Recursively walks the nodes and flattens any nested pipelines
+// and adds them to the list of tasks.
+//
+// Respects the order of execution set in tascktl.
+func jobBuilder(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph) error {
 	nodes := pipeline.BFSNodesFlattened(scheduler.RootNodeName)
 	for _, node := range nodes {
 		jobName := ghaNameConverter(utils.TailExtract(node.Name))

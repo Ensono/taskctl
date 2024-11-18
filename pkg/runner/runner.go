@@ -151,9 +151,7 @@ func (r *TaskRunner) Run(t *task.Task) error {
 	// denormalized graph will append all ancestral env keys to the task
 	// if task also includes an envfile property
 	// We need to read it in and hang on the env for the command compiler.
-	// TODO: add envfile reader here
-	// t.EnvFile.Path
-	if reader, exists := utils.ReaderFromPath(t.EnvFile.Path); exists {
+	if reader, exists := utils.ReaderFromPath(t.EnvFile); exists {
 		m, err := utils.ReadEnvFile(reader)
 		if err != nil {
 			// TODO: specify error wrapping here
@@ -290,7 +288,7 @@ func (r *TaskRunner) after(ctx context.Context, t *task.Task, env, vars *variabl
 
 // contextForTask initializes a default or returns an initialized context from config.
 //
-// It checks whether there is a `.taskctl.env` in the cwd if so it ingests it
+// It checks whether there is a `taskctl.env` in the cwd if so it ingests it
 // and merges with the specified env.
 func (r *TaskRunner) contextForTask(t *task.Task) (c *ExecutionContext, err error) {
 

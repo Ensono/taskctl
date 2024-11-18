@@ -260,11 +260,14 @@ func MustGetUserHomeDir() string {
 
 // ReaderFromPath returns an io.ReaderCloser from provided path
 // Returning false if the file does not exist or is unable to read it
-func ReaderFromPath(path string) (io.ReadCloser, bool) {
-	if fi, err := os.Stat(path); fi != nil && err == nil {
-		f, err := os.Open(path)
+func ReaderFromPath(envfile *Envfile) (io.ReadCloser, bool) {
+	if envfile == nil {
+		return nil, false
+	}
+	if fi, err := os.Stat(envfile.Path); fi != nil && err == nil {
+		f, err := os.Open(envfile.Path)
 		if err != nil {
-			logrus.Debugf("unable to open %s", path)
+			logrus.Debugf("unable to open %s", envfile.Path)
 			return nil, false
 		}
 		return f, true
@@ -296,25 +299,25 @@ func ReadEnvFile(r io.ReadCloser) (map[string]string, error) {
 }
 
 // TASKCTL_ENV_FILE is the default location of env file ingested by taskctl for every run.
-const TASKCTL_ENV_FILE string = ".taskctl.env"
+const TASKCTL_ENV_FILE string = "taskctl.env"
 
-// DefaultTaskctlEnv checks if there is a file in the current directory `.taskctl.env`
+// DefaultTaskctlEnv checks if there is a file in the current directory `taskctl.env`
 // if we ingest it into the Env variable
-// giving preference to the `.taskctl.env` specified K/V.
+// giving preference to the `taskctl.env` specified K/V.
 //
 // Or should this be done once on start up?
 func DefaultTaskctlEnv() *variables.Variables {
 	defaultVars := variables.NewVariables()
 	if fi, err := os.Stat(TASKCTL_ENV_FILE); fi != nil && err == nil {
-		f, err := os.Open(fi.Name())
+		f, err := os.Open(fi.Name()) // this will always be relative to the executable
 		if err != nil {
-			logrus.Debug("unable to open default .taskctl.env")
+			logrus.Debug("unable to open default taskctl.env")
 			return defaultVars
 		}
 
 		m, err := ReadEnvFile(f)
 		if err != nil {
-			logrus.Debug("unable to read default .taskctl.env")
+			logrus.Debug("unable to read default taskctl.env")
 			return defaultVars
 		}
 		return defaultVars.Merge(variables.FromMap(m))
