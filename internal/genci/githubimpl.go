@@ -170,6 +170,10 @@ func flattenTasksInPipeline(job *schema.GithubJob, graph *scheduler.ExecutionGra
 // Respects the order of execution set in tascktl.
 func jobBuilder(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGraph) error {
 	nodes := pipeline.BFSNodesFlattened(scheduler.RootNodeName)
+	// sort nodes according to depends on order
+	// ensuring the pipeline will look the same everytime
+	// alphabetically sorted top level jobs and same level children
+	sort.Sort(nodes)
 	for _, node := range nodes {
 		jobName := ghaNameConverter(utils.TailExtract(node.Name))
 		job := &schema.GithubJob{
