@@ -162,7 +162,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     env:
       SOME_TOKEN_FOR_APP1: ${{ secrets.FOO_BAR_Secret }}
-    environment: prod
+    environment: prod2
   post_dev:
     name: post_dev
     needs:
