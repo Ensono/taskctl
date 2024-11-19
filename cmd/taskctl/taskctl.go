@@ -155,7 +155,7 @@ func (tc *TaskCtlCmd) initConfig() (*config.Config, error) {
 	}
 
 	// config output not set - default to cmdline
-	if conf.Output == "" { //tc.viperConf.GetString("output") != ""
+	if conf.Output == "" {
 		conf.Output = outputpkg.OutputEnum(tc.viperConf.GetString("output"))
 	}
 
@@ -172,6 +172,11 @@ func (tc *TaskCtlCmd) initConfig() (*config.Config, error) {
 
 	if tc.viperConf.GetBool("cockpit") {
 		conf.Output = outputpkg.CockpitOutput
+	}
+	// if output not specified in yaml/CLI/EnvVars
+	if conf.Output == "" {
+		// set to default of RAW
+		conf.Output = outputpkg.RawOutput
 	}
 
 	// these are CLI args only
