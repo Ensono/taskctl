@@ -5,9 +5,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"dario.cat/mergo"
 	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/task"
 	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/sirupsen/logrus"
 )
 
 // Stage statuses
@@ -79,19 +81,18 @@ func (s *Stage) FromStage(originalStage *Stage, existingGraph *ExecutionGraph, a
 
 	if originalStage.Task != nil {
 		tsk := task.NewTask(utils.CascadeName(ancestralParents, originalStage.Task.Name))
-		tsk.FromTask(originalStage.Task)
-		tsk.Env = tsk.Env.Merge(variables.FromMap(existingGraph.Env))
 
-		tsk.EnvFile = utils.NewEnvFile(func(e *utils.Envfile) {
-			if tsk.EnvFile != nil {
-				e.Exclude = tsk.EnvFile.Exclude
-				e.Include = tsk.EnvFile.Include
-				e.Modify = tsk.EnvFile.Modify
-				e.PathValue = tsk.EnvFile.PathValue
-				e.Quote = tsk.EnvFile.Quote
-				e.ReplaceChar = tsk.EnvFile.ReplaceChar
+		tsk.FromTask(originalStage.Task)
+		// Add additional vars from the pipeline
+		tsk.Env = tsk.Env.Merge(variables.FromMap(existingGraph.Env))
+		if originalStage.Task.EnvFile != nil {
+			ef := utils.NewEnvFile()
+			if err := mergo.Merge(ef, originalStage.Task.EnvFile); err != nil {
+				logrus.Error("failed to dereference task")
 			}
-		})
+			tsk.EnvFile = ef
+		}
+
 		s.Task = tsk
 	}
 	if originalStage.Pipeline != nil {

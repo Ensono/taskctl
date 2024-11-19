@@ -1,6 +1,7 @@
 package config
 
 import (
+	"dario.cat/mergo"
 	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/variables"
 
@@ -25,16 +26,13 @@ func buildTask(def *TaskDefinition, lc *loaderContext) (*task.Task, error) {
 	t.ResetContext = def.ResetContext
 
 	t.Env = variables.FromMap(def.Env).Merge(t.Env)
-	t.EnvFile = utils.NewEnvFile(func(e *utils.Envfile) {
-		if def.Envfile != nil {
-			e.Exclude = def.Envfile.Exclude
-			e.Include = def.Envfile.Include
-			e.Modify = def.Envfile.Modify
-			e.PathValue = def.Envfile.PathValue
-			e.Quote = def.Envfile.Quote
-			e.ReplaceChar = def.Envfile.ReplaceChar
-		}
-	})
+	ef := utils.NewEnvFile()
+
+	if def.Envfile != nil {
+		_ = mergo.Merge(ef, def.Envfile)
+	}
+	t.EnvFile = ef
+
 	t.Variables = variables.FromMap(def.Variables).Merge(t.Variables)
 
 	t.Dir = def.Dir

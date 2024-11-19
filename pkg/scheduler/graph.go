@@ -184,7 +184,7 @@ func (g *ExecutionGraph) BFSNodesFlattened(nodeName string) StageList {
 		current := queue[0]
 		queue = queue[1:]
 
-		// // add to flattened list - except if it's the root node
+		// add to flattened list - except if it's the root node
 		if current != RootNodeName {
 			bfsStages = append(bfsStages, g.nodes[current])
 		}
