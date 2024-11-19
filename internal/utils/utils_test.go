@@ -422,6 +422,7 @@ func TestUtils_DefaultTaskctlEnv(t *testing.T) {
 }
 
 func TestUtils_ReaderFromPath(t *testing.T) {
+	t.Parallel()
 	tf, _ := os.CreateTemp("", "test-reader-*.env")
 	_, err := tf.Write([]byte(`FOO=bar`))
 	if err != nil {
@@ -443,6 +444,33 @@ func TestUtils_ReaderFromPath(t *testing.T) {
 	}
 }
 
+type tRCloser struct {
+	io.Reader
+}
+
+func (trc *tRCloser) Close() error {
+	return nil
+}
+func TestUtils_Generated(t *testing.T) {
+	tf, _ := os.CreateTemp("", "test-generated-*.env")
+	_, err := tf.Write([]byte(`FOO=bar`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tf.Name())
+	ef := utils.NewEnvFile()
+	ef.WithGeneratedPath(tf.Name())
+
+	b, err := os.ReadFile(ef.GeneratedPath())
+	if err != nil {
+		t.Error(err)
+	}
+	m, _ := utils.ReadEnvFile(&tRCloser{bytes.NewReader(b)})
+
+	if len(m) == 0 {
+		t.Error("nothing written")
+	}
+}
 func TestUtils_B62Encode_Decode(t *testing.T) {
 	t.Parallel()
 	ttests := map[string]struct {
