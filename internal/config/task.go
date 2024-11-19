@@ -30,7 +30,7 @@ func buildTask(def *TaskDefinition, lc *loaderContext) (*task.Task, error) {
 			e.Exclude = def.Envfile.Exclude
 			e.Include = def.Envfile.Include
 			e.Modify = def.Envfile.Modify
-			e.Path = def.Envfile.Path
+			e.PathValue = def.Envfile.PathValue
 			e.Quote = def.Envfile.Quote
 			e.ReplaceChar = def.Envfile.ReplaceChar
 		}

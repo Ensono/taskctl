@@ -172,7 +172,7 @@ ANOTHER_VAR=moo`))
 		if val.EnvFile == nil {
 			t.Fatal("failed to read the env file")
 		}
-		if val.EnvFile.Path != tmpEnv.Name() {
+		if val.EnvFile.PathValue != tmpEnv.Name() {
 			t.Error("incorrect env file name")
 		}
 	})

@@ -159,7 +159,7 @@ type TaskDefinition struct {
 	// This file is read dynamically each time before the task execution.
 	// Any keys specified in the `env` key=value map will overwrite those set in the env file.
 	//
-	// The precedence of environment setting at at task level
+	// The precedence of environment setting can be summarized as below
 	// Context < Pipeline < Task
 	//
 	// This means that whilst all env vars will be merged downwards to the task

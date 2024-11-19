@@ -80,7 +80,7 @@ func buildPipeline(g *scheduler.ExecutionGraph, stages []*PipelineDefinition, cf
 		if _, err := g.Node(stage.Name); err == nil {
 			return nil, fmt.Errorf("%w, stage with same name %s already exists", ErrStageBuildFailure, stage.Name)
 		}
-		// TODO: investigate gha sample p2 pipeline incorrect chilred adding
+
 		err := g.AddStage(stage)
 		if err != nil {
 			return nil, err

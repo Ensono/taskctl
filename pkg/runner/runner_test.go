@@ -3,12 +3,14 @@ package runner_test
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/Ensono/taskctl/internal/config"
 	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/pkg/output"
 	"github.com/Ensono/taskctl/pkg/runner"
@@ -104,52 +106,127 @@ func TestTaskRunner(t *testing.T) {
 	rnr.Finish()
 }
 
+type tCloser struct {
+	io.Reader
+}
+
+func (t *tCloser) Close() error {
+	return nil
+}
+
 func Test_DockerExec_Cmd(t *testing.T) {
-	ttests := map[string]struct {
-		execContext *runner.ExecutionContext
-		command     string
-	}{
-		"runs with default env file": {
-			execContext: runner.NewExecutionContext(&utils.Binary{Bin: "docker", Args: []string{
-				"run",
-				"--rm",
-				"alpine", "sh", "-c",
-			}}, "/", variables.NewVariables(), utils.NewEnvFile(func(e *utils.Envfile) {
-				e.Generate = true
-			}), []string{""}, []string{""}, []string{""}, []string{""}),
-			command: "echo 'taskctl'",
-		},
-	}
-	for name, tt := range ttests {
-		t.Run(name, func(t *testing.T) {
-			rnr, err := runner.NewTaskRunner(runner.WithContexts(map[string]*runner.ExecutionContext{"default_docker": tt.execContext}))
-			if err != nil {
-				t.Fatal(err)
+	t.Run("runs with default env file using v1 containers", func(t *testing.T) {
+		dockerCtx := runner.NewExecutionContext(&utils.Binary{Bin: "docker", Args: []string{
+			"run",
+			"--rm",
+			"alpine", "sh", "-c"}}, "/", variables.NewVariables(), utils.NewEnvFile(func(e *utils.Envfile) {}),
+			[]string{""}, []string{""}, []string{""}, []string{""})
+
+		rnr, err := runner.NewTaskRunner(runner.WithContexts(map[string]*runner.ExecutionContext{"default_docker": dockerCtx}))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer rnr.Finish()
+
+		testOut, testErr := &bytes.Buffer{}, &bytes.Buffer{}
+		rnr.Stdout, rnr.Stderr = testOut, testErr
+		rnr.SetVariables(variables.FromMap(map[string]string{"Root": "/tmp"}))
+		rnr.WithVariable("Root", "/")
+
+		task1 := taskpkg.NewTask("default:docker")
+		task1.Context = "default_docker"
+
+		task1.Commands = []string{"echo 'taskctl'"}
+		task1.Name = "some test task"
+		task1.Dir = "{{.Root}}"
+		task1.After = []string{"echo 'after task1'"}
+
+		if err := rnr.Run(task1); err != nil {
+			t.Fatalf("errored: %v\n\noutput: %v\n", err, testOut.String())
+		}
+
+		if len(testErr.String()) > 0 {
+			t.Fatalf("got: %s, wanted nil", testErr.String())
+		}
+	})
+
+	// with exclude
+	t.Run("with exclude correctly processed using v2 containers", func(t *testing.T) {
+		// Arrange
+		executable := &utils.Binary{
+			IsContainer: true,
+			// this can be podman or any other OCI compliant deamon/runtime
+			Bin:  "docker",
+			Args: []string{},
+		}
+		executable.WithBaseArgs([]string{"run", "--rm", "--env-file"})
+		executable.WithContainerArgs([]string{"-v", "${PWD}:/workspace/.taskctl", "-w", "/workspace/.taskctl", "alpine"})
+		executable.WithShellArgs([]string{"sh", "-c"})
+
+		tf, err := os.CreateTemp("", "exclude-*.env")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// for _, v := range [][2]string{{"ADDED", "/old/foo"}, {"NEW_STUFF", "/old/bar"}} {
+		// 	os.Setenv(v[0], v[1])
+		// }
+		// defer os.Clearenv()
+
+		// on program start up from Config - os.Environ are merged into contexts
+		dockerCtx := runner.NewExecutionContext(executable, "/", variables.FromMap(map[string]string{"ADDED": "/old/foo", "NEW_STUFF": "/old/bar"}), utils.NewEnvFile(func(e *utils.Envfile) {
+			e.PathValue = tf.Name()
+			e.Exclude = append(config.DefaultContainerExcludes, "ADDED")
+		}), []string{}, []string{}, []string{}, []string{})
+
+		tf.Write([]byte(`FOO=bar
+BAZ=wqiyh
+QUX=looopar`))
+
+		rnr, err := runner.NewTaskRunner(runner.WithContexts(map[string]*runner.ExecutionContext{"default_docker": dockerCtx}))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer rnr.Finish()
+
+		testOut, testErr := &bytes.Buffer{}, &bytes.Buffer{}
+		rnr.Stdout, rnr.Stderr = testOut, testErr
+
+		task1 := taskpkg.NewTask("default:docker:with:env")
+		task1.Context = "default_docker"
+
+		task1.Commands = []string{"env"}
+		task1.Name = "env test"
+		task1.After = []string{"echo 'after env'"}
+
+		// Act
+		if err := rnr.Run(task1); err != nil {
+			t.Fatalf("errored: %v\n\noutput: %v\n", err, testOut.String())
+		}
+
+		// Assert
+		if len(testErr.String()) > 0 {
+			t.Fatalf("got: %s, wanted nil", testErr.String())
+		}
+		rCloser := &tCloser{bytes.NewReader(testOut.Bytes())}
+		got, _ := utils.ReadEnvFile(rCloser)
+		if _, ok := got["ADDED"]; ok {
+			t.Error("should have skipped adding var")
+		}
+
+		for _, v := range [][2]string{{"FOO", "bar"}, {"QUX", "looopar"},
+			{"PWD", "/workspace/.taskctl"}, {"HOME", "/root"},
+			{"NEW_STUFF", "/old/bar"}, {"BAZ", "wqiyh"}} {
+			val, ok := got[v[0]]
+			if !ok {
+				t.Errorf("key %s not present", v[0])
 			}
-			defer rnr.Finish()
-
-			testOut, testErr := &bytes.Buffer{}, &bytes.Buffer{}
-			rnr.Stdout, rnr.Stderr = testOut, testErr
-			rnr.SetVariables(variables.FromMap(map[string]string{"Root": "/tmp"}))
-			rnr.WithVariable("Root", "/")
-
-			task1 := taskpkg.NewTask("default:docker")
-			task1.Context = "default_docker"
-
-			task1.Commands = []string{tt.command}
-			task1.Name = "some test task"
-			task1.Dir = "{{.Root}}"
-			task1.After = []string{"echo 'after task1'"}
-
-			if err := rnr.Run(task1); err != nil {
-				t.Fatalf("errord: %v\n\noutput: %v\n", err, testOut.String())
+			if val != v[1] {
+				t.Errorf("value %s not correct", v[1])
 			}
-
-			if len(testErr.String()) > 0 {
-				t.Fatalf("got: %s, wanted nil", testErr.String())
-			}
-		})
-	}
+		}
+	})
+	// 	// with custom envfile as well
 }
 
 func ExampleTaskRunner_Run() {

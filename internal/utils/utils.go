@@ -33,11 +33,6 @@ func IsURL(s string) bool {
 // Envile is a structure for storing the information required to generate an envfile which can be consumed
 // by the specified binary
 type Envfile struct {
-	// Generate will toggle the creation of the envfile inside a Context context
-	// when the context is `docker|podman`.
-	//
-	// When used inside a Task context this is Generate is ignored.
-	Generate bool `mapstructure:"generate" yaml:"generate,omitempty" json:"generate,omitempty"`
 	// list of variables to be excluded
 	// from the injection into container runtimes
 	//
@@ -49,8 +44,8 @@ type Envfile struct {
 	// Both of these will be skipped
 	Exclude []string `mapstructure:"exclude" yaml:"exclude,omitempty" json:"exclude,omitempty"`
 	Include []string `mapstructure:"include" yaml:"include,omitempty" json:"include,omitempty"`
-	// Path points to the file to read in and compute using the modify/include/exclude instructions.
-	Path        string `mapstructure:"path" yaml:"path,omitempty" json:"path,omitempty"`
+	// PathValue points to the file to read in and compute using the modify/include/exclude instructions.
+	PathValue   string `mapstructure:"path" yaml:"path,omitempty" json:"path,omitempty"`
 	ReplaceChar string `mapstructure:"replace_char" yaml:"replace_char,omitempty" json:"replace_char,omitempty"`
 	Quote       bool   `mapstructure:"quote" yaml:"quote,omitempty" json:"quote,omitempty"`
 	// Modify specifies the modifications to make to each env var and whether it meets the criteria
@@ -67,6 +62,12 @@ type Envfile struct {
 	// during generate the paths will be different
 	// during read it is if path is provided
 	mu sync.Mutex
+	// generatedFilePath is the path to the generated file path, which holds the unique task name reference
+	// It will be merged with env variables from os.Environ(), supplied `context.container.env`, contents of Path if not empty.
+	// All Include/Exclude Modifications are applied to the final environment Key/Value pairs.
+	//
+	// Single file is injected via the --env-file option to the docker|podman command.
+	generatedFilePath string
 }
 
 const REPLACE_CHAR_DEFAULT = " "
@@ -115,8 +116,23 @@ func NewEnvFile(opts ...EnvFileOpts) *Envfile {
 func (e *Envfile) WithPath(path string) *Envfile {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	e.Path = path
+	e.PathValue = path
 	return e
+}
+
+func (e *Envfile) Path() string {
+	return e.PathValue
+}
+
+func (e *Envfile) WithGeneratedPath(path string) *Envfile {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.generatedFilePath = path
+	return e
+}
+
+func (e *Envfile) GeneratedPath() string {
+	return e.generatedFilePath
 }
 
 // ConvertEnv converts map representing the environment to array of strings in the form "key=value"
@@ -264,10 +280,10 @@ func ReaderFromPath(envfile *Envfile) (io.ReadCloser, bool) {
 	if envfile == nil {
 		return nil, false
 	}
-	if fi, err := os.Stat(envfile.Path); fi != nil && err == nil {
-		f, err := os.Open(envfile.Path)
+	if fi, err := os.Stat(envfile.PathValue); fi != nil && err == nil {
+		f, err := os.Open(envfile.PathValue)
 		if err != nil {
-			logrus.Debugf("unable to open %s", envfile.Path)
+			logrus.Debugf("unable to open %s", envfile.PathValue)
 			return nil, false
 		}
 		return f, true

@@ -107,7 +107,7 @@ func (tc *TaskCompiler) CompileCommand(
 	// Look at the executable details and check if the command is running `docker` determine if an Envfile is being generated
 	// If it has then check to see if the args contains the --env-file flag and if it does modify the path to the envfile
 	// if it does not then add the --env-file flag to the args array
-	if executionCtx.Envfile != nil && executionCtx.Envfile.Generate {
+	if executionCtx.Envfile != nil && (executionCtx.Executable != nil) { // && executionCtx.Executable.IsContainer
 
 		// define the filename to hold the envfile path
 		// get the timestamp to use to append to the envfile name
@@ -119,7 +119,7 @@ func (tc *TaskCompiler) CompileCommand(
 
 		commandArgs = executionCtx.Executable.BuildArgsWithEnvFile(filename)
 		// set the path to the generated envfile
-		executionCtx.Envfile.WithPath(filename)
+		executionCtx.Envfile.WithGeneratedPath(filename)
 		// generate the envfile with supplied env only
 		err := executionCtx.GenerateEnvfile(env)
 		if err != nil {

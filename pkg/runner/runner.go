@@ -29,10 +29,14 @@ type Runner interface {
 	Finish()
 }
 
+type Executor interface {
+	Execute(context.Context, *executor.Job) ([]byte, error)
+}
+
 // TaskRunner struct holds the properties and methods
 // for running the tasks inside the given executor
 type TaskRunner struct {
-	Executor  executor.Executor
+	Executor  Executor
 	DryRun    bool
 	contexts  map[string]*ExecutionContext
 	variables *variables.Variables
@@ -176,7 +180,7 @@ func (r *TaskRunner) Run(t *task.Task) error {
 	if err != nil {
 		return err
 	}
-
+	//
 	job, err := r.compiler.CompileTask(t, execContext, stdin, taskOutput.Stdout(), taskOutput.Stderr(), env, vars)
 	if err != nil {
 		return err

@@ -87,7 +87,7 @@ func (s *Stage) FromStage(originalStage *Stage, existingGraph *ExecutionGraph, a
 				e.Exclude = tsk.EnvFile.Exclude
 				e.Include = tsk.EnvFile.Include
 				e.Modify = tsk.EnvFile.Modify
-				e.Path = tsk.EnvFile.Path
+				e.PathValue = tsk.EnvFile.PathValue
 				e.Quote = tsk.EnvFile.Quote
 				e.ReplaceChar = tsk.EnvFile.ReplaceChar
 			}

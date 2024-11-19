@@ -167,7 +167,15 @@ func (c *ExecutionContext) GenerateEnvfile(env *variables.Variables) error {
 	builder := []string{}
 	// iterate through all of the environment variables and add the selected ones to the builder
 	// env container at this point should already include all the merged variables by precedence
+	
 	// TODO: if envfile path was provided we should merge it in with Env and inject as a whole into the container
+	if reader, found := utils.ReaderFromPath(c.Envfile); reader != nil && found {
+		if envFileMap, err := utils.ReadEnvFile(reader); envFileMap != nil && err == nil {
+			// overwriting env from os < env property with the file
+			// 
+			env = variables.FromMap(envFileMap).Merge(env)
+		}
+	}
 	for varName, varValue := range env.Map() {
 		// check to see if the env matches an invalid variable, if it does
 		// move onto the next item in the  loop
@@ -193,11 +201,11 @@ func (c *ExecutionContext) GenerateEnvfile(env *variables.Variables) error {
 
 	// get the full output from the string builder
 	// write the output to the file
-	if err := os.MkdirAll(filepath.Dir(c.Envfile.Path), 0700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(c.Envfile.GeneratedPath()), 0700); err != nil {
 		logrus.Fatalf("Error creating parent directory for artifacts: %s\n", err.Error())
 	}
 
-	return os.WriteFile(c.Envfile.Path, []byte(strings.Join(builder, "\n")), 0700)
+	return os.WriteFile(c.Envfile.GeneratedPath(), []byte(strings.Join(builder, "\n")), 0700)
 }
 
 func (c *ExecutionContext) includeExcludeSkip(varName string) bool {

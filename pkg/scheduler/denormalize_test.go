@@ -249,6 +249,9 @@ tasks:
   graph:task2:
     command: |
       echo "hello task 2"
+      echo "another line1"
+      echo "another line2"
+      echo "another line3"
     context: podman
 
   graph:task3:
