@@ -123,6 +123,31 @@ func addStepsToTopLevelJob(job *schema.GithubJob, node *scheduler.Stage) {
 	}
 }
 
+func addMetaToJob(job *schema.GithubJob, node *scheduler.Stage) error {
+	gh, err := extractGeneratorMetadata[schema.GithubJob](GitHubCITarget, node.Generator)
+	if err != nil {
+		return fmt.Errorf("unable to extract metadata for %s\n%v", node.Name, err)
+	}
+	if gh != nil {
+		if gh.If != "" {
+			job.If = gh.If
+		}
+		if gh.Environment != "" {
+			job.Environment = gh.Environment
+		}
+		if gh.RunsOn != "" {
+			job.RunsOn = gh.RunsOn
+		}
+		if gh.Env != nil {
+			// merge top level pipeline env vars into the top level GHA Job
+			job.Env = node.Env().
+				Merge(variables.FromMap(utils.ConvertToMapOfStrings(gh.Env))).
+				Map()
+		}
+	}
+	return nil
+}
+
 func convertTaskToStep(node *scheduler.Stage) *schema.GithubStep {
 
 	step := &schema.GithubStep{
@@ -184,25 +209,11 @@ func jobBuilder(ciyaml *schema.GithubWorkflow, pipeline *scheduler.ExecutionGrap
 		// Add defaults
 		addDefaultStepsToJob(job)
 
+		// Adds correctly ordered steps to job
 		addStepsToTopLevelJob(job, node)
 
-		gh, err := extractGeneratorMetadata[schema.GithubJob](GitHubCITarget, node.Generator)
-		if gh != nil && err == nil {
-			if gh.If != "" {
-				job.If = gh.If
-			}
-			if gh.Environment != "" {
-				job.Environment = gh.Environment
-			}
-			if gh.RunsOn != "" {
-				job.RunsOn = gh.RunsOn
-			}
-			if gh.Env != nil {
-				// merge top level pipeline env vars into the top level GHA Job
-				job.Env = node.Env().
-					Merge(variables.FromMap(utils.ConvertToMapOfStrings(gh.Env))).
-					Map()
-			}
+		if err := addMetaToJob(job, node); err != nil {
+			return err
 		}
 		ciyaml.Jobs = append(ciyaml.Jobs, yaml.MapItem{Key: jobName, Value: job})
 	}
