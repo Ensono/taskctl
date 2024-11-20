@@ -30,6 +30,13 @@ func IsURL(s string) bool {
 	return strings.HasPrefix(u.Scheme, "http")
 }
 
+const REPLACE_CHAR_DEFAULT = " "
+
+var (
+	ErrInvalidOptionsEnvFile = errors.New("invalid options on envfile")
+	ErrEnvfileFormatIncorrect = errors.New("envfile incorrect")
+)
+
 // Envile is a structure for storing the information required to generate an envfile which can be consumed
 // by the specified binary
 type Envfile struct {
@@ -69,10 +76,6 @@ type Envfile struct {
 	// Single file is injected via the --env-file option to the docker|podman command.
 	generatedFilePath string
 }
-
-const REPLACE_CHAR_DEFAULT = " "
-
-var ErrInvalidOptionsEnvFile = errors.New("invalid options on envfile")
 
 // Validate checks input is correct
 //
