@@ -79,14 +79,14 @@ jobs:
       run: taskctl run task helm:deploy
       env:
         ENV_NAME: nonprod
-    - name: gha_infra_sample-_InfraDev-_infrapipeline-_helm-_helm_notification
-      id: gha_infra_sample-_InfraDev-_infrapipeline-_helm-_helm_notification
-      run: taskctl run task helm:notification
-      env:
-        ENV_NAME: nonprod
     - name: gha_infra_sample-_InfraDev-_infrapipeline-_helm-_helm_docs
       id: gha_infra_sample-_InfraDev-_infrapipeline-_helm-_helm_docs
       run: taskctl run task helm:docs
+      env:
+        ENV_NAME: nonprod
+    - name: gha_infra_sample-_InfraDev-_infrapipeline-_helm-_helm_notification
+      id: gha_infra_sample-_InfraDev-_infrapipeline-_helm-_helm_notification
+      run: taskctl run task helm:notification
       env:
         ENV_NAME: nonprod
     - name: gha_infra_sample-_InfraDev-_post_task
@@ -146,14 +146,14 @@ jobs:
       run: taskctl run task helm:deploy
       env:
         ENV_NAME: prod
-    - name: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_notification
-      id: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_notification
-      run: taskctl run task helm:notification
-      env:
-        ENV_NAME: prod
     - name: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_docs
       id: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_docs
       run: taskctl run task helm:docs
+      env:
+        ENV_NAME: prod
+    - name: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_notification
+      id: gha_infra_sample-_InfraProd-_infrapipeline-_helm-_helm_notification
+      run: taskctl run task helm:notification
       env:
         ENV_NAME: prod
     - name: gha_infra_sample-_InfraProd-_post_task
@@ -162,7 +162,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     env:
       SOME_TOKEN_FOR_APP1: ${{ secrets.FOO_BAR_Secret }}
-    environment: prod2
+    environment: prod
   post_dev:
     name: post_dev
     needs:
