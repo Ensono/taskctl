@@ -161,11 +161,12 @@ func Test_Generate_Env_file(t *testing.T) {
 		osEnvVars := variables.FromMap(map[string]string{"var1": "original", "var2": "original222", "!::": "whatever val will never be added", "=::": "whatever val will never be added 2", "incld1": "welcome var", "exclude3": "sadgfddf"})
 		userEnvVars := variables.FromMap(map[string]string{"foo": "bar", "VAR1": "userOverwrittemdd", "userSuppliedButExcluded": `¯\_(ツ)_/¯`})
 
-		contents := genEnvFileHelperTestRunner(t, osEnvVars.Merge(userEnvVars), utils.NewEnvFile(func(e *utils.Envfile) {
-			e.Generate = true
-			e.Path = outputFilePath
+		ef := utils.NewEnvFile(func(e *utils.Envfile) {
 			e.Exclude = append(e.Exclude, []string{"var1", "FOO", "UserSuppliedButEXCLUDED"}...)
-		}))
+		})
+		ef.WithGeneratedPath(outputFilePath)
+
+		contents := genEnvFileHelperTestRunner(t, osEnvVars.Merge(userEnvVars), ef)
 
 		got := strings.Split(contents, "\n")
 		for _, checkExcluded := range []string{"var1=original", "VAR1=userOverwrittemdd", "foo=bar", `userSuppliedButExcluded=¯\_(ツ)_/¯`} {
@@ -189,11 +190,13 @@ func Test_Generate_Env_file(t *testing.T) {
 		osEnvVars := variables.FromMap(map[string]string{"var1": "original", "var2": "original222", "!::": "whatever val will never be added", "=::": "whatever val will never be added 2", "incld1": "welcome var", "exclude3": "sadgfddf"})
 		userEnvVars := variables.FromMap(map[string]string{"foo": "bar", "VAR1": "userOverwrittemdd", "userSuppliedButExcluded": `¯\_(ツ)_/¯`})
 
-		contents := genEnvFileHelperTestRunner(t, osEnvVars.Merge(userEnvVars), utils.NewEnvFile(func(e *utils.Envfile) {
-			e.Generate = true
-			e.Path = outputFilePath
+		ef := utils.NewEnvFile(func(e *utils.Envfile) {
 			e.Include = []string{"var1", "FOO", "UserSuppliedButEXCLUDED"}
-		}))
+		})
+
+		ef.WithGeneratedPath(outputFilePath)
+
+		contents := genEnvFileHelperTestRunner(t, osEnvVars.Merge(userEnvVars), ef)
 
 		got := strings.Split(contents, "\n")
 		for _, checkExcluded := range []string{"var1=original", "VAR1=userOverwrittemdd", "foo=bar", `userSuppliedButExcluded=¯\_(ツ)_/¯`} {

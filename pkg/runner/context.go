@@ -182,6 +182,7 @@ func (c *ExecutionContext) GenerateEnvfile(env *variables.Variables) error {
 		if slices.Contains(invalidEnvVarKeys, varName) {
 			logrus.Warnf("Skipping invalid env var: %s=%v\n'%s' is not a valid key", varName, varValue, varName)
 			continue
+			
 		}
 
 		varName = c.modifyName(varName)
