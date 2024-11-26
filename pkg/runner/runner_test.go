@@ -168,11 +168,6 @@ func Test_DockerExec_Cmd(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// for _, v := range [][2]string{{"ADDED", "/old/foo"}, {"NEW_STUFF", "/old/bar"}} {
-		// 	os.Setenv(v[0], v[1])
-		// }
-		// defer os.Clearenv()
-
 		// on program start up from Config - os.Environ are merged into contexts
 		dockerCtx := runner.NewExecutionContext(executable, "/", variables.FromMap(map[string]string{"ADDED": "/old/foo", "NEW_STUFF": "/old/bar"}), utils.NewEnvFile(func(e *utils.Envfile) {
 			e.PathValue = tf.Name()
@@ -372,7 +367,4 @@ BAZ=quzxxx`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	// if got := task.Env.Get("FOO"); got != "bar" {
-	// 	t.Errorf("FOO env var not merged from file, got %s, wanted bar", got)
-	// }
 }

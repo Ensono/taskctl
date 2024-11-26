@@ -198,4 +198,3 @@ tasks:
     name: "tidy me up"
     command:
       - go mod tidy
-      - echo $SET_IN_TASKCTL_DEFAULT

@@ -68,7 +68,7 @@ func newEnvFile(defEnvFile *utils.Envfile, isContainerContext bool) (*utils.Envf
 	}
 
 	envFile := utils.NewEnvFile(func(e *utils.Envfile) {
-		// REMOVE Generate - as we will always generate when the context is container
+		// REMOVED Generate - as we will always generate when the context is container
 		// We will always inject env file from path if present
 		e.Exclude = defEnvFile.Exclude
 		// add default excludes from host to container
