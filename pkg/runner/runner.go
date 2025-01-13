@@ -103,15 +103,13 @@ func (r *TaskRunner) SetVariables(vars *variables.Variables) *TaskRunner {
 func (r *TaskRunner) Run(t *task.Task) error {
 
 	// wait for a cancel context - channel is closed automa
-	go func() error {
+	go func() {
 		<-r.ctx.Done()
 		if !errors.Is(r.ctx.Err(), context.Canceled) {
 			logrus.Debugf("task error: %v\n", r.ctx.Err())
-			return r.ctx.Err()
 		}
 		logrus.Error("tascktl run has been cancelled")
 		<-r.doneCh
-		return nil
 	}()
 
 	execContext, err := r.contextForTask(t)
