@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"slices"
+	"syscall"
 
 	taskctlcmd "github.com/Ensono/taskctl/cmd/taskctl"
 	"github.com/sirupsen/logrus"
@@ -57,7 +58,7 @@ func main() {
 	if err := taskctlRootCmd.InitCommand(); err != nil {
 		logrus.Fatal(err)
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), []os.Signal{os.Interrupt, syscall.SIGTERM}...)
 	defer stop()
 
 	setDefaultCommandIfNonePresent(taskctlRootCmd.Cmd)
