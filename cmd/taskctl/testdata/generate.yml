@@ -10,6 +10,18 @@ contexts:
     envfile:
       exclude:
         - HOME
+  asciidoc:
+    container:
+      name: ensonostackseuweirdfmu.azurecr.io/ensono/eir-asciidoctor:latest
+      container_args:
+        - -p 1313:1313
+      shell: pwsh
+      shell_args:
+        - -Command
+    envfile:
+      exclude:
+        - sourceversionmessage
+        - posh_azure_subscription
 
 ci_meta:
   targetOpts:
@@ -103,3 +115,8 @@ tasks:
         done
     env:
       FOO: task2
+
+  docs:serve:
+    context: asciidoc
+    description: Run Documentation website locally
+    command: hugo serve --bind 0.0.0.0
