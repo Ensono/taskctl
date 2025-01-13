@@ -105,10 +105,7 @@ func (r *TaskRunner) Run(t *task.Task) error {
 	// wait for a cancel context - channel is closed automa
 	go func() {
 		<-r.ctx.Done()
-		if !errors.Is(r.ctx.Err(), context.Canceled) {
-			logrus.Debugf("task error: %v\n", r.ctx.Err())
-		}
-		logrus.Error("tascktl run has been cancelled")
+		logrus.Errorf("tascktl error: %v", r.ctx.Err())
 		<-r.doneCh
 	}()
 

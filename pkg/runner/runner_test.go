@@ -2,6 +2,7 @@ package runner_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -367,4 +368,53 @@ BAZ=quzxxx`))
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestTaskRunner_withContext(t *testing.T) {
+	t.Run("cancelled", func(t *testing.T) {
+
+		ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
+
+		tr, err := runner.NewTaskRunner(runner.WithGracefulCtx(ctx))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		task := taskpkg.NewTask("test:with:env")
+		task.Env = task.Env.Merge(variables.FromMap(map[string]string{"ONE": "two"}))
+		task.Commands = []string{"sleep 2"}
+		go func() {
+			time.Sleep(1)
+			cancel()
+		}()
+
+		e := tr.Run(task)
+		if e == nil {
+			t.Fatalf("got %v, wanted 'context canceled'", e)
+		}
+		if e.Error() != "context canceled" {
+			t.Fatalf("got %v, wanted 'context canceled'", e)
+		}
+	})
+	t.Run("deadline exceeded", func(t *testing.T) {
+
+		ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Millisecond)
+		defer cancel()
+		tr, err := runner.NewTaskRunner(runner.WithGracefulCtx(ctx))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		task := taskpkg.NewTask("test:with:env")
+		task.Env = task.Env.Merge(variables.FromMap(map[string]string{"ONE": "two"}))
+		task.Commands = []string{"sleep 2"}
+
+		e := tr.Run(task)
+		if e == nil {
+			t.Fatalf("got %v, wanted error", e)
+		}
+		if e.Error() != "context deadline exceeded" {
+			t.Fatalf("got %v, wanted 'context deadline exceeded'", e)
+		}
+	})
 }
