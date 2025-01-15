@@ -343,7 +343,7 @@ func (r *TaskRunner) checkTaskCondition(t *task.Task) (bool, error) {
 		return false, err
 	}
 
-	_, err = exec.Execute(context.Background(), job)
+	_, err = exec.Execute(r.ctx, job)
 	if err != nil {
 		if _, ok := executor.IsExitStatus(err); ok {
 			return false, nil

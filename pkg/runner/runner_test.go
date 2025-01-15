@@ -384,7 +384,7 @@ func TestTaskRunner_withContext(t *testing.T) {
 		task.Env = task.Env.Merge(variables.FromMap(map[string]string{"ONE": "two"}))
 		task.Commands = []string{"sleep 2"}
 		go func() {
-			time.Sleep(1)
+			time.Sleep(100 * time.Millisecond)
 			cancel()
 		}()
 

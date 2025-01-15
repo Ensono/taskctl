@@ -198,6 +198,7 @@ func (tc *TaskCtlCmd) buildTaskRunner(args []string, conf *config.Config) (*runn
 		func(runner *runner.TaskRunner) {
 			runner.Stdout = tc.ChannelOut
 			runner.Stderr = tc.ChannelErr
+			runner.Stdin = tc.Cmd.InOrStdin()
 		},
 		runner.WithGracefulCtx(tc.Cmd.Context()))
 

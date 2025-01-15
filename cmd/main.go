@@ -58,7 +58,7 @@ func main() {
 	if err := taskctlRootCmd.InitCommand(); err != nil {
 		logrus.Fatal(err)
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), []os.Signal{os.Interrupt, syscall.SIGTERM}...)
+	ctx, stop := signal.NotifyContext(context.Background(), []os.Signal{os.Interrupt, syscall.SIGTERM, os.Kill}...)
 	defer stop()
 
 	setDefaultCommandIfNonePresent(taskctlRootCmd.Cmd)
