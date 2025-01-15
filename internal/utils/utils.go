@@ -33,7 +33,7 @@ func IsURL(s string) bool {
 const REPLACE_CHAR_DEFAULT = " "
 
 var (
-	ErrInvalidOptionsEnvFile = errors.New("invalid options on envfile")
+	ErrInvalidOptionsEnvFile  = errors.New("invalid options on envfile")
 	ErrEnvfileFormatIncorrect = errors.New("envfile incorrect")
 )
 

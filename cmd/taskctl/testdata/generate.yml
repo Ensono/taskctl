@@ -10,6 +10,18 @@ contexts:
     envfile:
       exclude:
         - HOME
+  asciidoc:
+    container:
+      name: ensonostackseuweirdfmu.azurecr.io/ensono/eir-asciidoctor:latest
+      container_args:
+        - -p 1313:1313
+      shell: pwsh
+      shell_args:
+        - -Command
+    envfile:
+      exclude:
+        - sourceversionmessage
+        - posh_azure_subscription
 
 ci_meta:
   targetOpts:
@@ -61,7 +73,7 @@ tasks:
     command: |
       for i in $(seq 1 5); do
         echo "hello task 1 in env ${ENV_NAME} - iteration $i"
-        sleep 0
+        sleep 1
       done
     context: podman
 
@@ -99,7 +111,12 @@ tasks:
       - |
         for i in $(seq 1 5); do
           echo "hello, p2 ${FOO} - env: ${ENV_NAME:-unknown} - iteration $i"
-          sleep 0
+          sleep 1
         done
     env:
       FOO: task2
+
+  docs:serve:
+    context: asciidoc
+    description: Run Documentation website locally
+    command: hugo serve --bind 0.0.0.0

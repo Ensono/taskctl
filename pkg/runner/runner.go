@@ -67,6 +67,7 @@ func NewTaskRunner(opts ...Opts) (*TaskRunner, error) {
 		Stderr:       os.Stderr,
 		variables:    variables.NewVariables(),
 		env:          variables.NewVariables(),
+		cancelMutex:  sync.RWMutex{},
 		doneCh:       make(chan struct{}, 1),
 	}
 
@@ -100,20 +101,17 @@ func (r *TaskRunner) SetVariables(vars *variables.Variables) *TaskRunner {
 // Env on the runner is global to all tasks
 // it is built using the dotenv output only for now
 func (r *TaskRunner) Run(t *task.Task) error {
-	defer func() {
-		r.cancelMutex.RLock()
-		if r.canceling {
-			close(r.doneCh)
-		}
-		r.cancelMutex.RUnlock()
-	}()
 
-	if err := r.ctx.Err(); err != nil {
-		return err
-	}
+	// wait for a cancel context - channel is closed automa
+	go func() {
+		<-r.ctx.Done()
+		logrus.Errorf("tascktl error: %v", r.ctx.Err())
+		<-r.doneCh
+	}()
 
 	execContext, err := r.contextForTask(t)
 	if err != nil {
+		logrus.Debugf("err in execContext: %s\n", err.Error())
 		return err
 	}
 
@@ -192,6 +190,9 @@ func (r *TaskRunner) Run(t *task.Task) error {
 
 	err = r.execute(r.ctx, t, job)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			logrus.Debugf("err is cancelled: %s\n", err.Error())
+		}
 		return err
 	}
 	if err := r.storeTaskOutput(t); err != nil {
@@ -342,7 +343,7 @@ func (r *TaskRunner) checkTaskCondition(t *task.Task) (bool, error) {
 		return false, err
 	}
 
-	_, err = exec.Execute(context.Background(), job)
+	_, err = exec.Execute(r.ctx, job)
 	if err != nil {
 		if _, ok := executor.IsExitStatus(err); ok {
 			return false, nil
@@ -421,5 +422,13 @@ func WithVariables(variables *variables.Variables) Opts {
 	return func(runner *TaskRunner) {
 		runner.variables = variables
 		runner.compiler.variables = variables
+	}
+}
+
+// WithGracefulCtx uses the top most context to create child contexts
+// this will ensure the cancellation is propagated properly down.
+func WithGracefulCtx(ctx context.Context) Opts {
+	return func(tr *TaskRunner) {
+		tr.ctx, tr.cancelFunc = context.WithCancel(ctx)
 	}
 }

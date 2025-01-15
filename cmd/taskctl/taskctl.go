@@ -193,10 +193,14 @@ func (tc *TaskCtlCmd) buildTaskRunner(args []string, conf *config.Config) (*runn
 	// These are stdin args passed over `-- arg1 arg2`
 	vars.Set("ArgsList", argsStringer.argsList)
 	vars.Set("Args", strings.Join(argsStringer.argsList, " "))
-	tr, err := runner.NewTaskRunner(runner.WithContexts(conf.Contexts), runner.WithVariables(vars), func(runner *runner.TaskRunner) {
-		runner.Stdout = tc.ChannelOut
-		runner.Stderr = tc.ChannelErr
-	})
+	tr, err := runner.NewTaskRunner(runner.WithContexts(conf.Contexts),
+		runner.WithVariables(vars),
+		func(runner *runner.TaskRunner) {
+			runner.Stdout = tc.ChannelOut
+			runner.Stderr = tc.ChannelErr
+			runner.Stdin = tc.Cmd.InOrStdin()
+		},
+		runner.WithGracefulCtx(tc.Cmd.Context()))
 
 	if err != nil {
 		return nil, nil, err
