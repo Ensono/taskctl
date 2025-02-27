@@ -47,6 +47,7 @@ func (tc *TaskCompiler) CompileTask(t *task.Task, executionContext *ExecutionCon
 	for _, variant := range t.GetVariations() {
 		// each command in the array needs compiling
 		for _, command := range t.Commands {
+			env := env.Merge(variables.FromMap(variant))
 			j, err := tc.CompileCommand(
 				t.Name,
 				command,
@@ -56,7 +57,7 @@ func (tc *TaskCompiler) CompileTask(t *task.Task, executionContext *ExecutionCon
 				stdin,
 				stdout,
 				stderr,
-				env.Merge(variables.FromMap(variant)),
+				env,
 				vars,
 			)
 			if err != nil {

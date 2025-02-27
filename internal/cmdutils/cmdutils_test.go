@@ -31,3 +31,11 @@ func TestPrintSummary(t *testing.T) {
 		}
 	})
 }
+
+func Test_Docker(t *testing.T) {
+	cmdutils.RunDockerContainer()
+}
+
+func Test_RunPodman(t *testing.T) {
+	// cmdutils.RunPodmanContainer()
+}
