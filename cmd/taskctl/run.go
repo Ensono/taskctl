@@ -11,7 +11,6 @@ import (
 	"github.com/Ensono/taskctl/runner"
 	"github.com/Ensono/taskctl/scheduler"
 	"github.com/Ensono/taskctl/task"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -147,12 +146,6 @@ func (r *runCmd) runTarget(taskRunner *runner.TaskRunner, conf *config.Config, a
 func (r *runCmd) runPipeline(g *scheduler.ExecutionGraph, taskRunner *runner.TaskRunner, summary bool) error {
 	sd := scheduler.NewScheduler(taskRunner)
 	defer sd.Finish()
-
-	go func() {
-		<-r.ctx.Done()
-		logrus.Info("gracefully exiting...")
-		sd.Cancel()
-	}()
 
 	// rebuild the tree with deduped nested graphs
 	// when running embedded pipelines in pipelines referencing
