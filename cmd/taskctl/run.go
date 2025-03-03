@@ -32,7 +32,7 @@ func newRunCmd(rootCmd *TaskCtlCmd) {
 		channelOut: rootCmd.ChannelOut,
 		channelErr: rootCmd.ChannelErr,
 		flags:      f,
-		ctx:        rootCmd.Cmd.Context(),
+		ctx:        rootCmd.ctx,
 	}
 
 	rc := &cobra.Command{
@@ -48,7 +48,6 @@ func newRunCmd(rootCmd *TaskCtlCmd) {
 			if err != nil {
 				return err
 			}
-			runner.ctx = rootCmd.Cmd.Context()
 			// display selector if nothing is supplied
 			if len(args) == 0 {
 				selected, err := cmdutils.DisplayTaskSelection(conf, false)
@@ -77,8 +76,6 @@ func newRunCmd(rootCmd *TaskCtlCmd) {
 			if err != nil {
 				return err
 			}
-			runner.ctx = rootCmd.Cmd.Context()
-
 			taskRunner, argsStringer, err := rootCmd.buildTaskRunner(args, conf)
 			if err != nil {
 				return err
@@ -134,14 +131,13 @@ func (r *runCmd) runTarget(taskRunner *runner.TaskRunner, conf *config.Config, a
 
 	if argsStringer.pipelineName != nil {
 		if err := r.runPipeline(argsStringer.pipelineName, taskRunner, conf.Summary); err != nil {
-			return fmt.Errorf("pipeline %s failed: %w", argsStringer.taskOrPipelineName, err)
+			return fmt.Errorf("pipeline `%s` failed: %w", argsStringer.taskOrPipelineName, err)
 		}
-		return nil
 	}
 
 	if argsStringer.taskName != nil {
 		if err := r.runTask(argsStringer.taskName, taskRunner); err != nil {
-			return fmt.Errorf("task %s failed: %w", argsStringer.taskOrPipelineName, err)
+			return fmt.Errorf("task `%s` failed: %w", argsStringer.taskOrPipelineName, err)
 		}
 	}
 

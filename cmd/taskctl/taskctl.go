@@ -22,8 +22,6 @@ var (
 	Revision = "aaaa1234"
 )
 
-var cancel = make(chan struct{})
-
 type rootCmdFlags struct {
 	// all vars here
 	Debug       bool
@@ -41,6 +39,7 @@ type rootCmdFlags struct {
 }
 
 type TaskCtlCmd struct {
+	ctx        context.Context
 	Cmd        *cobra.Command
 	ChannelOut io.Writer
 	ChannelErr io.Writer
@@ -48,8 +47,9 @@ type TaskCtlCmd struct {
 	rootFlags  *rootCmdFlags
 }
 
-func NewTaskCtlCmd(channelOut, channelErr io.Writer) *TaskCtlCmd {
+func NewTaskCtlCmd(ctx context.Context, channelOut, channelErr io.Writer) *TaskCtlCmd {
 	tc := &TaskCtlCmd{
+		ctx:        ctx,
 		ChannelOut: channelOut,
 		ChannelErr: channelErr,
 		Cmd: &cobra.Command{
@@ -102,7 +102,7 @@ func (tc *TaskCtlCmd) InitCommand() error {
 	return nil
 }
 
-func (tc *TaskCtlCmd) Execute(ctx context.Context) error {
+func (tc *TaskCtlCmd) Execute() error {
 	// NOTE: do we need logrus ???
 	// latest Go has structured logging...
 	logrus.SetFormatter(&logrus.TextFormatter{
@@ -112,7 +112,7 @@ func (tc *TaskCtlCmd) Execute(ctx context.Context) error {
 	})
 	logrus.SetOutput(tc.ChannelErr)
 
-	return tc.Cmd.ExecuteContext(ctx)
+	return tc.Cmd.ExecuteContext(tc.ctx)
 }
 
 var (
@@ -207,7 +207,7 @@ func (tc *TaskCtlCmd) buildTaskRunner(args []string, conf *config.Config) (*runn
 			runner.Stderr = tc.ChannelErr
 			runner.Stdin = tc.Cmd.InOrStdin()
 		},
-		runner.WithGracefulCtx(tc.Cmd.Context()))
+		runner.WithGracefulCtx(tc.ctx))
 
 	if err != nil {
 		return nil, nil, err
@@ -221,7 +221,7 @@ func (tc *TaskCtlCmd) buildTaskRunner(args []string, conf *config.Config) (*runn
 	}
 
 	go func() {
-		<-cancel // tc.Cmd.Context().Done()
+		<-tc.ctx.Done()
 		tr.Cancel()
 	}()
 

@@ -24,7 +24,7 @@ func cmdRunTestHelper(t *testing.T, testInput *cmdRunTestInput) {
 	logOut := output.NewSafeWriter(&bytes.Buffer{})
 	logErr := output.NewSafeWriter(&bytes.Buffer{})
 
-	cmd := taskctlCmd.NewTaskCtlCmd(logOut, logErr)
+	cmd := taskctlCmd.NewTaskCtlCmd(context.TODO(), logOut, logErr)
 	os.Args = append([]string{os.Args[0]}, testInput.args...)
 
 	cmd.Cmd.SetArgs(testInput.args)
@@ -37,7 +37,7 @@ func cmdRunTestHelper(t *testing.T, testInput *cmdRunTestInput) {
 		t.Fatal(err)
 	}
 
-	if err := cmd.Execute(context.TODO()); err != nil {
+	if err := cmd.Execute(); err != nil {
 		if testInput.errored {
 			return
 		}
