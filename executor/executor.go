@@ -82,7 +82,7 @@ func (e *DefaultExecutor) Execute(ctx context.Context, job *Job) ([]byte, error)
 		job.Dir = e.dir
 	}
 
-	logrus.Debugf("Executing \"%s\"", command)
+	logrus.Debugf("Executing Command: \"%s\"", command)
 
 	e.interp.Dir = job.Dir
 	e.interp.Env = expand.ListEnviron(env...)

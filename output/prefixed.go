@@ -22,6 +22,13 @@ func NewPrefixedOutputWriter(t *task.Task, w io.Writer) *prefixedOutputDecorator
 }
 
 func (d *prefixedOutputDecorator) Write(p []byte) (int, error) {
+	// b := bufio.NewReader(bytes.NewReader(p))
+	// readBytes, err := b.ReadBytes('\n')
+	// if err != nil {
+	// 	return 0, err
+	// }
+	// return d.w.Write(fmt.Appendf([]byte{}, "\x1b[36m%s\x1b[0m: %s\n", d.t.Name, readBytes))
+
 	n := len(p)
 	for {
 		// use ScanLines for an easier newlint and empty output management
@@ -30,11 +37,8 @@ func (d *prefixedOutputDecorator) Write(p []byte) (int, error) {
 		if err != nil {
 			return 0, err
 		}
+		// go to next stream once no tokens left
 		if advance == 0 {
-			break
-		}
-		// do not write empty lines
-		if len(line) == 0 {
 			break
 		}
 		if _, err := d.w.Write([]byte(fmt.Sprintf("\x1b[36m%s\x1b[0m: %s\r\n", d.t.Name, line))); err != nil {

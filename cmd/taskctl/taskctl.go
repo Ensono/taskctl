@@ -174,6 +174,11 @@ func (tc *TaskCtlCmd) initConfig() (*config.Config, error) {
 		conf.Output = outputpkg.CockpitOutput
 	}
 
+	// if no value was set - we set to default
+	if conf.Output == "" {
+		conf.Output = outputpkg.RawOutput
+	}
+
 	// these are CLI args only
 	conf.Options.GraphOrientationLeftRight = tc.viperConf.GetBool("lr")
 	conf.Options.InitDir = tc.viperConf.GetString("dir")
