@@ -371,7 +371,7 @@ BAZ=quzxxx`))
 }
 
 func TestTaskRunner_withContext(t *testing.T) {
-	t.Run("cancelled", func(t *testing.T) {
+	t.Run("cancelled via context", func(t *testing.T) {
 
 		ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 
@@ -396,6 +396,31 @@ func TestTaskRunner_withContext(t *testing.T) {
 			t.Fatalf("got %v, wanted 'context canceled'", e)
 		}
 	})
+
+	t.Run("cancelled via taskRunner Cancel", func(t *testing.T) {
+
+		tr, err := runner.NewTaskRunner(runner.WithGracefulCtx(context.TODO()))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		task := taskpkg.NewTask("test:with:env")
+		task.Env = task.Env.Merge(variables.FromMap(map[string]string{"ONE": "two"}))
+		task.Commands = []string{"sleep 2"}
+		go func() {
+			time.Sleep(100 * time.Millisecond)
+			tr.Cancel()
+		}()
+
+		e := tr.Run(task)
+		if e == nil {
+			t.Fatalf("got %v, wanted 'context canceled'", e)
+		}
+		if e.Error() != "context canceled" {
+			t.Fatalf("got %v, wanted 'context canceled'", e)
+		}
+	})
+
 	t.Run("deadline exceeded", func(t *testing.T) {
 
 		ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Millisecond)
