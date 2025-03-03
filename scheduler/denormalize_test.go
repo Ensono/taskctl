@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/Ensono/taskctl/internal/config"
-	"github.com/Ensono/taskctl/pkg/scheduler"
-	"github.com/Ensono/taskctl/pkg/task"
-	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/Ensono/taskctl/scheduler"
+	"github.com/Ensono/taskctl/task"
+	"github.com/Ensono/taskctl/variables"
 )
 
 func TestStageFrom_originalToNew(t *testing.T) {

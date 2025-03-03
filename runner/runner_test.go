@@ -13,11 +13,11 @@ import (
 
 	"github.com/Ensono/taskctl/internal/config"
 	"github.com/Ensono/taskctl/internal/utils"
-	"github.com/Ensono/taskctl/pkg/output"
-	"github.com/Ensono/taskctl/pkg/runner"
-	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/Ensono/taskctl/output"
+	"github.com/Ensono/taskctl/runner"
+	"github.com/Ensono/taskctl/variables"
 
-	taskpkg "github.com/Ensono/taskctl/pkg/task"
+	taskpkg "github.com/Ensono/taskctl/task"
 )
 
 func TestTaskRunner(t *testing.T) {
@@ -226,7 +226,7 @@ QUX=looopar`))
 }
 
 func ExampleTaskRunner_Run() {
-	t := taskpkg.FromCommands("t1", "go doc github.com/Ensono/taskctl/pkg/runner.Runner")
+	t := taskpkg.FromCommands("t1", "go doc github.com/Ensono/taskctl/runner.Runner")
 	ob := output.NewSafeWriter(&bytes.Buffer{})
 	r, err := runner.NewTaskRunner(func(tr *runner.TaskRunner) {
 		tr.Stdout = ob
@@ -240,7 +240,7 @@ func ExampleTaskRunner_Run() {
 	}
 	fmt.Println(ob.String())
 	// indentation is important with the matched output here
-	// Output: package runner // import "github.com/Ensono/taskctl/pkg/runner"
+	// Output: package runner // import "github.com/Ensono/taskctl/runner"
 	//
 	// type Runner interface {
 	// 	Run(t *task.Task) error

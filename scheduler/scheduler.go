@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/Ensono/taskctl/internal/utils"
-	"github.com/Ensono/taskctl/pkg/runner"
+	"github.com/Ensono/taskctl/runner"
 	"github.com/sirupsen/logrus"
 )
 

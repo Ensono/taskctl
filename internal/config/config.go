@@ -6,11 +6,11 @@ import (
 
 	"dario.cat/mergo"
 	"github.com/Ensono/taskctl/internal/watch"
-	"github.com/Ensono/taskctl/pkg/output"
-	"github.com/Ensono/taskctl/pkg/runner"
-	"github.com/Ensono/taskctl/pkg/scheduler"
-	"github.com/Ensono/taskctl/pkg/task"
-	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/Ensono/taskctl/output"
+	"github.com/Ensono/taskctl/runner"
+	"github.com/Ensono/taskctl/scheduler"
+	"github.com/Ensono/taskctl/task"
+	"github.com/Ensono/taskctl/variables"
 	"github.com/sirupsen/logrus"
 )
 

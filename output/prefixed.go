@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Ensono/taskctl/pkg/task"
+	"github.com/Ensono/taskctl/task"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,11 +30,8 @@ func (d *prefixedOutputDecorator) Write(p []byte) (int, error) {
 		if err != nil {
 			return 0, err
 		}
+		// go to next stream once no tokens left
 		if advance == 0 {
-			break
-		}
-		// do not write empty lines
-		if len(line) == 0 {
 			break
 		}
 		if _, err := d.w.Write([]byte(fmt.Sprintf("\x1b[36m%s\x1b[0m: %s\r\n", d.t.Name, line))); err != nil {

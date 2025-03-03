@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Ensono/taskctl/pkg/scheduler"
-	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/Ensono/taskctl/scheduler"
+	"github.com/Ensono/taskctl/variables"
 
-	"github.com/Ensono/taskctl/pkg/runner"
+	"github.com/Ensono/taskctl/runner"
 
-	"github.com/Ensono/taskctl/pkg/task"
+	"github.com/Ensono/taskctl/task"
 )
 
 type TestTaskRunner struct {

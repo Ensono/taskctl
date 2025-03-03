@@ -5,7 +5,7 @@ import (
 	"io"
 	"slices"
 
-	"github.com/Ensono/taskctl/pkg/scheduler"
+	"github.com/Ensono/taskctl/scheduler"
 	"github.com/emicklei/dot"
 	"github.com/spf13/cobra"
 )

@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/Ensono/taskctl/internal/utils"
-	"github.com/Ensono/taskctl/pkg/runner"
-	"github.com/Ensono/taskctl/pkg/task"
-	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/Ensono/taskctl/runner"
+	"github.com/Ensono/taskctl/task"
+	"github.com/Ensono/taskctl/variables"
 )
 
 var shBin = utils.Binary{

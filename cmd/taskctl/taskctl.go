@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/Ensono/taskctl/internal/config"
-	outputpkg "github.com/Ensono/taskctl/pkg/output"
-	"github.com/Ensono/taskctl/pkg/runner"
-	"github.com/Ensono/taskctl/pkg/variables"
+	outputpkg "github.com/Ensono/taskctl/output"
+	"github.com/Ensono/taskctl/runner"
+	"github.com/Ensono/taskctl/variables"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -34,10 +34,10 @@ type rootCmdFlags struct {
 	Quiet       bool
 	VariableSet map[string]string
 	DryRun      bool
-	// Summary report at the end of the task run
+	// NoSummary report at the end of the task run
 	// this was set to default as true in the original
 	// - not sure this makes sense for a boolean flag "¯\_(ツ)_/¯"
-	Summary bool
+	NoSummary bool
 }
 
 type TaskCtlCmd struct {
@@ -79,8 +79,8 @@ func NewTaskCtlCmd(channelOut, channelErr io.Writer) *TaskCtlCmd {
 	tc.Cmd.PersistentFlags().BoolVarP(&tc.rootFlags.DryRun, "dry-run", "", false, "dry run")
 	_ = tc.viperConf.BindPFlag("dry-run", tc.Cmd.PersistentFlags().Lookup("dry-run"))
 
-	tc.Cmd.PersistentFlags().BoolVarP(&tc.rootFlags.Summary, "summary", "s", true, "show summary")
-	_ = tc.viperConf.BindPFlag("summary", tc.Cmd.PersistentFlags().Lookup("summary"))
+	tc.Cmd.PersistentFlags().BoolVarP(&tc.rootFlags.NoSummary, "no-summary", "", false, "show summary")
+	_ = tc.viperConf.BindPFlag("no-summary", tc.Cmd.PersistentFlags().Lookup("summary"))
 
 	tc.Cmd.PersistentFlags().BoolVarP(&tc.rootFlags.Quiet, "quiet", "q", false, "quite mode")
 	_ = tc.viperConf.BindPFlag("quiet", tc.Cmd.PersistentFlags().Lookup("quiet"))
@@ -133,6 +133,7 @@ func (tc *TaskCtlCmd) initConfig() (*config.Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	// if cmd line flags were passed in, they override anything
 	// parsed from theconfig file
 	if tc.viperConf.GetBool("debug") {
@@ -144,19 +145,20 @@ func (tc *TaskCtlCmd) initConfig() (*config.Config, error) {
 	}
 	// if default config keys were set to false
 	// we check the overrides
-	if !conf.Quiet {
+	if tc.rootFlags.Quiet {
 		conf.Quiet = tc.rootFlags.Quiet
 	}
-	if !conf.DryRun {
+	if tc.rootFlags.DryRun {
 		conf.DryRun = tc.rootFlags.DryRun
 	}
-	if !conf.Summary {
-		conf.Summary = tc.rootFlags.Summary
+	if tc.rootFlags.NoSummary {
+		// This is to maintain the old behaviour of exposing a flag with a default state in `true`
+		conf.Summary = !tc.rootFlags.NoSummary
 	}
 
 	// if output not specified in yaml/CLI/EnvVar
 	// conf.Output comes from the yaml - if not set in yaml
-	if conf.Output == "" {
+	if tc.viperConf.GetString("output") != "" {
 		// then compute the cmd line --output flag
 		// can be set via env or as a flag
 		conf.Output = outputpkg.OutputEnum(tc.viperConf.GetString("output"))
@@ -170,6 +172,11 @@ func (tc *TaskCtlCmd) initConfig() (*config.Config, error) {
 
 	if tc.viperConf.GetBool("cockpit") {
 		conf.Output = outputpkg.CockpitOutput
+	}
+
+	// if no value was set - we set to default
+	if conf.Output == "" {
+		conf.Output = outputpkg.RawOutput
 	}
 
 	// these are CLI args only

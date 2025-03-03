@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/Ensono/taskctl/internal/config"
-	"github.com/Ensono/taskctl/pkg/scheduler"
+	"github.com/Ensono/taskctl/scheduler"
 	"github.com/charmbracelet/huh"
 )
 

@@ -3,7 +3,7 @@ package variables_test
 import (
 	"testing"
 
-	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/Ensono/taskctl/variables"
 )
 
 func TestNewVariables(t *testing.T) {

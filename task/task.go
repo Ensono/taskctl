@@ -6,7 +6,7 @@ import (
 
 	"dario.cat/mergo"
 	"github.com/Ensono/taskctl/internal/utils"
-	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/Ensono/taskctl/variables"
 	"github.com/sirupsen/logrus"
 )
 

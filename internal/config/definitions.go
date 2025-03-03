@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/Ensono/taskctl/internal/utils"
-	"github.com/Ensono/taskctl/pkg/task"
+	"github.com/Ensono/taskctl/task"
 	"github.com/invopop/jsonschema"
 )
 

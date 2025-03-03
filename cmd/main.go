@@ -43,10 +43,8 @@ func setDefaultCommandIfNonePresent(cmd *cobra.Command) {
 	if len(os.Args) > 1 {
 		// This will turn `taskctl [pipeline task]` => `taskctl run [pipeline task]`
 		potentialCommand := os.Args[1]
-		for _, command := range subCommands(cmd) {
-			if command == potentialCommand {
-				return
-			}
+		if slices.Contains(subCommands(cmd), potentialCommand) {
+			return
 		}
 		os.Args = append([]string{os.Args[0], "run"}, os.Args[1:]...)
 	}

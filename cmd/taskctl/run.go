@@ -8,10 +8,9 @@ import (
 
 	"github.com/Ensono/taskctl/internal/cmdutils"
 	"github.com/Ensono/taskctl/internal/config"
-	"github.com/Ensono/taskctl/pkg/output"
-	"github.com/Ensono/taskctl/pkg/runner"
-	"github.com/Ensono/taskctl/pkg/scheduler"
-	"github.com/Ensono/taskctl/pkg/task"
+	"github.com/Ensono/taskctl/runner"
+	"github.com/Ensono/taskctl/scheduler"
+	"github.com/Ensono/taskctl/task"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -109,21 +108,21 @@ func newRunCmd(rootCmd *TaskCtlCmd) {
 		},
 	})
 
-	rc.PersistentFlags().StringVarP(&rootCmd.rootFlags.Output, "output", "o", string(output.RawOutput), "output format (raw, prefixed or cockpit)")
+	rc.PersistentFlags().StringVarP(&rootCmd.rootFlags.Output, "output", "o", "", "output format (raw, prefixed or cockpit)")
 	_ = rootCmd.viperConf.BindEnv("output", "TASKCTL_OUTPUT_FORMAT")
 	_ = rootCmd.viperConf.BindPFlag("output", rc.PersistentFlags().Lookup("output"))
 
 	// Shortcut flags
 	rc.PersistentFlags().BoolVarP(&rootCmd.rootFlags.Raw, "raw", "r", false, "shortcut for --output=raw")
-	_ = rootCmd.viperConf.BindPFlag("raw", rc.PersistentFlags().Lookup("raw")) // TASKCTL_DEBUG
+	_ = rootCmd.viperConf.BindPFlag("raw", rc.PersistentFlags().Lookup("raw"))
 
 	rc.PersistentFlags().BoolVarP(&rootCmd.rootFlags.Cockpit, "cockpit", "", false, "shortcut for --output=cockpit")
-	_ = rootCmd.viperConf.BindPFlag("cockpit", rc.PersistentFlags().Lookup("cockpit")) // TASKCTL_DEBUG
+	_ = rootCmd.viperConf.BindPFlag("cockpit", rc.PersistentFlags().Lookup("cockpit"))
 
 	// Key=Value pairs
 	// can be supplied numerous times
 	rc.PersistentFlags().StringToStringVarP(&rootCmd.rootFlags.VariableSet, "set", "", nil, "set global variable value")
-	_ = rootCmd.viperConf.BindPFlag("set", rc.PersistentFlags().Lookup("set")) // TASKCTL_DEBUG
+	_ = rootCmd.viperConf.BindPFlag("set", rc.PersistentFlags().Lookup("set"))
 
 	rc.PersistentFlags().BoolVarP(&f.showGraphOnly, "graph-only", "", false, "Show only the denormalized graph")
 	rc.PersistentFlags().BoolVarP(&f.detailedSummary, "detailed", "", false, "Show detailed summary, otherwise will be summarised by top level stages only")
