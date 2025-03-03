@@ -130,9 +130,7 @@ func newRunCmd(rootCmd *TaskCtlCmd) {
 func (r *runCmd) runTarget(taskRunner *runner.TaskRunner, conf *config.Config, argsStringer *argsToStringsMapper) (err error) {
 
 	if argsStringer.pipelineName != nil {
-		if err := r.runPipeline(argsStringer.pipelineName, taskRunner, conf.Summary); err != nil {
-			return fmt.Errorf("pipeline `%s` failed: %w", argsStringer.taskOrPipelineName, err)
-		}
+		return r.runPipeline(argsStringer.pipelineName, taskRunner, conf.Summary)
 	}
 
 	if argsStringer.taskName != nil {
