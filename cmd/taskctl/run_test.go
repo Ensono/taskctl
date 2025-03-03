@@ -80,6 +80,11 @@ func Test_errors_on_run(t *testing.T) {
 		cmdRunTestHelper(t, &cmdRunTestInput{args: []string{"-c", "testdata/graph.yaml", "run", "error:task", "--raw", "--no-summary"}, errored: true, output: []string{"file not found in $PATH"}})
 	})
 
+	t.Run("errors inside task 2", func(t *testing.T) {
+		defer os.Unsetenv("TASKCTL_CONFIG_FILE")
+		cmdRunTestHelper(t, &cmdRunTestInput{args: []string{"-c", "testdata/graph.yaml", "run", "error:task2", "--raw", "--no-summary"}, errored: false})
+	})
+
 	t.Run("run errors on config not found", func(t *testing.T) {
 		os.Setenv("TASKCTL_CONFIG_FILE", "testdata/task.yaml")
 		defer os.Unsetenv("TASKCTL_CONFIG_FILE")

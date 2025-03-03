@@ -443,3 +443,22 @@ func TestTaskRunner_withContext(t *testing.T) {
 		}
 	})
 }
+
+func Test_allowFailure(t *testing.T) {
+	t.Run("set to true", func(t *testing.T) {
+		tr, err := runner.NewTaskRunner(runner.WithGracefulCtx(context.TODO()))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		task := taskpkg.NewTask("test:with:env")
+		task.Env = task.Env.Merge(variables.FromMap(map[string]string{"ONE": "two"}))
+		task.AllowFailure = true
+		task.Commands = []string{"exit 1"}
+
+		e := tr.Run(task)
+		if e != nil {
+			t.Fatalf("got %v, wanted nil", e)
+		}
+	})
+}

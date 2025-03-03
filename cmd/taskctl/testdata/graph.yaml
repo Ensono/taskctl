@@ -23,5 +23,10 @@ tasks:
 
   graph:task3:
     command: "echo 'hello, world!'"
+  
   error:task:
     command: false
+  
+  error:task2:
+    command: exit 1
+    allow_failure: true
