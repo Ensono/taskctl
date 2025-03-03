@@ -69,10 +69,31 @@ func Test_errors_on_run(t *testing.T) {
 		cmdRunTestHelper(t, &cmdRunTestInput{args: []string{"-c", "testdata/task.yaml", "run", "pipeline", "error:task", "--raw", "--", "first", "second"}, errored: true, exactOutput: `error:task does not exist, ensure your first argument is the name of the pipeline or task. supplied argument does not match any pipelines or tasks`})
 	})
 
-	t.Run("pipeline errors", func(t *testing.T) {
+	t.Run("pipeline not found", func(t *testing.T) {
 		os.Setenv("TASKCTL_CONFIG_FILE", "testdata/task.yaml")
 		defer os.Unsetenv("TASKCTL_CONFIG_FILE")
-		cmdRunTestHelper(t, &cmdRunTestInput{args: []string{"-c", "testdata/task.yaml", "run", "pipeline", "error", "--raw", "--", "first", "second"}, errored: true})
+		cmdRunTestHelper(t, &cmdRunTestInput{args: []string{"-c", "testdata/task.yaml", "run", "pipeline", "not:found", "--raw", "--", "first", "second"}, errored: true})
 	})
 
+	t.Run("errors inside pipeline or task", func(t *testing.T) {
+		os.Setenv("TASKCTL_CONFIG_FILE", "testdata/task.yaml")
+		defer os.Unsetenv("TASKCTL_CONFIG_FILE")
+		cmdRunTestHelper(t, &cmdRunTestInput{args: []string{"-c", "testdata/graph.yaml", "run", "error", "--raw", "--no-summary"}, errored: false, output: []string{"file not found in $PATH"}})
+	})
+
+	t.Run("run errors on config not found", func(t *testing.T) {
+		os.Setenv("TASKCTL_CONFIG_FILE", "testdata/task.yaml")
+		defer os.Unsetenv("TASKCTL_CONFIG_FILE")
+		cmdRunTestHelper(t, &cmdRunTestInput{args: []string{"-c", "testdata/task-notfound.yaml", "run", "error", "--raw", "--", "first", "second"}, errored: true})
+	})
+	t.Run("run pipeline errors on config not found", func(t *testing.T) {
+		os.Setenv("TASKCTL_CONFIG_FILE", "testdata/task.yaml")
+		defer os.Unsetenv("TASKCTL_CONFIG_FILE")
+		cmdRunTestHelper(t, &cmdRunTestInput{args: []string{"-c", "testdata/task-notfound.yaml", "run", "pipeline", "error", "--raw", "--", "first", "second"}, errored: true})
+	})
+	t.Run("run task errors on config not found", func(t *testing.T) {
+		os.Setenv("TASKCTL_CONFIG_FILE", "testdata/task.yaml")
+		defer os.Unsetenv("TASKCTL_CONFIG_FILE")
+		cmdRunTestHelper(t, &cmdRunTestInput{args: []string{"-c", "testdata/task-notfound.yaml", "run", "task", "error", "--raw", "--", "first", "second"}, errored: true})
+	})
 }
