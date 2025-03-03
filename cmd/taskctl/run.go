@@ -146,6 +146,8 @@ func (r *runCmd) runTarget(taskRunner *runner.TaskRunner, conf *config.Config, a
 
 func (r *runCmd) runPipeline(g *scheduler.ExecutionGraph, taskRunner *runner.TaskRunner, summary bool) error {
 	sd := scheduler.NewScheduler(taskRunner)
+	defer sd.Finish()
+
 	go func() {
 		<-r.ctx.Done()
 		logrus.Info("gracefully exiting...")
@@ -160,16 +162,12 @@ func (r *runCmd) runPipeline(g *scheduler.ExecutionGraph, taskRunner *runner.Tas
 	if err != nil {
 		return err
 	}
+
 	if r.flags.showGraphOnly {
 		return graphCmdRun(ng, r.channelOut, &graphFlags{})
 	}
 
-	if err := sd.Schedule(ng); err != nil {
-		logrus.Debug("returning error from sd.Schedule")
-		return err
-	}
-
-	sd.Finish()
+	sd.Schedule(ng)
 
 	fmt.Fprint(r.channelOut, "\r\n")
 

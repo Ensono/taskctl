@@ -80,7 +80,7 @@ func NewTaskCtlCmd(ctx context.Context, channelOut, channelErr io.Writer) *TaskC
 	_ = tc.viperConf.BindPFlag("dry-run", tc.Cmd.PersistentFlags().Lookup("dry-run"))
 
 	tc.Cmd.PersistentFlags().BoolVarP(&tc.rootFlags.NoSummary, "no-summary", "", false, "show summary")
-	_ = tc.viperConf.BindPFlag("no-summary", tc.Cmd.PersistentFlags().Lookup("summary"))
+	_ = tc.viperConf.BindPFlag("no-summary", tc.Cmd.PersistentFlags().Lookup("no-summary"))
 
 	tc.Cmd.PersistentFlags().BoolVarP(&tc.rootFlags.Quiet, "quiet", "q", false, "quite mode")
 	_ = tc.viperConf.BindPFlag("quiet", tc.Cmd.PersistentFlags().Lookup("quiet"))
@@ -151,6 +151,10 @@ func (tc *TaskCtlCmd) initConfig() (*config.Config, error) {
 	if tc.rootFlags.DryRun {
 		conf.DryRun = tc.rootFlags.DryRun
 	}
+
+	// default set up of summary to true
+	conf.Summary = true
+
 	if tc.rootFlags.NoSummary {
 		// This is to maintain the old behaviour of exposing a flag with a default state in `true`
 		conf.Summary = !tc.rootFlags.NoSummary

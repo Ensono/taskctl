@@ -88,8 +88,7 @@ func (s *Scheduler) Schedule(g *ExecutionGraph) error {
 
 				stage.WithStart(time.Now())
 
-				err := s.runStage(stage)
-				if err != nil {
+				if err := s.runStage(stage); err != nil {
 					stage.UpdateStatus(StatusError)
 					// Store error irrespective
 					g.WithStageError(stage, err)
@@ -97,7 +96,6 @@ func (s *Scheduler) Schedule(g *ExecutionGraph) error {
 						return
 					}
 				}
-
 				stage.UpdateStatus(StatusDone)
 			}(stage, &wg)
 		}

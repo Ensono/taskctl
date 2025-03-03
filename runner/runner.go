@@ -395,6 +395,8 @@ func (r *TaskRunner) execute(ctx context.Context, t *task.Task, job *executor.Jo
 			if status, ok := executor.IsExitStatus(err); ok {
 				t.WithExitCode(int16(status))
 				if t.AllowFailure {
+					t.WithError(err)
+					t.WithEnd(time.Now())
 					continue
 				}
 			}
