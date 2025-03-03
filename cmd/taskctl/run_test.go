@@ -9,6 +9,7 @@ func Test_runCommand(t *testing.T) {
 	t.Run("errors on graph:task4", func(t *testing.T) {
 		cmdRunTestHelper(t, &cmdRunTestInput{args: []string{"-c", "testdata/graph.yaml", "run", "graph:task4", "--raw"}, errored: true})
 	})
+
 	t.Run("no task or pipeline supplied", func(t *testing.T) {
 		cmdRunTestHelper(t, &cmdRunTestInput{args: []string{"-c", "testdata/graph.yaml", "run", "graph:task4", "--raw"}, errored: true})
 	})
@@ -61,3 +62,17 @@ func Test_runCommandWithArgumentsList(t *testing.T) {
 	})
 }
 
+func Test_errors_on_run(t *testing.T) {
+	t.Run("task not found", func(t *testing.T) {
+		os.Setenv("TASKCTL_CONFIG_FILE", "testdata/task.yaml")
+		defer os.Unsetenv("TASKCTL_CONFIG_FILE")
+		cmdRunTestHelper(t, &cmdRunTestInput{args: []string{"-c", "testdata/task.yaml", "run", "pipeline", "error:task", "--raw", "--", "first", "second"}, errored: true, exactOutput: `error:task does not exist, ensure your first argument is the name of the pipeline or task. supplied argument does not match any pipelines or tasks`})
+	})
+
+	t.Run("pipeline errors", func(t *testing.T) {
+		os.Setenv("TASKCTL_CONFIG_FILE", "testdata/task.yaml")
+		defer os.Unsetenv("TASKCTL_CONFIG_FILE")
+		cmdRunTestHelper(t, &cmdRunTestInput{args: []string{"-c", "testdata/task.yaml", "run", "pipeline", "error", "--raw", "--", "first", "second"}, errored: true})
+	})
+
+}

@@ -10,6 +10,9 @@ pipelines:
 
   graph:pipeline2:
     - task: graph:task1
+  
+  error:
+    - task: error:task
 
 tasks:
   graph:task1:
@@ -20,3 +23,5 @@ tasks:
 
   graph:task3:
     command: "echo 'hello, world!'"
+  error:task:
+    command: false
