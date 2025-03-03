@@ -11,6 +11,7 @@ import (
 	"github.com/Ensono/taskctl/runner"
 	"github.com/Ensono/taskctl/scheduler"
 	"github.com/Ensono/taskctl/task"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -160,7 +161,9 @@ func (r *runCmd) runPipeline(g *scheduler.ExecutionGraph, taskRunner *runner.Tas
 		return graphCmdRun(ng, r.channelOut, &graphFlags{})
 	}
 
-	sd.Schedule(ng)
+	if err := sd.Schedule(ng); err != nil {
+		logrus.Debugf("scheduler error: %v", err)
+	}
 
 	fmt.Fprint(r.channelOut, "\r\n")
 
