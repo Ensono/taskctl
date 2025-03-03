@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Ensono/taskctl/pkg/runner"
-	"github.com/Ensono/taskctl/pkg/task"
-	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/Ensono/taskctl/runner"
+	"github.com/Ensono/taskctl/task"
+	"github.com/Ensono/taskctl/variables"
 	"github.com/bmatcuk/doublestar"
 	"github.com/fsnotify/fsnotify"
 	"github.com/sirupsen/logrus"

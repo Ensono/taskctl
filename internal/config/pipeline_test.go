@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/Ensono/taskctl/internal/config"
-	"github.com/Ensono/taskctl/pkg/scheduler"
+	"github.com/Ensono/taskctl/scheduler"
 )
 
 func TestBuildPipeline_Cyclical(t *testing.T) {

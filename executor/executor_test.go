@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Ensono/taskctl/pkg/output"
+	"github.com/Ensono/taskctl/output"
 )
 
 func TestDefaultExecutor_Execute(t *testing.T) {

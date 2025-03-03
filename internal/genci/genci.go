@@ -17,7 +17,7 @@ import (
 	"fmt"
 
 	"github.com/Ensono/taskctl/internal/config"
-	"github.com/Ensono/taskctl/pkg/scheduler"
+	"github.com/Ensono/taskctl/scheduler"
 	"gopkg.in/yaml.v2"
 )
 

@@ -8,10 +8,10 @@ import (
 
 	"github.com/Ensono/taskctl/internal/cmdutils"
 	"github.com/Ensono/taskctl/internal/config"
-	"github.com/Ensono/taskctl/pkg/output"
-	"github.com/Ensono/taskctl/pkg/runner"
-	"github.com/Ensono/taskctl/pkg/scheduler"
-	"github.com/Ensono/taskctl/pkg/task"
+	"github.com/Ensono/taskctl/output"
+	"github.com/Ensono/taskctl/runner"
+	"github.com/Ensono/taskctl/scheduler"
+	"github.com/Ensono/taskctl/task"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

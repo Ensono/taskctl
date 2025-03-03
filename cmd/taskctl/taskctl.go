@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/Ensono/taskctl/internal/config"
-	outputpkg "github.com/Ensono/taskctl/pkg/output"
-	"github.com/Ensono/taskctl/pkg/runner"
-	"github.com/Ensono/taskctl/pkg/variables"
+	outputpkg "github.com/Ensono/taskctl/output"
+	"github.com/Ensono/taskctl/runner"
+	"github.com/Ensono/taskctl/variables"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

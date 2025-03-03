@@ -3,9 +3,9 @@ package config
 import (
 	"dario.cat/mergo"
 	"github.com/Ensono/taskctl/internal/utils"
-	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/Ensono/taskctl/variables"
 
-	"github.com/Ensono/taskctl/pkg/task"
+	"github.com/Ensono/taskctl/task"
 )
 
 func buildTask(def *TaskDefinition, lc *loaderContext) (*task.Task, error) {

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	taskctlCmd "github.com/Ensono/taskctl/cmd/taskctl"
-	"github.com/Ensono/taskctl/pkg/output"
+	"github.com/Ensono/taskctl/output"
 )
 
 type cmdRunTestInput struct {

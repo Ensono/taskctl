@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/Ensono/taskctl/internal/utils"
-	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/Ensono/taskctl/variables"
 )
 
 func TestConvertEnv(t *testing.T) {

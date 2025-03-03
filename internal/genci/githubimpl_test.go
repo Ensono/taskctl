@@ -7,8 +7,8 @@ import (
 
 	"github.com/Ensono/taskctl/internal/config"
 	"github.com/Ensono/taskctl/internal/genci"
-	"github.com/Ensono/taskctl/pkg/scheduler"
-	"github.com/Ensono/taskctl/pkg/task"
+	"github.com/Ensono/taskctl/scheduler"
+	"github.com/Ensono/taskctl/task"
 )
 
 func TestGenCi_GithubImpl(t *testing.T) {

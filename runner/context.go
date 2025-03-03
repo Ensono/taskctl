@@ -11,9 +11,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/Ensono/taskctl/executor"
 	"github.com/Ensono/taskctl/internal/utils"
-	"github.com/Ensono/taskctl/pkg/executor"
-	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/Ensono/taskctl/variables"
 	"github.com/sirupsen/logrus"
 )
 

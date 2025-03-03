@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Ensono/taskctl/internal/cmdutils"
-	"github.com/Ensono/taskctl/pkg/scheduler"
+	"github.com/Ensono/taskctl/scheduler"
 )
 
 func TestPrintSummary(t *testing.T) {

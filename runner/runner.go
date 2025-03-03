@@ -12,11 +12,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Ensono/taskctl/executor"
 	"github.com/Ensono/taskctl/internal/utils"
-	"github.com/Ensono/taskctl/pkg/executor"
-	"github.com/Ensono/taskctl/pkg/output"
-	"github.com/Ensono/taskctl/pkg/task"
-	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/Ensono/taskctl/output"
+	"github.com/Ensono/taskctl/task"
+	"github.com/Ensono/taskctl/variables"
 	"github.com/sirupsen/logrus"
 )
 

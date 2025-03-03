@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/Ensono/taskctl/pkg/runner"
-	"github.com/Ensono/taskctl/pkg/variables"
+	"github.com/Ensono/taskctl/runner"
+	"github.com/Ensono/taskctl/variables"
 	"github.com/sirupsen/logrus"
 
 	"github.com/Ensono/taskctl/internal/utils"

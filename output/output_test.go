@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Ensono/taskctl/pkg/output"
-	"github.com/Ensono/taskctl/pkg/task"
+	"github.com/Ensono/taskctl/output"
+	"github.com/Ensono/taskctl/task"
 	"github.com/sirupsen/logrus"
 )
 
