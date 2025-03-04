@@ -104,6 +104,7 @@ func (tc *TaskCompiler) CompileCommand(
 	if executionCtx.Executable != nil {
 		commandArgs = executionCtx.Executable.GetArgs()
 	}
+
 	// Look at the executable details and check if the command is running `docker` determine if an Envfile is being generated
 	// If it has then check to see if the args contains the --env-file flag and if it does modify the path to the envfile
 	// if it does not then add the --env-file flag to the args array
