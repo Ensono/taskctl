@@ -51,7 +51,7 @@ func setDefaultCommandIfNonePresent(cmd *cobra.Command) {
 }
 
 func cmdSetUp() (*taskctlcmd.TaskCtlCmd, context.CancelFunc) {
-	ctx, stop := signal.NotifyContext(context.Background(), []os.Signal{os.Interrupt, syscall.SIGTERM, os.Kill}...) //  syscall.SIGTERM, os.Kill
+	ctx, stop := signal.NotifyContext(context.Background(), []os.Signal{os.Interrupt, syscall.SIGTERM, os.Kill}...)
 
 	taskctlRootCmd := taskctlcmd.NewTaskCtlCmd(ctx, os.Stdout, os.Stderr)
 
