@@ -50,17 +50,24 @@ func setDefaultCommandIfNonePresent(cmd *cobra.Command) {
 	}
 }
 
-func main() {
-	taskctlRootCmd := taskctlcmd.NewTaskCtlCmd(os.Stdout, os.Stderr)
+func cmdSetUp() (*taskctlcmd.TaskCtlCmd, context.CancelFunc) {
+	ctx, stop := signal.NotifyContext(context.Background(), []os.Signal{os.Interrupt, syscall.SIGTERM, os.Kill}...)
+
+	taskctlRootCmd := taskctlcmd.NewTaskCtlCmd(ctx, os.Stdout, os.Stderr)
 
 	if err := taskctlRootCmd.InitCommand(); err != nil {
 		logrus.Fatal(err)
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), []os.Signal{os.Interrupt, syscall.SIGTERM, os.Kill}...)
-	defer stop()
 
 	setDefaultCommandIfNonePresent(taskctlRootCmd.Cmd)
-	if err := taskctlRootCmd.Execute(ctx); err != nil {
+
+	return taskctlRootCmd, stop
+}
+
+func main() {
+	taskctlRootCmd, stop := cmdSetUp()
+	defer stop()
+	if err := taskctlRootCmd.Execute(); err != nil {
 		logrus.Fatal(err)
 	}
 }

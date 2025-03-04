@@ -87,14 +87,14 @@ func (e *DefaultExecutor) Execute(ctx context.Context, job *Job) ([]byte, error)
 	e.interp.Dir = job.Dir
 	e.interp.Env = expand.ListEnviron(env...)
 
-	var cancelFn context.CancelFunc
+	var timeoutCancelFn context.CancelFunc
 	if job.Timeout != nil {
-		ctx, cancelFn = context.WithTimeout(ctx, *job.Timeout)
+		ctx, timeoutCancelFn = context.WithTimeout(ctx, *job.Timeout)
 	}
 
 	defer func() {
-		if cancelFn != nil {
-			cancelFn()
+		if timeoutCancelFn != nil {
+			timeoutCancelFn()
 		}
 	}()
 

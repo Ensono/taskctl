@@ -102,11 +102,12 @@ func (r *TaskRunner) SetVariables(vars *variables.Variables) *TaskRunner {
 // it is built using the dotenv output only for now
 func (r *TaskRunner) Run(t *task.Task) error {
 
-	// wait for a cancel context - channel is closed automa
-	go func() {
-		<-r.ctx.Done()
-		logrus.Errorf("tascktl error: %v", r.ctx.Err())
-		<-r.doneCh
+	defer func() {
+		r.cancelMutex.RLock()
+		if r.canceling {
+			close(r.doneCh)
+		}
+		r.cancelMutex.RUnlock()
 	}()
 
 	execContext, err := r.contextForTask(t)
@@ -394,6 +395,8 @@ func (r *TaskRunner) execute(ctx context.Context, t *task.Task, job *executor.Jo
 			if status, ok := executor.IsExitStatus(err); ok {
 				t.WithExitCode(int16(status))
 				if t.AllowFailure {
+					t.WithError(err)
+					t.WithEnd(time.Now())
 					continue
 				}
 			}

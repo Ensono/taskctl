@@ -32,7 +32,7 @@ func newRunCmd(rootCmd *TaskCtlCmd) {
 		channelOut: rootCmd.ChannelOut,
 		channelErr: rootCmd.ChannelErr,
 		flags:      f,
-		ctx:        rootCmd.Cmd.Context(),
+		ctx:        rootCmd.ctx,
 	}
 
 	rc := &cobra.Command{
@@ -48,7 +48,6 @@ func newRunCmd(rootCmd *TaskCtlCmd) {
 			if err != nil {
 				return err
 			}
-			runner.ctx = rootCmd.Cmd.Context()
 			// display selector if nothing is supplied
 			if len(args) == 0 {
 				selected, err := cmdutils.DisplayTaskSelection(conf, false)
@@ -77,8 +76,6 @@ func newRunCmd(rootCmd *TaskCtlCmd) {
 			if err != nil {
 				return err
 			}
-			runner.ctx = rootCmd.Cmd.Context()
-
 			taskRunner, argsStringer, err := rootCmd.buildTaskRunner(args, conf)
 			if err != nil {
 				return err
@@ -133,15 +130,12 @@ func newRunCmd(rootCmd *TaskCtlCmd) {
 func (r *runCmd) runTarget(taskRunner *runner.TaskRunner, conf *config.Config, argsStringer *argsToStringsMapper) (err error) {
 
 	if argsStringer.pipelineName != nil {
-		if err := r.runPipeline(argsStringer.pipelineName, taskRunner, conf.Summary); err != nil {
-			return fmt.Errorf("pipeline %s failed: %w", argsStringer.taskOrPipelineName, err)
-		}
-		return nil
+		return r.runPipeline(argsStringer.pipelineName, taskRunner, conf.Summary)
 	}
 
 	if argsStringer.taskName != nil {
 		if err := r.runTask(argsStringer.taskName, taskRunner); err != nil {
-			return fmt.Errorf("task %s failed: %w", argsStringer.taskOrPipelineName, err)
+			return fmt.Errorf("task `%s` failed: %w", argsStringer.taskOrPipelineName, err)
 		}
 	}
 
@@ -150,11 +144,7 @@ func (r *runCmd) runTarget(taskRunner *runner.TaskRunner, conf *config.Config, a
 
 func (r *runCmd) runPipeline(g *scheduler.ExecutionGraph, taskRunner *runner.TaskRunner, summary bool) error {
 	sd := scheduler.NewScheduler(taskRunner)
-	go func() {
-		<-r.ctx.Done()
-		logrus.Info("gracefully exiting...")
-		sd.Cancel()
-	}()
+	defer sd.Finish()
 
 	// rebuild the tree with deduped nested graphs
 	// when running embedded pipelines in pipelines referencing
@@ -164,16 +154,14 @@ func (r *runCmd) runPipeline(g *scheduler.ExecutionGraph, taskRunner *runner.Tas
 	if err != nil {
 		return err
 	}
+
 	if r.flags.showGraphOnly {
 		return graphCmdRun(ng, r.channelOut, &graphFlags{})
 	}
 
 	if err := sd.Schedule(ng); err != nil {
-		logrus.Debug("returning error from sd.Schedule")
-		return err
+		logrus.Debugf("scheduler error: %v", err)
 	}
-
-	sd.Finish()
 
 	fmt.Fprint(r.channelOut, "\r\n")
 
