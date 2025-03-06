@@ -153,15 +153,8 @@ func Test_DockerExec_Cmd(t *testing.T) {
 	// with exclude
 	t.Run("with exclude correctly processed using v2 containers", func(t *testing.T) {
 		// Arrange
-		executable := &utils.Binary{
-			IsContainer: true,
-			// this can be podman or any other OCI compliant deamon/runtime
-			Bin:  "docker",
-			Args: []string{},
-		}
-		executable.WithBaseArgs([]string{"run", "--rm", "--env-file"})
-		executable.WithContainerArgs([]string{"-v", "${PWD}:/workspace/.taskctl", "-w", "/workspace/.taskctl", "alpine"})
-		executable.WithShellArgs([]string{"sh", "-c"})
+		executable := runner.NewContainerContext()
+		executable.Name = "alpine"
 
 		tf, err := os.CreateTemp("", "exclude-*.env")
 		if err != nil {
@@ -169,10 +162,11 @@ func Test_DockerExec_Cmd(t *testing.T) {
 		}
 
 		// on program start up from Config - os.Environ are merged into contexts
-		dockerCtx := runner.NewExecutionContext(executable, "/", variables.FromMap(map[string]string{"ADDED": "/old/foo", "NEW_STUFF": "/old/bar"}), utils.NewEnvFile(func(e *utils.Envfile) {
-			e.PathValue = tf.Name()
-			e.Exclude = append(config.DefaultContainerExcludes, "ADDED")
-		}), []string{}, []string{}, []string{}, []string{})
+		dockerCtx := runner.NewExecutionContext(nil, "/", variables.FromMap(map[string]string{"ADDED": "/old/foo", "NEW_STUFF": "/old/bar"}),
+			utils.NewEnvFile(func(e *utils.Envfile) {
+				e.PathValue = tf.Name()
+				e.Exclude = append(config.DefaultContainerExcludes, "ADDED")
+			}), []string{}, []string{}, []string{}, []string{}, runner.WithContainerOpts(executable))
 
 		tf.Write([]byte(`FOO=bar
 BAZ=wqiyh

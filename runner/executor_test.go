@@ -74,13 +74,12 @@ func Test_ContainerExecutor(t *testing.T) {
 	})
 
 	t.Run("semi-integration with alpine:latest", func(t *testing.T) {
+		cc := runner.NewContainerContext()
+		cc.Name = "alpine:3"
+		cc.ShellArgs = []string{"sh", "-c"}
 
 		execContext := runner.NewExecutionContext(&utils.Binary{}, "", variables.NewVariables(), &utils.Envfile{},
-			[]string{}, []string{}, []string{}, []string{}, runner.WithContainerOpts(&utils.Container{
-				Name:      "alpine:3",
-				Shell:     "sh",
-				ShellArgs: []string{"-c"},
-			}))
+			[]string{}, []string{}, []string{}, []string{}, runner.WithContainerOpts(cc))
 
 		if dh := os.Getenv("DOCKER_HOST"); dh == "" {
 			t.Fatal("ensure your DOCKER_HOST is set correctly")

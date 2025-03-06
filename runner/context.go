@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
@@ -25,10 +24,45 @@ var (
 	}
 )
 
+type ContainerContext struct {
+	Name       string
+	Entrypoint []string
+	ShellArgs  []string
+	volumes    map[string]struct{}
+}
+
+func NewContainerContext() *ContainerContext {
+	return &ContainerContext{
+		volumes: make(map[string]struct{}),
+	}
+}
+
+func (c *ContainerContext) WithVolumes(vols ...string) *ContainerContext {
+	for _, v := range vols {
+		c.volumes[v] = struct{}{}
+	}
+	return c
+}
+
+func (c *ContainerContext) VolumesFromArgs(cargs []string) *ContainerContext {
+	vols := []string{}
+	for _, v := range cargs {
+		if strings.HasPrefix(v, "-v ") {
+			vols = append(vols, strings.TrimSpace(strings.TrimPrefix(v, "-v")))
+		}
+	}
+	c.WithVolumes(vols...)
+	return c
+}
+
+func (c *ContainerContext) Volumes() map[string]struct{} {
+	return c.volumes
+}
+
 // ExecutionContext allow you to set up execution environment, variables, binary which will run your task, up/down commands etc.
 type ExecutionContext struct {
 	Executable *utils.Binary
-	container  *utils.Container
+	container  *ContainerContext
 	Dir        string
 	Env        *variables.Variables
 	Envfile    *utils.Envfile
@@ -78,14 +112,14 @@ func NewExecutionContext(executable *utils.Binary, dir string,
 	return c
 }
 
-func WithContainerOpts(containerOpts *utils.Container) ExecutionContextOption {
+func WithContainerOpts(containerOpts *ContainerContext) ExecutionContextOption {
 	return func(c *ExecutionContext) {
 		c.container = containerOpts
 		// add additional closed properties
 	}
 }
 
-func (c *ExecutionContext) Container() *utils.Container {
+func (c *ExecutionContext) Container() *ContainerContext {
 	return c.container
 }
 
@@ -163,12 +197,12 @@ func (c *ExecutionContext) After() error {
 
 var ErrMutuallyExclusiveVarSet = errors.New("mutually exclusive vars have been set")
 
-// GenerateEnvfile processes env and other supplied variables
+// ProcessEnvfile processes env and other supplied variables
 // writes them to a `.taskctl` folder in a current directory
 // the file names are generated using the `generated_{Task_Name}_{UNIX_timestamp}.env`.
 //
 // Note: it will create the directory
-func (c *ExecutionContext) GenerateEnvfile(env *variables.Variables) error {
+func (c *ExecutionContext) ProcessEnvfile(env *variables.Variables) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	// return an error if the include and exclude have both been specified
@@ -210,14 +244,8 @@ func (c *ExecutionContext) GenerateEnvfile(env *variables.Variables) error {
 		builder = append(builder, envstr)
 		logrus.Debug(envstr)
 	}
-
-	// get the full output from the string builder
-	// write the output to the file
-	if err := os.MkdirAll(filepath.Dir(c.Envfile.GeneratedPath()), 0700); err != nil {
-		logrus.Fatalf("Error creating parent directory for artifacts: %s\n", err.Error())
-	}
-
-	return os.WriteFile(c.Envfile.GeneratedPath(), []byte(strings.Join(builder, "\n")), 0700)
+	c.Env = c.Env.Merge(variables.FromMap(utils.ConvertFromEnv(builder)))
+	return nil
 }
 
 func (c *ExecutionContext) includeExcludeSkip(varName string) bool {

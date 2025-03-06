@@ -504,6 +504,7 @@ func TestUtils_B62Encode_Decode(t *testing.T) {
 }
 
 func TestUtils_Binary(t *testing.T) {
+	// TODO: this test is currently not very useful
 	ttests := map[string]struct {
 		binary        string
 		args          []string
@@ -512,7 +513,6 @@ func TestUtils_Binary(t *testing.T) {
 		containerArgs []string
 		envFile       string
 		expect        []string
-		isContainer   bool
 	}{
 		"legacy docker with envfile specified": {
 			"docker",
@@ -521,8 +521,7 @@ func TestUtils_Binary(t *testing.T) {
 			[]string{},
 			[]string{},
 			"envfile.env",
-			[]string{"run", "--rm", "--env-file", "envfile.env"},
-			false,
+			[]string{"run", "--rm", "--env-file", "ignored-env.file"},
 		},
 		"legacy docker without envfile specified": {
 			"docker",
@@ -531,8 +530,7 @@ func TestUtils_Binary(t *testing.T) {
 			[]string{},
 			[]string{},
 			"envfile.env",
-			[]string{"run", "--env-file", "envfile.env", "--rm"},
-			false,
+			[]string{"run", "--rm"},
 		},
 		"other executable - passthrough only": {
 			"someshell",
@@ -542,7 +540,6 @@ func TestUtils_Binary(t *testing.T) {
 			[]string{},
 			"envfile.env",
 			[]string{"--out", "-c"},
-			false,
 		},
 		"container executable - with base args only": {
 			"docker",
@@ -551,33 +548,30 @@ func TestUtils_Binary(t *testing.T) {
 			[]string{},
 			[]string{},
 			"envfile.env",
-			[]string{"run", "--rm", "other", "envfile.env"},
-			true,
+			[]string{"--out", "-c", "run", "--rm", "other"},
 		},
 		"container executable - with base shell and container": {
 			"docker",
 			[]string{"--out", "-c"},
-			[]string{"run", "--rm", "--env-file"},
+			[]string{"run", "--rm"},
 			[]string{"sh", "--shellArg", "s1"},
 			[]string{"--containerArg1", "c1"},
 			"envfile.env",
-			[]string{"run", "--rm", "--env-file", "envfile.env", "--containerArg1", "c1", "sh", "--shellArg", "s1"},
-			true,
+			[]string{"--out", "-c", "run", "--rm", "--containerArg1", "c1", "sh", "--shellArg", "s1"},
 		},
 	}
 	for name, tt := range ttests {
 		t.Run(name, func(t *testing.T) {
 			executable := &utils.Binary{
-				IsContainer: tt.isContainer,
-				Args:        tt.args,
-				Bin:         tt.binary,
+				Bin:  tt.binary,
+				Args: tt.args,
 			}
 
 			executable.WithBaseArgs(tt.baseArgs)
 			executable.WithContainerArgs(tt.containerArgs)
 			executable.WithShellArgs(tt.shellArgs)
 
-			got := executable.BuildArgsWithEnvFile(tt.envFile)
+			got := executable.Args
 			if !slices.Equal(got, tt.expect) {
 				t.Errorf("got: %v\nwanted: %v\n", got, tt.expect)
 			}

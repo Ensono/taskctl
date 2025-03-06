@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"path"
 
 	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/docker/docker/api/types/container"
@@ -80,30 +81,32 @@ func (e *ContainerExecutor) Execute(ctx context.Context, job *Job) ([]byte, erro
 	defer e.cc.Close()
 
 	containerContext := e.execContext.Container()
-	cmd := []string{containerContext.Shell}
-	cmd = append(cmd, containerContext.ShellArgs...)
+	cmd := containerContext.ShellArgs
 	cmd = append(cmd, job.Command)
 	tty, attachStdin := false, false
 	if job.Stdin != nil {
 		tty = true
 		attachStdin = true
 	}
+
 	containerConfig := &container.Config{
 		Image:       containerContext.Name,
-		Entrypoint:  nil, //[]string{},
+		Entrypoint:  containerContext.Entrypoint,
 		Env:         utils.ConvertEnv(utils.ConvertToMapOfStrings(job.Env.Map())),
 		Cmd:         cmd,
 		Volumes:     map[string]struct{}{},
 		Tty:         tty,
 		AttachStdin: attachStdin,
 		// OpenStdin: ,
-		WorkingDir: job.Dir, //"/workspace/.taskctl",
+		// WorkingDir in a container will always be /eirctl
+		// will append any job specified paths to the default working
+		WorkingDir: path.Join("/eirctl", job.Dir),
 	}
 
 	if err := e.PullImage(ctx, containerContext.Name, job.Stdout); err != nil {
 		return nil, err
 	}
-	
+
 	resp, err := e.cc.ContainerCreate(ctx, containerConfig, nil, nil, nil, "")
 	if err != nil {
 		return nil, fmt.Errorf("%v\n%w", err, ErrContainerCreate)

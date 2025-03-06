@@ -227,7 +227,7 @@ func Test_Generate_Env_file(t *testing.T) {
 			e.Include = append(e.Include, "incld1")
 		}), []string{}, []string{}, []string{}, []string{})
 
-		if err := execContext.GenerateEnvfile(envVars); err == nil {
+		if err := execContext.ProcessEnvfile(envVars); err == nil {
 			t.Fatal("got nil, wanted an error")
 		}
 
@@ -240,7 +240,7 @@ func genEnvFileHelperTestRunner(t *testing.T, envVars *variables.Variables, envF
 
 	execContext := runner.NewExecutionContext(nil, "", envVars, envFile, []string{}, []string{}, []string{}, []string{})
 
-	err := execContext.GenerateEnvfile(envVars)
+	err := execContext.ProcessEnvfile(envVars)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -275,7 +275,7 @@ func ExampleExecutionContext_GenerateEnvfile() {
 	ef.WithGeneratedPath(outputFilePath)
 
 	execContext := runner.NewExecutionContext(nil, "", envVars, ef, []string{}, []string{}, []string{}, []string{})
-	_ = execContext.GenerateEnvfile(envVars)
+	_ = execContext.ProcessEnvfile(envVars)
 
 	contents, _ := os.ReadFile(outputFilePath)
 	// for the purposes of the test example we need to make sure the map is

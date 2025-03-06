@@ -252,7 +252,7 @@ func (r *TaskRunner) before(ctx context.Context, t *task.Task, env, vars *variab
 			return fmt.Errorf(`"before\" command compilation failed: %w`, err)
 		}
 
-		exec, err := GetExecutorFactory(execContext, job)
+		exec, err := newDefaultExecutor(job.Stdin, job.Stdout, job.Stderr)
 		if err != nil {
 			return err
 		}
@@ -282,7 +282,7 @@ func (r *TaskRunner) after(ctx context.Context, t *task.Task, env, vars *variabl
 			return fmt.Errorf(`"after" command compilation failed: %w`, err)
 		}
 
-		exec, err := GetExecutorFactory(execContext, job)
+		exec, err := newDefaultExecutor(job.Stdin, job.Stdout, job.Stderr)
 		if err != nil {
 			return err
 		}
@@ -391,9 +391,6 @@ func (r *TaskRunner) execute(ctx context.Context, t *task.Task, job *Job) error 
 		return err
 	}
 	exec.WithReset(t.ResetContext)
-	if err != nil {
-		return err
-	}
 
 	t.WithStart(time.Now())
 
