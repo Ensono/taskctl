@@ -23,10 +23,11 @@ func buildContext(def *ContextDefinition) (*runner.ExecutionContext, error) {
 	if dir == "" {
 		dir = utils.MustGetwd()
 	}
+	// Sanity checks for Container native commands
 	if def.Container != nil && def.Container.Name == "" {
 		return nil, fmt.Errorf("either container image must be specified, %w", ErrBuildContextIncorrect)
 	}
-
+	// Sanity checks for generic executables
 	if def.Executable != nil && def.Executable.Bin == "" {
 		return nil, fmt.Errorf("executable binary must be specified, %w", ErrBuildContextIncorrect)
 	}

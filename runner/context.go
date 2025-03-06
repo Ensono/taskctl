@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -11,7 +12,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Ensono/taskctl/executor"
 	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/variables"
 	"github.com/sirupsen/logrus"
@@ -87,6 +87,20 @@ func WithContainerOpts(containerOpts *utils.Container) ExecutionContextOption {
 
 func (c *ExecutionContext) Container() *utils.Container {
 	return c.container
+}
+
+type ExecutorType string
+
+const (
+	DefaultExecutorTyp   ExecutorType = "default"
+	ContainerExecutorTyp ExecutorType = "container"
+)
+
+func (c *ExecutionContext) GetExecutorType() ExecutorType {
+	if c.container != nil {
+		return ContainerExecutorTyp
+	}
+	return DefaultExecutorTyp
 }
 
 // StartUpError reports whether an error exists on startUp
@@ -253,14 +267,18 @@ func (c *ExecutionContext) modifyName(varName string) string {
 	return varName
 }
 
+// runServiceCommand runs all the up,down,before,after commands
+// currently this is run outside of the context and always in the mvdn shell
+//
+// TODO: run serviceCommand in the same context as the command slice
 func (c *ExecutionContext) runServiceCommand(command string) (err error) {
 	logrus.Debugf("running context service command: %s", command)
-	ex, err := executor.NewDefaultExecutor(nil, nil, nil)
+	ex, err := newDefaultExecutor(nil, io.Discard, io.Discard)
 	if err != nil {
 		return err
 	}
 
-	out, err := ex.Execute(context.Background(), &executor.Job{
+	out, err := ex.Execute(context.Background(), &Job{
 		Command: command,
 		Dir:     c.Dir,
 		Env:     c.Env,
@@ -273,7 +291,6 @@ func (c *ExecutionContext) runServiceCommand(command string) (err error) {
 
 		return err
 	}
-
 	return nil
 }
 

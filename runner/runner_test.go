@@ -28,7 +28,6 @@ func TestTaskRunner(t *testing.T) {
 		runner.WithContexts(map[string]*runner.ExecutionContext{"local": c}),
 		func(tr *runner.TaskRunner) {
 			tr.Stdout, tr.Stderr = ob, eb
-
 		})
 	if err != nil {
 		t.Fatal(err)

@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Ensono/taskctl/executor"
 	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/task"
 	"github.com/Ensono/taskctl/variables"
@@ -26,10 +25,10 @@ func NewTaskCompiler() *TaskCompiler {
 }
 
 // CompileTask compiles task into Job (linked list of commands) executed by Executor
-func (tc *TaskCompiler) CompileTask(t *task.Task, executionContext *ExecutionContext, stdin io.Reader, stdout, stderr io.Writer, env, vars *variables.Variables) (*executor.Job, error) {
+func (tc *TaskCompiler) CompileTask(t *task.Task, executionContext *ExecutionContext, stdin io.Reader, stdout, stderr io.Writer, env, vars *variables.Variables) (*Job, error) {
 	vars = t.Variables.Merge(vars)
 
-	var job, prev *executor.Job
+	var job, prev *Job
 
 	for k, v := range vars.Map() {
 		if reflect.ValueOf(v).Kind() != reflect.String {
@@ -89,8 +88,8 @@ func (tc *TaskCompiler) CompileCommand(
 	stdin io.Reader,
 	stdout, stderr io.Writer,
 	env, vars *variables.Variables,
-) (*executor.Job, error) {
-	j := &executor.Job{
+) (*Job, error) {
+	j := &Job{
 		Timeout: timeout,
 		Env:     env,
 		Stdin:   stdin,

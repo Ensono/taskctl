@@ -1,13 +1,12 @@
-package executor
+package runner
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"io"
-	"os"
 
-	"github.com/Ensono/taskctl/runner"
+	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
@@ -37,7 +36,7 @@ type ContainerExecutorIface interface {
 type ContainerExecutor struct {
 	// containerClient
 	cc          ContainerExecutorIface
-	execContext *runner.ExecutionContext
+	execContext *ExecutionContext
 }
 
 type ContainerOpts func(*ContainerExecutor)
@@ -46,7 +45,7 @@ type ContainerOpts func(*ContainerExecutor)
 //
 // It implicitely creates it from `env` any missing vars required to initialise it,
 // will be flagged in the error response.
-func NewContainerExecutor(execContext *runner.ExecutionContext, opts ...ContainerOpts) (*ContainerExecutor, error) {
+func NewContainerExecutor(execContext *ExecutionContext, opts ...ContainerOpts) (*ContainerExecutor, error) {
 	// NOTE: potentially check env vars are set here
 	// also cover it in tests to ensure errors are handled correctly
 	// os.Setenv("DOCKER_HOST", "unix:///var/run/docker.sock")
@@ -56,7 +55,8 @@ func NewContainerExecutor(execContext *runner.ExecutionContext, opts ...Containe
 	}
 
 	ce := &ContainerExecutor{
-		cc: c,
+		cc:          c,
+		execContext: execContext,
 	}
 
 	for _, opt := range opts {
@@ -72,46 +72,39 @@ func WithClient(client ContainerExecutorIface) ContainerOpts {
 	}
 }
 
-// WithEnv is used to set more specifically the environment vars inside the executor
-func (e *ContainerExecutor) WithEnv(env []string) *ContainerExecutor {
-	return e
-}
-
-func (e *ContainerExecutor) WithReset(doReset bool) *ContainerExecutor {
-	return e
-}
+func (e *ContainerExecutor) WithReset(doReset bool) {}
 
 // Execute executes given job with provided context
 // Returns job output
 func (e *ContainerExecutor) Execute(ctx context.Context, job *Job) ([]byte, error) {
 	defer e.cc.Close()
-	// job.Command
 
-	reader, err := e.cc.ImagePull(ctx, "docker.io/library/alpine", image.PullOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("%v\n%w", err, ErrImagePull)
+	containerContext := e.execContext.Container()
+	cmd := []string{containerContext.Shell}
+	cmd = append(cmd, containerContext.ShellArgs...)
+	cmd = append(cmd, job.Command)
+	tty, attachStdin := false, false
+	if job.Stdin != nil {
+		tty = true
+		attachStdin = true
+	}
+	containerConfig := &container.Config{
+		Image:       containerContext.Name,
+		Entrypoint:  nil, //[]string{},
+		Env:         utils.ConvertEnv(utils.ConvertToMapOfStrings(job.Env.Map())),
+		Cmd:         cmd,
+		Volumes:     map[string]struct{}{},
+		Tty:         tty,
+		AttachStdin: attachStdin,
+		// OpenStdin: ,
+		WorkingDir: job.Dir, //"/workspace/.taskctl",
 	}
 
-	defer reader.Close()
-	// cli.ImagePull is asynchronous.
-	// The reader needs to be read completely for the pull operation to complete.
-	// If stdout is not required, consider using io.Discard instead of os.Stdout.
-	io.Copy(os.Stdout, reader)
-
-	resp, err := e.cc.ContainerCreate(ctx, &container.Config{
-		Image:      "alpine",
-		Entrypoint: []string{"/usr/bin/env"},
-		Env:        []string{"FOO=hellloooo"},
-		Cmd: []string{"sh", "-c", `env
-ls -lat .
-pwd`}, //"env", "&&",
-		Volumes: map[string]struct{}{
-			".:/workspace/.taskctl": {}},
-		// Cmd:        []string{"env && ls -lat ."}, //"env", "&&",
-		Tty:        false,
-		WorkingDir: "/workspace/.taskctl",
-	}, nil, nil, nil, "")
-
+	if err := e.PullImage(ctx, containerContext.Name, job.Stdout); err != nil {
+		return nil, err
+	}
+	
+	resp, err := e.cc.ContainerCreate(ctx, containerConfig, nil, nil, nil, "")
 	if err != nil {
 		return nil, fmt.Errorf("%v\n%w", err, ErrContainerCreate)
 	}
@@ -138,3 +131,22 @@ pwd`}, //"env", "&&",
 
 	return []byte{}, nil
 }
+
+// Container pull images - all contexts that have a container property
+func (e *ContainerExecutor) PullImage(ctx context.Context, name string, dstOutput io.Writer) error {
+	reader, err := e.cc.ImagePull(ctx, name, image.PullOptions{})
+	if err != nil {
+		return fmt.Errorf("%v\n%w", err, ErrImagePull)
+	}
+
+	defer reader.Close()
+	// container.ImagePull is asynchronous.
+	// The reader needs to be read completely for the pull operation to complete.
+	// If stdout is not required, consider using io.Discard instead of os.Stdout.
+	if _, err := io.Copy(dstOutput, reader); err != nil {
+		return err
+	}
+	return nil
+}
+
+// container attach stdin - via task or context

@@ -1,13 +1,8 @@
-// package executor
-//
-// It uses the mvdan.sh shell implementation in Go.
-// injects a custom environment per execution
-//
-// not all *nix* commands are available, should only be used for a limited number of scenarios
-package executor
+package runner
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -19,6 +14,30 @@ import (
 	"mvdan.cc/sh/v3/syntax"
 )
 
+type ExecutorIface interface {
+	// WithEnv(env []string) ExecutorIface
+	WithReset(doReset bool)
+	Execute(ctx context.Context, job *Job) ([]byte, error)
+}
+
+// type StreamAttachment struct {}
+
+func GetExecutorFactory(execContext *ExecutionContext, job *Job) (ExecutorIface, error) {
+
+	switch execContext.GetExecutorType() {
+	case DefaultExecutorTyp:
+		return newDefaultExecutor(job.Stdin, job.Stdout, job.Stderr)
+	case ContainerExecutorTyp:
+		return NewContainerExecutor(execContext)
+	default:
+		return nil, fmt.Errorf("wrong executor type")
+	}
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// return de
+}
+
 // DefaultExecutor is a default executor used for jobs
 // Uses `mvdan.cc/sh/v3/interp` under the hood
 type DefaultExecutor struct {
@@ -29,8 +48,8 @@ type DefaultExecutor struct {
 	doReset bool
 }
 
-// NewDefaultExecutor creates new default executor
-func NewDefaultExecutor(stdin io.Reader, stdout, stderr io.Writer) (*DefaultExecutor, error) {
+// newDefaultExecutor creates new default executor
+func newDefaultExecutor(stdin io.Reader, stdout, stderr io.Writer) (*DefaultExecutor, error) {
 	var err error
 	e := &DefaultExecutor{
 		env: os.Environ(), // do not want to set the environment here
@@ -51,15 +70,14 @@ func NewDefaultExecutor(stdin io.Reader, stdout, stderr io.Writer) (*DefaultExec
 	return e, nil
 }
 
-// WithEnv is used to set more specifically the environment vars inside the executor
-func (e *DefaultExecutor) WithEnv(env []string) *DefaultExecutor {
-	e.env = env
-	return e
-}
+// withEnv is used to set more specifically the environment vars inside the executor
+// func (e *DefaultExecutor) withEnv(env []string) *DefaultExecutor {
+// 	e.env = env
+// 	return e
+// }
 
-func (e *DefaultExecutor) WithReset(doReset bool) *DefaultExecutor {
+func (e *DefaultExecutor) WithReset(doReset bool) {
 	e.doReset = doReset
-	return e
 }
 
 // Execute executes given job with provided context

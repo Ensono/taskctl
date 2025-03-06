@@ -52,9 +52,9 @@ func (vars *Variables) Has(name string) bool {
 }
 
 // Map returns container in map[string]string form
-func (vars *Variables) Map() map[string]interface{} {
-	m := make(map[string]interface{})
-	vars.m.Range(func(key, value interface{}) bool {
+func (vars *Variables) Map() map[string]any {
+	m := make(map[string]any)
+	vars.m.Range(func(key, value any) bool {
 		m[key.(string)] = value
 		return true
 	})

@@ -1,6 +1,12 @@
 // package runner
 //
 // Runner runs the command inside the executor shell
+// It uses the mvdan.sh shell implementation in Go.
+// injects a custom environment per execution
+//
+// not all *nix* commands are available, should only be used for a limited number of scenarios
+//
+// Container Specific implementation runner will use the MobyAPI
 package runner
 
 import (
@@ -12,7 +18,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Ensono/taskctl/executor"
 	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/output"
 	"github.com/Ensono/taskctl/task"
@@ -30,7 +35,7 @@ type Runner interface {
 }
 
 type Executor interface {
-	Execute(context.Context, *executor.Job) ([]byte, error)
+	Execute(context.Context, *Job) ([]byte, error)
 }
 
 // TaskRunner struct holds the properties and methods
@@ -247,7 +252,7 @@ func (r *TaskRunner) before(ctx context.Context, t *task.Task, env, vars *variab
 			return fmt.Errorf(`"before\" command compilation failed: %w`, err)
 		}
 
-		exec, err := executor.NewDefaultExecutor(job.Stdin, job.Stdout, job.Stderr)
+		exec, err := GetExecutorFactory(execContext, job)
 		if err != nil {
 			return err
 		}
@@ -277,7 +282,7 @@ func (r *TaskRunner) after(ctx context.Context, t *task.Task, env, vars *variabl
 			return fmt.Errorf(`"after" command compilation failed: %w`, err)
 		}
 
-		exec, err := executor.NewDefaultExecutor(job.Stdin, job.Stdout, job.Stderr)
+		exec, err := GetExecutorFactory(execContext, job)
 		if err != nil {
 			return err
 		}
@@ -295,33 +300,30 @@ func (r *TaskRunner) after(ctx context.Context, t *task.Task, env, vars *variabl
 //
 // It checks whether there is a `taskctl.env` in the cwd if so it ingests it
 // and merges with the specified env.
-func (r *TaskRunner) contextForTask(t *task.Task) (c *ExecutionContext, err error) {
+func (r *TaskRunner) contextForTask(t *task.Task) (*ExecutionContext, error) {
 
-	if t.Context == "" {
-		c = DefaultContext()
-	} else {
+	context := DefaultContext()
+	if t.Context != "" {
 		var ok bool
-		c, ok = r.contexts[t.Context]
-		if !ok {
+		if context, ok = r.contexts[t.Context]; !ok {
 			return nil, fmt.Errorf("no such context %s", t.Context)
 		}
-
-		r.cleanupList.Store(t.Context, c)
+		r.cleanupList.Store(t.Context, context)
 	}
 
-	err = c.Up()
+	err := context.Up()
 	if err != nil {
 		return nil, err
 	}
 
-	err = c.Before()
+	err = context.Before()
 	if err != nil {
 		return nil, err
 	}
 
 	// This will be run at every task start allowing dynamic changes
-	c.Env = c.Env.Merge(utils.DefaultTaskctlEnv())
-	return c, nil
+	context.Env = context.Env.Merge(utils.DefaultTaskctlEnv())
+	return context, nil
 }
 
 func (r *TaskRunner) checkTaskCondition(t *task.Task) (bool, error) {
@@ -339,14 +341,14 @@ func (r *TaskRunner) checkTaskCondition(t *task.Task) (bool, error) {
 		return false, err
 	}
 
-	exec, err := executor.NewDefaultExecutor(job.Stdin, job.Stdout, job.Stderr)
+	exec, err := GetExecutorFactory(executionContext, job)
 	if err != nil {
 		return false, err
 	}
 
 	_, err = exec.Execute(r.ctx, job)
 	if err != nil {
-		if _, ok := executor.IsExitStatus(err); ok {
+		if _, ok := IsExitStatus(err); ok {
 			return false, nil
 		}
 
@@ -378,8 +380,16 @@ func (r *TaskRunner) storeTaskOutput(t *task.Task) error {
 }
 
 // execute
-func (r *TaskRunner) execute(ctx context.Context, t *task.Task, job *executor.Job) error {
-	exec, err := executor.NewDefaultExecutor(job.Stdin, job.Stdout, job.Stderr)
+func (r *TaskRunner) execute(ctx context.Context, t *task.Task, job *Job) error {
+	execContext, err := r.contextForTask(t)
+	if err != nil {
+		return err
+	}
+
+	exec, err := GetExecutorFactory(execContext, job)
+	if err != nil {
+		return err
+	}
 	exec.WithReset(t.ResetContext)
 	if err != nil {
 		return err
@@ -388,11 +398,9 @@ func (r *TaskRunner) execute(ctx context.Context, t *task.Task, job *executor.Jo
 	t.WithStart(time.Now())
 
 	for nextJob := job; nextJob != nil; nextJob = nextJob.Next {
-		var err error
-		_, err = exec.Execute(ctx, nextJob)
-		if err != nil {
+		if _, err := exec.Execute(ctx, nextJob); err != nil {
 			logrus.Debug(err.Error())
-			if status, ok := executor.IsExitStatus(err); ok {
+			if status, ok := IsExitStatus(err); ok {
 				t.WithExitCode(int16(status))
 				if t.AllowFailure {
 					t.WithError(err)
