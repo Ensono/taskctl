@@ -3,12 +3,10 @@ package runner
 import (
 	"fmt"
 	"io"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"time"
 
-	"github.com/Ensono/taskctl/executor"
 	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/task"
 	"github.com/Ensono/taskctl/variables"
@@ -26,10 +24,10 @@ func NewTaskCompiler() *TaskCompiler {
 }
 
 // CompileTask compiles task into Job (linked list of commands) executed by Executor
-func (tc *TaskCompiler) CompileTask(t *task.Task, executionContext *ExecutionContext, stdin io.Reader, stdout, stderr io.Writer, env, vars *variables.Variables) (*executor.Job, error) {
+func (tc *TaskCompiler) CompileTask(t *task.Task, executionContext *ExecutionContext, stdin io.Reader, stdout, stderr io.Writer, env, vars *variables.Variables) (*Job, error) {
 	vars = t.Variables.Merge(vars)
 
-	var job, prev *executor.Job
+	var job, prev *Job
 
 	for k, v := range vars.Map() {
 		if reflect.ValueOf(v).Kind() != reflect.String {
@@ -89,8 +87,8 @@ func (tc *TaskCompiler) CompileCommand(
 	stdin io.Reader,
 	stdout, stderr io.Writer,
 	env, vars *variables.Variables,
-) (*executor.Job, error) {
-	j := &executor.Job{
+) (*Job, error) {
+	j := &Job{
 		Timeout: timeout,
 		Env:     env,
 		Stdin:   stdin,
@@ -99,29 +97,12 @@ func (tc *TaskCompiler) CompileCommand(
 		Vars:    tc.variables.Merge(vars),
 	}
 
-	commandArgs := []string{}
-
-	if executionCtx.Executable != nil {
-		commandArgs = executionCtx.Executable.GetArgs()
-	}
 	// Look at the executable details and check if the command is running `docker` determine if an Envfile is being generated
 	// If it has then check to see if the args contains the --env-file flag and if it does modify the path to the envfile
 	// if it does not then add the --env-file flag to the args array
-	if executionCtx.Envfile != nil && (executionCtx.Executable != nil) { // && executionCtx.Executable.IsContainer
-
-		// define the filename to hold the envfile path
-		// get the timestamp to use to append to the envfile name
-		filename := utils.GetFullPath(
-			filepath.Join(
-				executionCtx.Envfile.GeneratedDir,
-				fmt.Sprintf("generated_%s.env", utils.EncodeBase62(taskName)),
-			))
-
-		commandArgs = executionCtx.Executable.BuildArgsWithEnvFile(filename)
-		// set the path to the generated envfile
-		executionCtx.Envfile.WithGeneratedPath(filename)
+	if executionCtx.Envfile != nil { // && executionCtx.Executable.IsContainer
 		// generate the envfile with supplied env only
-		err := executionCtx.GenerateEnvfile(env)
+		err := executionCtx.ProcessEnvfile(env)
 		if err != nil {
 			return nil, err
 		}
@@ -130,12 +111,12 @@ func (tc *TaskCompiler) CompileCommand(
 	c := []string{command}
 	if executionCtx.Executable != nil {
 		c = []string{executionCtx.Executable.Bin}
-		c = append(c, commandArgs...)
+		c = append(c, executionCtx.Executable.Args...)
 		c = append(c, fmt.Sprintf("%s%s%s", executionCtx.Quote, command, executionCtx.Quote))
 	}
 
 	j.Command = strings.Join(c, " ")
-
+	j.Env = executionCtx.Env
 	logrus.Debugf("command: %s", j.Command)
 
 	var err error

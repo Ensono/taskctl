@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"slices"
 	"strings"
 
@@ -23,10 +24,11 @@ func buildContext(def *ContextDefinition) (*runner.ExecutionContext, error) {
 	if dir == "" {
 		dir = utils.MustGetwd()
 	}
+	// Sanity checks for Container native commands
 	if def.Container != nil && def.Container.Name == "" {
 		return nil, fmt.Errorf("either container image must be specified, %w", ErrBuildContextIncorrect)
 	}
-
+	// Sanity checks for generic executables
 	if def.Executable != nil && def.Executable.Bin == "" {
 		return nil, fmt.Errorf("executable binary must be specified, %w", ErrBuildContextIncorrect)
 	}
@@ -45,8 +47,13 @@ func buildContext(def *ContextDefinition) (*runner.ExecutionContext, error) {
 		return nil, err
 	}
 
+	utilContainer, err := contextExecutable(def.Container)
+	if err != nil {
+		return nil, err
+	}
+
 	c := runner.NewExecutionContext(
-		contextExecutable(def),
+		def.Executable,
 		dir,
 		buildEnvVars,
 		envFile,
@@ -57,7 +64,7 @@ func buildContext(def *ContextDefinition) (*runner.ExecutionContext, error) {
 		runner.WithQuote(def.Quote), func(c *runner.ExecutionContext) {
 			c.Variables = variables.FromMap(def.Variables)
 		},
-		runner.WithContainerOpts(def.Container),
+		runner.WithContainerOpts(utilContainer),
 	)
 	return c, nil
 }
@@ -87,54 +94,43 @@ func newEnvFile(defEnvFile *utils.Envfile, isContainerContext bool) (*utils.Envf
 	return envFile, nil
 }
 
-func contextExecutable(def *ContextDefinition) *utils.Binary {
-	if def.Container != nil && def.Container.Name != "" {
-		// docker run --rm --env-file $ENVFILE --entrypoint $ENTRYPOINT -v ${PWD}:/workspace/.taskctl  $IMAGE
-		// args := def.Container.Image.ContainerArgs
-		executable := &utils.Binary{
-			IsContainer: true,
-			// this can be podman or any other OCI compliant deamon/runtime
-			Bin:  "docker",
-			Args: []string{},
+func contextExecutable(container *utils.Container) (*runner.ContainerContext, error) {
+	if container != nil && container.Name != "" {
+		cc := runner.NewContainerContext()
+		ex, err := os.Executable()
+		if err != nil {
+			return nil, err
 		}
-		// BASE ARGS are a special case
-		executable.WithBaseArgs([]string{"run", "--rm", "--env-file"})
+		pwd := path.Dir(ex)
 
+		cc.WithVolumes(fmt.Sprintf("%s:/workspace/.taskctl", pwd))
+		if container.EnableDinD {
+			cc.WithVolumes("/var/run/docker.sock:/var/run/docker.sock")
+		}
 		// CONTAINER ARGS these are best left to be tightly controlled
-		containerArgs := []string{"-v", "${PWD}:/workspace/.taskctl"}
-		if def.Container.Entrypoint != "" {
-			containerArgs = append(containerArgs, "--entrypoint", def.Container.Entrypoint)
-		}
-		if def.Container.EnableDinD {
-			containerArgs = append(containerArgs, "-v", "/var/run/docker.sock:/var/run/docker.sock")
-		}
-		if def.Container.ContainerArgs != nil {
-			containerArgs = append(containerArgs, checkForbiddenContainerArgs(def.Container.ContainerArgs)...)
-		}
-		// always append current workspace and image to run
-		containerArgs = append(containerArgs, "-w", "/workspace/.taskctl", def.Container.Name)
-		executable.WithContainerArgs(containerArgs)
+		cc.VolumesFromArgs(checkForbiddenContainerArgs(container.ContainerArgs))
+
 		// default shell and flag is set
 		// if shell is overwritten it should also contain the
-		shellArgs := []string{"sh", "-c"}
-		if def.Container.Shell != "" {
+		if container.Shell != "" {
 			// SHELL ARGS
-			shellArgs = []string{def.Container.Shell}
-			if def.Container.ShellArgs != nil {
-				shellArgs = append(shellArgs, def.Container.ShellArgs...)
+			shellArgs := []string{container.Shell}
+			if container.ShellArgs != nil {
+				cc.ShellArgs = append(shellArgs, container.ShellArgs...)
 			} else {
 				// user should know that this might not work
-				logrus.Warnf("your chosen shell: %s does not include any arguments, usually at least -c as the command gets parsed as string", def.Container.Shell)
+				logrus.Warnf("your chosen shell: %s does not include any arguments, usually at least -c as the command gets parsed as string", container.Shell)
 			}
+		} else {
+			cc.ShellArgs = []string{"sh", "-c"}
 		}
-		executable.WithShellArgs(shellArgs)
-		return executable
+		return cc, nil
 	}
-	return def.Executable
+	return nil, nil
 }
 
 // forbiddenContainerArgsPairs contains the list of string segments
-// when foind in containerArgs they should be ignored and removed
+// when found in containerArgs they should be ignored and removed
 var forbiddenContainerArgsPairs = [1]string{"docker.sock:"} // is an array so it's allocated to the stack
 var forbiddenContainerArgsSwitches = [1]string{"--privileged"}
 

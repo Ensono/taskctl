@@ -28,7 +28,6 @@ func TestTaskRunner(t *testing.T) {
 		runner.WithContexts(map[string]*runner.ExecutionContext{"local": c}),
 		func(tr *runner.TaskRunner) {
 			tr.Stdout, tr.Stderr = ob, eb
-
 		})
 	if err != nil {
 		t.Fatal(err)
@@ -116,6 +115,7 @@ func (t *tCloser) Close() error {
 }
 
 func Test_DockerExec_Cmd(t *testing.T) {
+	t.Parallel()
 	t.Run("runs with default env file using v1 containers", func(t *testing.T) {
 		dockerCtx := runner.NewExecutionContext(&utils.Binary{Bin: "docker", Args: []string{
 			"run",
@@ -154,15 +154,8 @@ func Test_DockerExec_Cmd(t *testing.T) {
 	// with exclude
 	t.Run("with exclude correctly processed using v2 containers", func(t *testing.T) {
 		// Arrange
-		executable := &utils.Binary{
-			IsContainer: true,
-			// this can be podman or any other OCI compliant deamon/runtime
-			Bin:  "docker",
-			Args: []string{},
-		}
-		executable.WithBaseArgs([]string{"run", "--rm", "--env-file"})
-		executable.WithContainerArgs([]string{"-v", "${PWD}:/workspace/.taskctl", "-w", "/workspace/.taskctl", "alpine"})
-		executable.WithShellArgs([]string{"sh", "-c"})
+		executable := runner.NewContainerContext()
+		executable.Name = "alpine"
 
 		tf, err := os.CreateTemp("", "exclude-*.env")
 		if err != nil {
@@ -170,10 +163,11 @@ func Test_DockerExec_Cmd(t *testing.T) {
 		}
 
 		// on program start up from Config - os.Environ are merged into contexts
-		dockerCtx := runner.NewExecutionContext(executable, "/", variables.FromMap(map[string]string{"ADDED": "/old/foo", "NEW_STUFF": "/old/bar"}), utils.NewEnvFile(func(e *utils.Envfile) {
-			e.PathValue = tf.Name()
-			e.Exclude = append(config.DefaultContainerExcludes, "ADDED")
-		}), []string{}, []string{}, []string{}, []string{})
+		dockerCtx := runner.NewExecutionContext(nil, "/", variables.FromMap(map[string]string{"ADDED": "/old/foo", "NEW_STUFF": "/old/bar"}),
+			utils.NewEnvFile(func(e *utils.Envfile) {
+				e.PathValue = tf.Name()
+				e.Exclude = append(config.DefaultContainerExcludes, "ADDED")
+			}), []string{}, []string{}, []string{}, []string{}, runner.WithContainerOpts(executable))
 
 		tf.Write([]byte(`FOO=bar
 BAZ=wqiyh
@@ -206,12 +200,13 @@ QUX=looopar`))
 		}
 		rCloser := &tCloser{bytes.NewReader(testOut.Bytes())}
 		got, _ := utils.ReadEnvFile(rCloser)
+
 		if _, ok := got["ADDED"]; ok {
 			t.Error("should have skipped adding var")
 		}
 
 		for _, v := range [][2]string{{"FOO", "bar"}, {"QUX", "looopar"},
-			{"PWD", "/workspace/.taskctl"}, {"HOME", "/root"},
+			{"PWD", "/eirctl"}, {"HOME", "/root"},
 			{"NEW_STUFF", "/old/bar"}, {"BAZ", "wqiyh"}} {
 			val, ok := got[v[0]]
 			if !ok {
@@ -222,7 +217,7 @@ QUX=looopar`))
 			}
 		}
 	})
-	// 	// with custom envfile as well
+	// with custom envfile as well
 }
 
 func ExampleTaskRunner_Run() {

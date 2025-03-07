@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
-	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
 	"sync"
 
-	"github.com/Ensono/taskctl/executor"
 	"github.com/Ensono/taskctl/internal/utils"
 	"github.com/Ensono/taskctl/variables"
 	"github.com/sirupsen/logrus"
@@ -25,10 +24,45 @@ var (
 	}
 )
 
+type ContainerContext struct {
+	Name       string
+	Entrypoint []string
+	ShellArgs  []string
+	volumes    map[string]struct{}
+}
+
+func NewContainerContext() *ContainerContext {
+	return &ContainerContext{
+		volumes: make(map[string]struct{}),
+	}
+}
+
+func (c *ContainerContext) WithVolumes(vols ...string) *ContainerContext {
+	for _, v := range vols {
+		c.volumes[v] = struct{}{}
+	}
+	return c
+}
+
+func (c *ContainerContext) VolumesFromArgs(cargs []string) *ContainerContext {
+	vols := []string{}
+	for _, v := range cargs {
+		if strings.HasPrefix(v, "-v ") {
+			vols = append(vols, strings.TrimSpace(strings.TrimPrefix(v, "-v")))
+		}
+	}
+	c.WithVolumes(vols...)
+	return c
+}
+
+func (c *ContainerContext) Volumes() map[string]struct{} {
+	return c.volumes
+}
+
 // ExecutionContext allow you to set up execution environment, variables, binary which will run your task, up/down commands etc.
 type ExecutionContext struct {
 	Executable *utils.Binary
-	container  *utils.Container
+	container  *ContainerContext
 	Dir        string
 	Env        *variables.Variables
 	Envfile    *utils.Envfile
@@ -78,15 +112,29 @@ func NewExecutionContext(executable *utils.Binary, dir string,
 	return c
 }
 
-func WithContainerOpts(containerOpts *utils.Container) ExecutionContextOption {
+func WithContainerOpts(containerOpts *ContainerContext) ExecutionContextOption {
 	return func(c *ExecutionContext) {
 		c.container = containerOpts
 		// add additional closed properties
 	}
 }
 
-func (c *ExecutionContext) Container() *utils.Container {
+func (c *ExecutionContext) Container() *ContainerContext {
 	return c.container
+}
+
+type ExecutorType string
+
+const (
+	DefaultExecutorTyp   ExecutorType = "default"
+	ContainerExecutorTyp ExecutorType = "container"
+)
+
+func (c *ExecutionContext) GetExecutorType() ExecutorType {
+	if c.container != nil {
+		return ContainerExecutorTyp
+	}
+	return DefaultExecutorTyp
 }
 
 // StartUpError reports whether an error exists on startUp
@@ -149,12 +197,8 @@ func (c *ExecutionContext) After() error {
 
 var ErrMutuallyExclusiveVarSet = errors.New("mutually exclusive vars have been set")
 
-// GenerateEnvfile processes env and other supplied variables
-// writes them to a `.taskctl` folder in a current directory
-// the file names are generated using the `generated_{Task_Name}_{UNIX_timestamp}.env`.
-//
-// Note: it will create the directory
-func (c *ExecutionContext) GenerateEnvfile(env *variables.Variables) error {
+// ProcessEnvfile processes env and other supplied variables into a single context environment
+func (c *ExecutionContext) ProcessEnvfile(env *variables.Variables) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	// return an error if the include and exclude have both been specified
@@ -196,14 +240,8 @@ func (c *ExecutionContext) GenerateEnvfile(env *variables.Variables) error {
 		builder = append(builder, envstr)
 		logrus.Debug(envstr)
 	}
-
-	// get the full output from the string builder
-	// write the output to the file
-	if err := os.MkdirAll(filepath.Dir(c.Envfile.GeneratedPath()), 0700); err != nil {
-		logrus.Fatalf("Error creating parent directory for artifacts: %s\n", err.Error())
-	}
-
-	return os.WriteFile(c.Envfile.GeneratedPath(), []byte(strings.Join(builder, "\n")), 0700)
+	c.Env = variables.FromMap(utils.ConvertFromEnv(builder))
+	return nil
 }
 
 func (c *ExecutionContext) includeExcludeSkip(varName string) bool {
@@ -253,14 +291,18 @@ func (c *ExecutionContext) modifyName(varName string) string {
 	return varName
 }
 
+// runServiceCommand runs all the up,down,before,after commands
+// currently this is run outside of the context and always in the mvdn shell
+//
+// TODO: run serviceCommand in the same context as the command slice
 func (c *ExecutionContext) runServiceCommand(command string) (err error) {
 	logrus.Debugf("running context service command: %s", command)
-	ex, err := executor.NewDefaultExecutor(nil, nil, nil)
+	ex, err := newDefaultExecutor(nil, io.Discard, io.Discard)
 	if err != nil {
 		return err
 	}
 
-	out, err := ex.Execute(context.Background(), &executor.Job{
+	out, err := ex.Execute(context.Background(), &Job{
 		Command: command,
 		Dir:     c.Dir,
 		Env:     c.Env,
@@ -273,7 +315,6 @@ func (c *ExecutionContext) runServiceCommand(command string) (err error) {
 
 		return err
 	}
-
 	return nil
 }
 

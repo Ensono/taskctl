@@ -143,6 +143,7 @@ func (tc *TaskCtlCmd) initConfig() (*config.Config, error) {
 	if conf.Debug {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
+
 	// if default config keys were set to false
 	// we check the overrides
 	if tc.rootFlags.Quiet {

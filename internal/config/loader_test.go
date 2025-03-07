@@ -270,7 +270,7 @@ func TestLoader_contexts(t *testing.T) {
     container:
       name: ensono/eir-infrastructure:1.1.251
       enable_dind: true
-      entrypoint: "/usr/bin/env"
+      entrypoint: ["/usr/bin/env"]
       shell: bash
       shell_args:
         - -c
@@ -305,29 +305,27 @@ func TestLoader_contexts(t *testing.T) {
 		t.Errorf("powershell context not found")
 	}
 
-	if !pwshContainer.Executable.IsContainer {
-		t.Errorf("\npwshContainer IsContainer not correctly processed\n\ngot: %v\nwanted: false", pwshContainer.Executable.IsContainer)
+	if pwshContainer.Container() == nil {
+		t.Errorf("\npwshContainer IsContainer not correctly processed\n\ngot: %v\nwanted: false", pwshContainer.Container())
 	}
 
-	if !dindContainer.Executable.IsContainer {
-		t.Errorf("\ndindContainer IsContainer not correctly processed\n\ngot: %v\nwanted: false", dindContainer.Executable.IsContainer)
+	if dindContainer.Container() == nil {
+		t.Errorf("\ndindContainer IsContainer not correctly processed\n\ngot: %v\nwanted: false", dindContainer.Container())
 	}
 
-	if oldDockerContext.Executable.IsContainer {
-		t.Errorf("\noldDockerContext IsContainer not correctly processed\n\ngot: %v\nwanted: false", oldDockerContext.Executable.IsContainer)
+	if oldDockerContext.Executable == nil {
+		t.Errorf("\noldDockerContext IsContainer not correctly processed\n\ngot: %v\nwanted: false", oldDockerContext.Executable)
 	}
-	dindArgs := dindContainer.Executable.BuildArgsWithEnvFile("some-file.env")
-	wantDindArgs := []string{"run", "--rm", "--env-file", "some-file.env", "-v", "${PWD}:/workspace/.taskctl", "--entrypoint", "/usr/bin/env",
-		"-v", "/var/run/docker.sock:/var/run/docker.sock", "-w", "/workspace/.taskctl", "ensono/eir-infrastructure:1.1.251", "bash", "-c"}
-	if !slices.Equal(dindArgs, wantDindArgs) {
-		t.Errorf("dindContainer incorrectly parsed args: %v", dindArgs)
+
+	if len(dindContainer.Container().Volumes()) != 2 {
+		t.Errorf("dindContainer incorrectly parsed args: %v", 2)
 	}
 }
 
 func TestLoader_contexts_with_containerArgs(t *testing.T) {
 	ttests := map[string]struct {
-		contexts []byte
-		expect   []string
+		contexts        []byte
+		expectVolsCount int
 	}{
 		"includes forbidden args": {
 			contexts: []byte(`contexts:
@@ -338,17 +336,14 @@ func TestLoader_contexts_with_containerArgs(t *testing.T) {
       shell_args:
         - -NonInteractive
         - -Command
-      container_args: ["--some","-f","-v","/var/run/docker.sock:/var/run/docker.sock","-other","--safe"]
+      container_args: ["--some","-f","-v /var/run/docker.sock:/var/run/docker.sock","-other","--safe"]
     envfile:
       exclude:
         - SOURCEVERSIONMESSAGE
         - JAVA
         - GO
         - HOMEBREW`),
-			expect: []string{"run", "--rm", "--env-file", "envfile", "-v",
-				"${PWD}:/workspace/.taskctl", "--some", "-f", "-other", "--safe", "-w",
-				"/workspace/.taskctl", "ensono/eir-infrastructure:1.1.251", "pwsh",
-				"-NonInteractive", "-Command"},
+			expectVolsCount: 1,
 		},
 		"includes NO forbidden args": {
 			contexts: []byte(`contexts:
@@ -360,16 +355,14 @@ func TestLoader_contexts_with_containerArgs(t *testing.T) {
         - -NonInteractive
         - -Command
       container_args: ["--some","-f","-other","--safe"]
+      enable_dind: true
     envfile:
       exclude:
         - SOURCEVERSIONMESSAGE
         - JAVA
         - GO
         - HOMEBREW`),
-			expect: []string{"run", "--rm", "--env-file", "envfile", "-v",
-				"${PWD}:/workspace/.taskctl", "--some", "-f", "-other", "--safe", "-w",
-				"/workspace/.taskctl", "ensono/eir-infrastructure:1.1.251", "pwsh",
-				"-NonInteractive", "-Command"},
+			expectVolsCount: 2,
 		},
 		"includes ONLY forbidden args": {
 			contexts: []byte(`contexts:
@@ -380,17 +373,14 @@ func TestLoader_contexts_with_containerArgs(t *testing.T) {
       shell_args:
         - -NonInteractive
         - -Command
-      container_args: ["--privileged","-v","/var/run/docker.sock:/var/run/docker.sock"]
+      container_args: ["--privileged","-v /var/run/docker.sock:/var/run/docker.sock"]
     envfile:
       exclude:
         - SOURCEVERSIONMESSAGE
         - JAVA
         - GO
         - HOMEBREW`),
-			expect: []string{"run", "--rm", "--env-file", "envfile", "-v",
-				"${PWD}:/workspace/.taskctl", "-w",
-				"/workspace/.taskctl", "ensono/eir-infrastructure:1.1.251", "pwsh",
-				"-NonInteractive", "-Command"},
+			expectVolsCount: 1,
 		},
 	}
 	for name, tt := range ttests {
@@ -413,14 +403,15 @@ func TestLoader_contexts_with_containerArgs(t *testing.T) {
 				t.Errorf("test:args context not found")
 			}
 
-			if !testArgsContainer.Executable.IsContainer {
-				t.Errorf("\ntest:args IsContainer not correctly processed\n\ngot: %v\nwanted: false", testArgsContainer.Executable.IsContainer)
+			if testArgsContainer.Container() == nil {
+				t.Errorf("\ntest:args IsContainer not correctly processed\n\ngot: %v\nwanted: Container", testArgsContainer.Container())
 			}
-
-			gotArgs := testArgsContainer.Executable.BuildArgsWithEnvFile("envfile")
-
-			if !slices.Equal(gotArgs, tt.expect) {
-				t.Errorf("test:args incorrectly parsed args: %v\nwanted: %v", gotArgs, tt.expect)
+			gotVols := testArgsContainer.Container().Volumes()
+			if len(gotVols) != tt.expectVolsCount {
+				t.Errorf("dindContainer set volumes count to %v, wanted: %v\n", len(gotVols), tt.expectVolsCount)
+			}
+			if !slices.Equal(testArgsContainer.Container().ShellArgs, []string{"pwsh", "-NonInteractive", "-Command"}) {
+				t.Errorf("dindContainer incorrectly parsed shellArgs: %v, wanted: %v\n", testArgsContainer.Container().ShellArgs, []string{"pwsh", "-NonInteractive", "-Command"})
 			}
 		})
 	}

@@ -55,7 +55,6 @@ tasks:
       path: .env
       type: file
 
-
   build:push:image:
     description: | 
       Pushes an image to registry

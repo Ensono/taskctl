@@ -128,7 +128,10 @@
           "description": "Name is the name of the container\n\ncan be specified in the following formats\n\n- \u003cimage-name\u003e (Same as using \u003cimage-name\u003e with the latest tag)\n\n- \u003cimage-name\u003e:\u003ctag\u003e\n\n- \u003cimage-name\u003e@\u003cdigest\u003e\n\nIf the known runtime is podman it should include the registry domain\ne.g. `docker.io/alpine:latest`"
         },
         "entrypoint": {
-          "type": "string",
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
           "description": "Entrypoint Overwrites the default ENTRYPOINT of the image"
         },
         "enable_dind": {
@@ -151,7 +154,7 @@
             "type": "string"
           },
           "type": "array",
-          "description": "Args are additional args to pass to the shell if provided\n\n// e.g. dcoker run (TASKCTL_ARGS...) (CONTAINER_ARGS...) image (shell) (SHELL_ARGS...) (command)"
+          "description": "Args are additional args to pass to the shell if provided.\nOnce you provide the ShellArgs, you must also specify the Shell as well, as there is no reliable way to ensure the default `sh` accepts provided shell arguments\n\nDefault Shell and ShellArgs are `sh -c`\n\ne.g. docker run (TASKCTL_ARGS...) (CONTAINER_ARGS...) image (shell) (SHELL_ARGS...) (command)\n\nExample: with powershell could be: `-Command -NonInteractive` along with a custom shell of `pwsh` would result in `pwsh -Command -NonInteractive (command)`"
         }
       },
       "additionalProperties": false,

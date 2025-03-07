@@ -32,6 +32,8 @@ pipelines:
     - task: clean
     - task: test_prereqs
     - task: test
+      # env:
+      #   DOCKER_HOST: unix:///var/run/docker.sock
       depends_on: 
         - clean
         - test_prereqs
