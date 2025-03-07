@@ -8,12 +8,14 @@ import (
 	"path"
 
 	"github.com/Ensono/taskctl/internal/utils"
+	"github.com/Ensono/taskctl/variables"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -89,18 +91,23 @@ func (e *ContainerExecutor) Execute(ctx context.Context, job *Job) ([]byte, erro
 		attachStdin = true
 	}
 
+	// everything in the container is relative to the `/eirctl` directory
+	wd := path.Join("/eirctl", job.Dir)
+	// adding the opiniated PWD into the Container Env as per the wd variable
+	cEnv := utils.ConvertEnv(utils.ConvertToMapOfStrings(job.Env.Merge(variables.FromMap(map[string]string{"PWD": wd})).Map()))
+
 	containerConfig := &container.Config{
 		Image:       containerContext.Name,
 		Entrypoint:  containerContext.Entrypoint,
-		Env:         utils.ConvertEnv(utils.ConvertToMapOfStrings(job.Env.Map())),
+		Env:         cEnv,
 		Cmd:         cmd,
-		Volumes:     map[string]struct{}{},
+		Volumes:     containerContext.Volumes(),
 		Tty:         tty,
 		AttachStdin: attachStdin,
 		// OpenStdin: ,
 		// WorkingDir in a container will always be /eirctl
 		// will append any job specified paths to the default working
-		WorkingDir: path.Join("/eirctl", job.Dir),
+		WorkingDir: wd,
 	}
 
 	if err := e.PullImage(ctx, containerContext.Name, job.Stdout); err != nil {
@@ -130,7 +137,7 @@ func (e *ContainerExecutor) Execute(ctx context.Context, job *Job) ([]byte, erro
 		return nil, fmt.Errorf("%v\n%w", err, ErrContainerLogs)
 	}
 
-	stdcopy.StdCopy(job.Stdout, job.Stderr, out)
+	_, _ = stdcopy.StdCopy(job.Stdout, job.Stderr, out)
 
 	return []byte{}, nil
 }
@@ -146,9 +153,8 @@ func (e *ContainerExecutor) PullImage(ctx context.Context, name string, dstOutpu
 	// container.ImagePull is asynchronous.
 	// The reader needs to be read completely for the pull operation to complete.
 	// If stdout is not required, consider using io.Discard instead of os.Stdout.
-	if _, err := io.Copy(dstOutput, reader); err != nil {
-		return err
-	}
+	// Debug log pull image output
+	logrus.Debug(io.ReadAll(reader))
 	return nil
 }
 

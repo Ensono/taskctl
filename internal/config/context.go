@@ -48,6 +48,9 @@ func buildContext(def *ContextDefinition) (*runner.ExecutionContext, error) {
 	}
 
 	utilContainer, err := contextExecutable(def.Container)
+	if err != nil {
+		return nil, err
+	}
 
 	c := runner.NewExecutionContext(
 		def.Executable,

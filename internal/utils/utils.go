@@ -69,12 +69,6 @@ type Envfile struct {
 	// during generate the paths will be different
 	// during read it is if path is provided
 	mu sync.Mutex
-	// generatedFilePath is the path to the generated file path, which holds the unique task name reference
-	// It will be merged with env variables from os.Environ(), supplied `context.container.env`, contents of Path if not empty.
-	// All Include/Exclude Modifications are applied to the final environment Key/Value pairs.
-	//
-	// Single file is injected via the --env-file option to the docker|podman command.
-	generatedFilePath string
 }
 
 // Validate checks input is correct
@@ -125,17 +119,6 @@ func (e *Envfile) WithPath(path string) *Envfile {
 
 func (e *Envfile) Path() string {
 	return e.PathValue
-}
-
-func (e *Envfile) WithGeneratedPath(path string) *Envfile {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	e.generatedFilePath = path
-	return e
-}
-
-func (e *Envfile) GeneratedPath() string {
-	return e.generatedFilePath
 }
 
 // ConvertEnv converts map representing the environment to array of strings in the form "key=value"

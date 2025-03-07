@@ -197,11 +197,7 @@ func (c *ExecutionContext) After() error {
 
 var ErrMutuallyExclusiveVarSet = errors.New("mutually exclusive vars have been set")
 
-// ProcessEnvfile processes env and other supplied variables
-// writes them to a `.taskctl` folder in a current directory
-// the file names are generated using the `generated_{Task_Name}_{UNIX_timestamp}.env`.
-//
-// Note: it will create the directory
+// ProcessEnvfile processes env and other supplied variables into a single context environment
 func (c *ExecutionContext) ProcessEnvfile(env *variables.Variables) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -244,7 +240,7 @@ func (c *ExecutionContext) ProcessEnvfile(env *variables.Variables) error {
 		builder = append(builder, envstr)
 		logrus.Debug(envstr)
 	}
-	c.Env = c.Env.Merge(variables.FromMap(utils.ConvertFromEnv(builder)))
+	c.Env = variables.FromMap(utils.ConvertFromEnv(builder))
 	return nil
 }
 

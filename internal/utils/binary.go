@@ -77,6 +77,4 @@ type Container struct {
 	//
 	// Example: with powershell could be: `-Command -NonInteractive` along with a custom shell of `pwsh` would result in `pwsh -Command -NonInteractive (command)`
 	ShellArgs []string `mapstructure:"shell_args" yaml:"shell_args,omitempty" json:"shell_args,omitempty"`
-	// volumes will be extracted from ContainerArgs
-	volumes map[string]struct{}
 }

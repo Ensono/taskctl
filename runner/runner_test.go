@@ -115,6 +115,7 @@ func (t *tCloser) Close() error {
 }
 
 func Test_DockerExec_Cmd(t *testing.T) {
+	t.Parallel()
 	t.Run("runs with default env file using v1 containers", func(t *testing.T) {
 		dockerCtx := runner.NewExecutionContext(&utils.Binary{Bin: "docker", Args: []string{
 			"run",
@@ -199,12 +200,13 @@ QUX=looopar`))
 		}
 		rCloser := &tCloser{bytes.NewReader(testOut.Bytes())}
 		got, _ := utils.ReadEnvFile(rCloser)
+
 		if _, ok := got["ADDED"]; ok {
 			t.Error("should have skipped adding var")
 		}
 
 		for _, v := range [][2]string{{"FOO", "bar"}, {"QUX", "looopar"},
-			{"PWD", "/workspace/.taskctl"}, {"HOME", "/root"},
+			{"PWD", "/eirctl"}, {"HOME", "/root"},
 			{"NEW_STUFF", "/old/bar"}, {"BAZ", "wqiyh"}} {
 			val, ok := got[v[0]]
 			if !ok {
@@ -215,7 +217,7 @@ QUX=looopar`))
 			}
 		}
 	})
-	// 	// with custom envfile as well
+	// with custom envfile as well
 }
 
 func ExampleTaskRunner_Run() {
