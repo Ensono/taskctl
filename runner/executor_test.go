@@ -73,7 +73,7 @@ func Test_ContainerExecutor(t *testing.T) {
 
 	})
 
-	t.Run("semi-integration with alpine:latest", func(t *testing.T) {
+	t.Run("docker with alpine:latest", func(t *testing.T) {
 		cc := runner.NewContainerContext()
 		cc.Name = "alpine:3"
 		cc.ShellArgs = []string{"sh", "-c"}
