@@ -73,7 +73,9 @@ jobs:
           ${{ runner.os }}-go-
     
     - name: check schema
-      run: CI=true go run cmd/main.go generate_own_schema
+      run: |
+        CI=true go run cmd/main.go generate_own_schema
+        ls -lat /var/run/docker.sock
 
     - name: go vet
       run: |
