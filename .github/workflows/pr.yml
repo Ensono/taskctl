@@ -82,8 +82,7 @@ jobs:
     
     - name: Test
       run: |
-        DOCKER_HOST=unix:///var/run/docker.sock
-        go run cmd/main.go run pipeline test:unit
+        DOCKER_HOST=unix:///var/run/docker.sock go run cmd/main.go run pipeline test:unit
     
     - name: Publish Junit style Test Report
       uses: mikepenz/action-junit-report@v5
