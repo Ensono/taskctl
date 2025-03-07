@@ -75,7 +75,6 @@ jobs:
     - name: check schema
       run: |
         CI=true go run cmd/main.go generate_own_schema
-        ls -lat /var/run/docker.sock
 
     - name: go vet
       run: |
@@ -83,7 +82,7 @@ jobs:
     
     - name: Test
       run: |
-        echo $DOCKER_HOST
+        DOCKER_HOST=unix:///var/run/docker.sock
         go run cmd/main.go run pipeline test:unit
     
     - name: Publish Junit style Test Report
