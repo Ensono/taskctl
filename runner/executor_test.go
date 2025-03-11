@@ -74,8 +74,7 @@ func Test_ContainerExecutor(t *testing.T) {
 	})
 
 	t.Run("docker with alpine:latest", func(t *testing.T) {
-		cc := runner.NewContainerContext()
-		cc.Name = "alpine:3"
+		cc := runner.NewContainerContext("alpine:3")
 		cc.ShellArgs = []string{"sh", "-c"}
 
 		execContext := runner.NewExecutionContext(&utils.Binary{}, "", variables.NewVariables(), &utils.Envfile{},
@@ -110,6 +109,44 @@ pwd`,
 		}
 
 		if len(so.Bytes()) == 0 {
+			t.Errorf("got (%s) no output, expected stdout\n\n", se.String())
+		}
+	})
+
+	t.Run("error docker with alpine:latest", func(t *testing.T) {
+		cc := runner.NewContainerContext("alpine:3")
+		cc.ShellArgs = []string{"sh", "-c"}
+
+		execContext := runner.NewExecutionContext(&utils.Binary{}, "", variables.NewVariables(), &utils.Envfile{},
+			[]string{}, []string{}, []string{}, []string{}, runner.WithContainerOpts(cc))
+
+		if dh := os.Getenv("DOCKER_HOST"); dh == "" {
+			t.Fatal("ensure your DOCKER_HOST is set correctly")
+		}
+
+		ce, err := runner.GetExecutorFactory(execContext, nil)
+		if err != nil {
+			t.Error(err)
+		}
+
+		so := &bytes.Buffer{}
+		se := &bytes.Buffer{}
+		_, err = ce.Execute(context.TODO(), &runner.Job{Command: `unknown --version`,
+			Env:    variables.NewVariables(),
+			Vars:   variables.NewVariables(),
+			Stdout: output.NewSafeWriter(so),
+			Stderr: output.NewSafeWriter(se),
+		})
+
+		if err == nil {
+			t.Errorf("got %v, wanted error", err)
+		}
+
+		if len(se.Bytes()) == 0 {
+			t.Errorf("got error (%v), expected error\n\n", se.String())
+		}
+
+		if len(so.Bytes()) > 0 {
 			t.Errorf("got (%s) no output, expected stdout\n\n", se.String())
 		}
 	})

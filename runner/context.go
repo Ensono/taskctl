@@ -25,14 +25,16 @@ var (
 )
 
 type ContainerContext struct {
-	Name       string
-	Entrypoint []string
-	ShellArgs  []string
-	volumes    map[string]struct{}
+	Name         string
+	Entrypoint   []string
+	ShellArgs    []string
+	volumes      map[string]struct{}
+	isPrivileged bool
 }
 
-func NewContainerContext() *ContainerContext {
+func NewContainerContext(name string) *ContainerContext {
 	return &ContainerContext{
+		Name:    name,
 		volumes: make(map[string]struct{}),
 	}
 }
@@ -47,7 +49,7 @@ func (c *ContainerContext) WithVolumes(vols ...string) *ContainerContext {
 func (c *ContainerContext) VolumesFromArgs(cargs []string) *ContainerContext {
 	vols := []string{}
 	for _, v := range cargs {
-		if strings.HasPrefix(v, "-v ") {
+		if strings.HasPrefix(v, "-v") {
 			vols = append(vols, strings.TrimSpace(strings.TrimPrefix(v, "-v")))
 		}
 	}

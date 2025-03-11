@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
 	"slices"
 	"strings"
 
@@ -96,19 +95,21 @@ func newEnvFile(defEnvFile *utils.Envfile, isContainerContext bool) (*utils.Envf
 
 func contextExecutable(container *utils.Container) (*runner.ContainerContext, error) {
 	if container != nil && container.Name != "" {
-		cc := runner.NewContainerContext()
-		ex, err := os.Executable()
+		cc := runner.NewContainerContext(container.Name)
+		pwd, err := os.Getwd()
 		if err != nil {
 			return nil, err
 		}
-		pwd := path.Dir(ex)
 
-		cc.WithVolumes(fmt.Sprintf("%s:/workspace/.taskctl", pwd))
+		cc.WithVolumes(fmt.Sprintf("%s:/eirctl", pwd))
 		if container.EnableDinD {
 			cc.WithVolumes("/var/run/docker.sock:/var/run/docker.sock")
 		}
 		// CONTAINER ARGS these are best left to be tightly controlled
 		cc.VolumesFromArgs(checkForbiddenContainerArgs(container.ContainerArgs))
+		if container.Entrypoint != nil {
+			cc.Entrypoint = container.Entrypoint
+		}
 
 		// default shell and flag is set
 		// if shell is overwritten it should also contain the
@@ -124,6 +125,7 @@ func contextExecutable(container *utils.Container) (*runner.ContainerContext, er
 		} else {
 			cc.ShellArgs = []string{"sh", "-c"}
 		}
+
 		return cc, nil
 	}
 	return nil, nil

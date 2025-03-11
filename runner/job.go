@@ -8,6 +8,7 @@ import (
 )
 
 // Job is a linked list of jobs to execute by Executor
+// Task can have 1 or more Jobs
 type Job struct {
 	Command string
 	Dir     string

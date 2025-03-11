@@ -154,8 +154,7 @@ func Test_DockerExec_Cmd(t *testing.T) {
 	// with exclude
 	t.Run("with exclude correctly processed using v2 containers", func(t *testing.T) {
 		// Arrange
-		executable := runner.NewContainerContext()
-		executable.Name = "alpine"
+		executable := runner.NewContainerContext("alpine:3.21.3")
 
 		tf, err := os.CreateTemp("", "exclude-*.env")
 		if err != nil {

@@ -6,6 +6,12 @@ output: prefixed
 # variables:
 #   foo: 1
 
+contexts:
+  go:container:
+    container:
+      name: golang:1.23.7
+      enable_dind: true
+
 pipelines:
   fixcs:
     - task: goimports
@@ -78,6 +84,23 @@ tasks:
       - gocov convert .coverage/out | gocov-xml > .coverage/report-cobertura.xml
     after:
       - cat .coverage/test.out
+    allow_failure: true
+
+  test:in:container:
+    context: go:container
+    # dir: runner
+    command:
+      - |
+        echo 'starting go test...'
+        echo "docker sock: $(ls -lat /var/run/docker.sock)"
+        echo "docker_HOST: $DOCKER_HOST"
+        echo 'finished go test...'
+      - aws sts get-caller-identity
+  # > .coverage/test.out
+  # cat .coverage/test.out | go-junit-report > .coverage/report-junit.xml
+  # gocov convert .coverage/out | gocov-xml > .coverage/report-cobertura.xml
+    # after:
+    #   - cat .coverage/test.out
     allow_failure: true
 
   build:

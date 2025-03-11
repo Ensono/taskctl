@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -90,9 +91,13 @@ func (e *ContainerExecutor) Execute(ctx context.Context, job *Job) ([]byte, erro
 		tty = true
 		attachStdin = true
 	}
+	remoteDir := ""
+	if e.execContext.Dir != job.Dir {
+		remoteDir = job.Dir
+	}
 
 	// everything in the container is relative to the `/eirctl` directory
-	wd := path.Join("/eirctl", job.Dir)
+	wd := path.Join("/eirctl", remoteDir)
 	// adding the opiniated PWD into the Container Env as per the wd variable
 	cEnv := utils.ConvertEnv(utils.ConvertToMapOfStrings(job.Env.Merge(variables.FromMap(map[string]string{"PWD": wd})).Map()))
 
@@ -109,11 +114,12 @@ func (e *ContainerExecutor) Execute(ctx context.Context, job *Job) ([]byte, erro
 		// will append any job specified paths to the default working
 		WorkingDir: wd,
 	}
-
+	logrus.Debugf("entrypoint: %v", containerConfig.Entrypoint)
+	logrus.Debugf("command: %v", containerConfig.Cmd)
 	if err := e.PullImage(ctx, containerContext.Name, job.Stdout); err != nil {
 		return nil, err
 	}
-
+	logrus.Debugf("%+v", containerConfig.Volumes)
 	resp, err := e.cc.ContainerCreate(ctx, containerConfig, nil, nil, nil, "")
 	if err != nil {
 		return nil, fmt.Errorf("%v\n%w", err, ErrContainerCreate)
@@ -132,18 +138,29 @@ func (e *ContainerExecutor) Execute(ctx context.Context, job *Job) ([]byte, erro
 	case <-statusCh:
 	}
 
-	out, err := e.cc.ContainerLogs(ctx, resp.ID, container.LogsOptions{ShowStdout: true})
+	out, err := e.cc.ContainerLogs(ctx, resp.ID, container.LogsOptions{ShowStdout: true, ShowStderr: true})
 	if err != nil {
 		return nil, fmt.Errorf("%v\n%w", err, ErrContainerLogs)
 	}
+	// capture stderr separately
+	stderr := &bytes.Buffer{}
+	if _, err := stdcopy.StdCopy(job.Stdout, stderr, out); err != nil {
+		return []byte{}, err
+	}
 
-	_, _ = stdcopy.StdCopy(job.Stdout, job.Stderr, out)
-
+	if len(stderr.Bytes()) > 0 {
+		errStr := &bytes.Buffer{}
+		if _, err = io.Copy(io.MultiWriter(job.Stderr, errStr), stderr); err != nil {
+			return nil, err
+		}
+		return []byte{}, fmt.Errorf(errStr.String())
+	}
 	return []byte{}, nil
 }
 
 // Container pull images - all contexts that have a container property
 func (e *ContainerExecutor) PullImage(ctx context.Context, name string, dstOutput io.Writer) error {
+	logrus.Debug(name)
 	reader, err := e.cc.ImagePull(ctx, name, image.PullOptions{})
 	if err != nil {
 		return fmt.Errorf("%v\n%w", err, ErrImagePull)
@@ -154,7 +171,9 @@ func (e *ContainerExecutor) PullImage(ctx context.Context, name string, dstOutpu
 	// The reader needs to be read completely for the pull operation to complete.
 	// If stdout is not required, consider using io.Discard instead of os.Stdout.
 	// Debug log pull image output
-	logrus.Debug(io.ReadAll(reader))
+	b := &bytes.Buffer{}
+	_, _ = io.Copy(b, reader)
+	logrus.Debug(b.String())
 	return nil
 }
 

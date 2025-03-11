@@ -1,8 +1,8 @@
 <p align="center">
-<img width="400" src="./docs/eirctl-logo.webp" alt="eirctl" title="eirctl " />
+<img width="400" src="https://raw.githubusercontent.com/Ensono/taskctl/master/docs/logo.png" alt="taskctl - developer's routine tasks automation toolkit" title="taskctl - developer's routine tasks automation toolkit" />
 </p>
 
-# eirctl - concurrent task and container runner
+# taskctl - concurrent task runner, developer's routine tasks automation toolkit
 
 > modified taskctl/taskctl
 
