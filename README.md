@@ -1,10 +1,12 @@
+> :warning: **This repo and the fork is archived**, the active development and maintainance of this tool has moved to [eirctl](https://github.com/Ensono/eirctl). 
+
+> Huge thanks to the [original author](https://github.com/trntv) :clap:, whose work has inspired the spin off into [eirctl](https://github.com/Ensono/eirctl)
+
 <p align="center">
 <img width="400" src="https://raw.githubusercontent.com/Ensono/taskctl/master/docs/logo.png" alt="taskctl - developer's routine tasks automation toolkit" title="taskctl - developer's routine tasks automation toolkit" />
 </p>
 
 # taskctl - concurrent task runner, developer's routine tasks automation toolkit
-
-> modified taskctl/taskctl
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/Ensono/taskctl.svg)](https://pkg.go.dev/github.com/Ensono/taskctl)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Ensono/taskctl)](https://goreportcard.com/report/github.com/Ensono/taskctl)
